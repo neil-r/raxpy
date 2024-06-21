@@ -1,4 +1,19 @@
-# raxpy
+# raxpy, Pythom Library to simplify experimentation over complex search spaces
+
+
+- Python static typing annotation configuration, self-contained documentation
+- Exploration heuristics
+- Hierarchical monte-carlo search
+- MPI parallelization support
+- Auto-generated data schema and database
+- Response-surface-methodology
+- Constrained search spaces
+- trial folder management
+
+## Static Type Annotations
+
+Documentation as code. 
+
 
 
 
