@@ -2,7 +2,13 @@ from typing import List, Optional
 from dataclasses import dataclass
 from .dimensions import Dimension
 
+
 @dataclass
-class Space:
+class InputSpace:
     dimensions:List[Dimension]
-    constraints:Optional[List] = None
+    multi_dim_contraints:Optional[List] = None
+
+@dataclass
+class OutputSpace:
+    dimensions:List[Dimension]
+

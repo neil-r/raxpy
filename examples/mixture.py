@@ -1,5 +1,5 @@
 from typing import Annotated, List
-import raxpy.spec as rx
+import raxpy.annotations as rx
 
 m = rx.Mixture("test")
 m1_meta = m.create_component_meta("Juice")

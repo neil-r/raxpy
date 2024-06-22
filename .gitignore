@@ -84,3 +84,6 @@ ipython_config.py
 
 # Mac local directory file
 .DS_Store
+
+# Virtual Environment files
+venv
