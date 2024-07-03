@@ -8,7 +8,7 @@ T = TypeVar('T')
 def _map_values(x, value_set, portion_null):
     value_count = len(value_set)
     
-    return [value_set[int(((xp - portion_null)/(1.0-portion_null))//value_count)] if xp is not None and xp < portion_null else None for xp in x]
+    return [value_set[int(((xp - portion_null)/(1.0-portion_null))//value_count)] if xp is not None and xp > portion_null else None for xp in x]
 
 
 @dataclass
