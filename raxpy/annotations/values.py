@@ -7,17 +7,19 @@ from ..spaces import dimensions as d
 CategorySpec = Union[str, Tuple[str,str]]
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Base:
     label:Optional[str] = None
     tags:Optional[List[str]] = None
 
-@dataclass
+
+@dataclass(frozen=True, eq=True)
 class Categorical(Base):
     value_set:Optional[List[CategorySpec]] = None
-    
 
-@dataclass
+
+
+@dataclass(frozen=True, eq=True)
 class Float(Base):
     ub:Optional[float] = None
     lb:Optional[float] = None
@@ -29,7 +31,7 @@ class Float(Base):
         d.value_set = self.value_set
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Integer(Base):
     ub:Optional[int] = None
     lb:Optional[int] = None
@@ -42,7 +44,7 @@ class Integer(Base):
         d.value_set = self.value_set
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Binary(Base):
 
     pass

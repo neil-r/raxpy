@@ -15,7 +15,40 @@
 Documentation as code. 
 
 
+## Experimentation Orchistration Types
 
+ - Coordinated Agent Search
+  - Runners managed by Coordinators
+  - IndepdentRunner
+ - Sequentail Batch Search
+  - DepednentRunner
+
+
+ - Task Types
+  - Analyze Function's Space
+  - Run Function Given Inputs (with/without checkpoint details)
+  
+ - Task Executor
+  - TaskExecutionContext
+  - PreProcessor
+  - EpochProcessor
+  - CheckpointRestorer
+  - CheckpointSaver
+  - PostProcessor
+ 
+ - Database
+  - InitalizeSpaces
+  - InsertDataPoints
+  - MarkDataPoints
+  - UpdateDataPoints
+  - RetrieveDataPoints
+
+## Configuration Methods
+
+ - MPI delegator, with centralized data-point processing, decentralized artifact processing
+ - Task Message Broker (task results)
+  - 
+ - 
 
 ## Getting started
 
