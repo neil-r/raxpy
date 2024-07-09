@@ -24,10 +24,10 @@ def test_collapse_of_random_numbers():
         nullable=True,
         portion_null=0.33,
         children=[
-          d.Float(
+          d.Int(
             id="x4",
-            lb=6.0,
-            ub=7.0,
+            lb=6,
+            ub=7,
             nullable=False
           ),
           d.Float(
@@ -41,10 +41,17 @@ def test_collapse_of_random_numbers():
     ]
   )
   assert space.count_dimensions() == 5
-  random_x = np.random.rand(10, 5)
 
-  collapsed_x = space.collapse(random_x)
+  flatted_dimensions = s.create_all_iterable(space.children)
+  dim_map = {}
+  for i, dim in enumerate(flatted_dimensions):
+    dim_map[dim.id] = i
+  random_x = np.random.rand(10, 5)
+  collapsed_x = space.decode_zero_one_matrix(random_x, dim_map,map_null_to_children_dim=True)
 
   assert collapsed_x is not None
 
-  
+  x3_values = collapsed_x[:,dim_map["x3"]]
+  x4_values = collapsed_x[:,dim_map["x4"]]
+  # make sure if x3 is null, x4 is also null
+  assert np.all(np.isnan(x3_values) == np.isnan(x4_values))

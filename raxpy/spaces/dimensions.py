@@ -1,3 +1,4 @@
+import numpy as np
 from typing import Optional, List, Union, Generic, TypeVar, Set
 from dataclasses import dataclass
 
@@ -7,8 +8,12 @@ T = TypeVar('T')
 
 def _map_values(x, value_set, portion_null):
     value_count = len(value_set)
+    boundary_size = 1.0/value_count
     
-    return [value_set[int(((xp - portion_null)/(1.0-portion_null))//value_count)] if xp is not None and xp > portion_null else None for xp in x]
+    if portion_null is not None:
+        return [value_set[int(((xp - portion_null)/(1.0-portion_null))//boundary_size)] if (not np.isnan(xp)) and xp > portion_null else np.nan for xp in x]
+    else:
+        return [value_set[int(xp//boundary_size)] if not np.isnan(xp) else np.nan for xp in x]
 
 
 @dataclass
@@ -30,7 +35,8 @@ class Dimension(Generic[T]):
     def collapse_uniform(self, x):
         raise NotImplementedError("Abstract method, subclass should implement this method")
     
-
+    def has_tag(self, tag:str) -> bool:
+        return self.tags is not None and tag in self.tags
 
 
 @dataclass

@@ -18,6 +18,15 @@ be dynamically derived from the values of inputs; the expression attribute
 specifies this computation
 """
 
+EXPECT_INTERACTIONS = "expect_interactions"
+"""
+Flag to indicate a composite input dimension as having children dimensions that
+cause significant interaction effects to the outputs of interest.
+
+This flag may be used in dimensional complexity hueristics to support how to
+summarize the complexity of multiple children dimensions.
+"""
+
 
 # Ouptut Dimension Tags
 

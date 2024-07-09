@@ -57,3 +57,7 @@ def extract_output_space(func: Callable) -> OutputSpace:
         dimensions=output_dimensions
     )
     return output_space
+
+
+def map_inputs_to_function_spec(inputs, func: Callable):
+    raise NotImplementedError("TODO implement")

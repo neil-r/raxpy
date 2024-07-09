@@ -1,9 +1,118 @@
-from typing import List, Optional, Dict
+from typing import Iterable, List, Optional, Dict
 from dataclasses import dataclass
 import numpy as np
+import itertools
 
 from .dimensions import Dimension
 
+
+def _generate_combinations(base_list):
+    # Create an empty list to store all combinations
+    all_combinations = []
+    
+    # Iterate through all possible lengths of combinations
+    for r in range(1, len(base_list) + 1):
+        # Generate combinations of length r
+        combinations = itertools.combinations(base_list, r)
+        # Add the generated combinations to the list
+        all_combinations.extend(combinations)
+    
+    return all_combinations
+
+
+def derive_subspaces(level:Iterable[Dimension]) -> List[List[str]]:
+   
+   optional_dims = []
+   expansion_map = {}
+   required_dims = []
+
+   for dim in level:
+      if dim.nullable:
+         if dim.has_child_dimensions():
+            children_subspaces = derive_subspaces(create_level_iterable(dim.children))
+            expansion_map[dim.id] = children_subspaces
+            optional_dims.append(dim.id)
+         else:
+            optional_dims.append(dim.id)
+      else:
+         required_dims.append(dim.id)
+   
+   base_dim_combinations = _generate_combinations(optional_dims)
+
+   # expand base-level combinations with children subspace combinations
+   condensed_lists = []
+   for base_dim_combination in base_dim_combinations:
+     expanded_dim_list:List[List[str]] = []
+     for base_dim_id in base_dim_combination:
+        # if dim does not have children subspace combinations
+        if base_dim_id not in expansion_map:
+            # simply add to existing combinations
+            if len(expanded_dim_list) > 0:
+                for b_list in expanded_dim_list:
+                    b_list.append(base_dim_id)
+            else:
+                expanded_dim_list.append([base_dim_id])
+        else:
+            # dim has children subspace combinations
+            children_spaces = expansion_map[base_dim_id]
+            base_list_len = len(expanded_dim_list)
+            if base_list_len == 0:
+                # must create base combinations with child combination
+                for css in children_spaces:
+                   expanded_dim_list.append([base_dim_id] + css)
+            else:
+                # must mix each existing combination with each child combination
+                for css in children_spaces:
+                    i = 0
+                    while i < base_list_len:
+                        expanded_dim_list.append(expanded_dim_list[i] + [base_dim_id] + css)
+                        i += 1
+                # remove incomplete sets without any child combination
+                for _ in range(base_list_len):
+                    expanded_dim_list.pop(0)
+     # add required dims to every combination
+     for dim_list in expanded_dim_list:
+        condensed_lists.append(list(required_dims) + dim_list)
+   
+   condensed_lists.append(required_dims)
+    
+   return condensed_lists
+
+
+def create_level_iterable(base_dimensions:List[Dimension]) -> Iterable[Dimension]:
+    resolved_dimension_list:List[Dimension] = []
+
+    dimension_stack = list(base_dimensions)
+
+    while len(dimension_stack) > 0:
+      dim1 = dimension_stack.pop(0)
+
+      if dim1.has_child_dimensions():
+        if dim1.only_supports_spec_structure():
+          # insert children dimensions to stack to be processed in same level
+          for child_dim in reversed(dim1.children):
+            dimension_stack.insert(0, child_dim)
+        else:
+          resolved_dimension_list.append(dim1)
+      else:
+        resolved_dimension_list.append(dim1)
+    
+    return resolved_dimension_list
+
+def create_all_iterable(base_dimensions:List[Dimension]) -> Iterable[Dimension]:
+    resolved_dimension_list:List[Dimension] = []
+
+    dimension_stack = list(base_dimensions)
+
+    while len(dimension_stack) > 0:
+      dim1 = dimension_stack.pop(0)
+      resolved_dimension_list.append(dim1)
+      if dim1.has_child_dimensions():
+        for child_dim in reversed(dim1.children):
+          dimension_stack.insert(0, child_dim)
+      
+    
+    return resolved_dimension_list
 
 @dataclass
 class SubSpace:
@@ -19,20 +128,12 @@ def _project_null(x1, x2):
 class Space:
     dimensions:List[Dimension]
 
-    def derive_complete_sub_spaces(self, target_sample_count:int):
-        sub_spaces = []
+    @property
+    def children(self)->List[Dimension]:
+        return self.dimensions
 
-        for d in self.dimensions:
-            #TODO derive children dimension sub-spaces
-
-            if d.nullable:
-                # duplicate sub_spaces
-                sub_spaces = sub_spaces + [SubSpace(s).inject() for s in sub_spaces]
-                pass
-            else:
-                pass
-        
-        return sub_spaces
+    def derive_subspaces(self):
+       return derive_subspaces(create_level_iterable(self.children))
 
     def count_dimensions(self):
         return sum([
@@ -40,29 +141,30 @@ class Space:
                 (0 if d.only_supports_spec_structure() else 1) + 
             (d.count_children_dimensions())  ) for d in self.dimensions])
 
-    def collapse(self, x):
+    def decode_zero_one_matrix(self, x:np.array, dim_column_map:Dict[str,int], map_null_to_children_dim=False ):
+        
+        decoded_values = np.array(x)
+        flatted_dimensions = create_all_iterable(self.children)
+        for dim in flatted_dimensions:
+        
+            if dim.id in dim_column_map:
+                column_index = dim_column_map[dim.id]
+                encoded_column = x[:,column_index]
+                decoded_column = dim.collapse_uniform(encoded_column)
+                if map_null_to_children_dim and dim.has_child_dimensions():
+                   nan_mask = np.isnan(decoded_column)
+                   if nan_mask.sum() > 0:
+                      children = create_all_iterable(dim.children)
+                      non_nan_mask = ~nan_mask
+                      for c_dim in children:
+                         if c_dim.id in dim_column_map:
+                            c_column_index = dim_column_map[c_dim.id]
+                            x[:,c_column_index][non_nan_mask] = x[:,c_column_index][non_nan_mask]
+                            x[:,c_column_index][nan_mask] = np.nan
 
-        x = np.array(x)
-
-        column_index = 0
-        columns = self.dimensions
-
-        while column_index < len(columns):
-            active_column = columns[column_index]
-            child_dim_count = 0
-            if active_column.has_child_dimensions():
-                child_dim_count = active_column.count_children_dimensions()
-                # inject child columns
-                columns = columns[:column_index+1] + active_column.children + columns[column_index+1:]
-            print(column_index)
-            print("-" * 80)
-            x[:,column_index] = active_column.collapse_uniform(x[:,column_index])
-            if active_column.portion_null is not None and child_dim_count > 0:
-                for i in range(child_dim_count):
-                    x[:,i+column_index+1] = _project_null(x[:, column_index], x[:,i+column_index+1])
-
-            column_index += 1
-        return x
+                   pass
+                decoded_values[:,column_index] = decoded_column
+        return decoded_values
 
 @dataclass
 class InputSpace(Space):
