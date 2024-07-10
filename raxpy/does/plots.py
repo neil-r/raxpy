@@ -1,4 +1,9 @@
+"""
+    This modules provides some custom plots to show experiment designs.
+"""
+
 import itertools
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,7 +15,7 @@ def scatterplot_matrix(data, names, **kwargs):
     passed on to matplotlib's "plot" command. Returns the matplotlib figure
     object containg the subplot grid."""
     n_points, n_columns = data.shape
-    fig, axes = plt.subplots(nrows=n_columns, ncols=n_columns, figsize=(8,8))
+    fig, axes = plt.subplots(nrows=n_columns, ncols=n_columns, figsize=(8, 8))
     fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
     for ax in axes.flat:
@@ -32,19 +37,20 @@ def scatterplot_matrix(data, names, **kwargs):
 
     # Plot the data.
     for i, j in zip(*np.triu_indices_from(axes, k=1)):
-        for x, y in [(i,j), (j,i)]:
-            x_d = [(xp if xp is not None else -0.1) for xp in data[:,x]]
-            y_d = [(xp if xp is not None else -0.1) for xp in data[:,y]]
-            axes[x,y].scatter(x_d, y_d, **kwargs)
+        for x, y in [(i, j), (j, i)]:
+            x_d = [(xp if xp is not None else -0.1) for xp in data[:, x]]
+            y_d = [(xp if xp is not None else -0.1) for xp in data[:, y]]
+            axes[x, y].scatter(x_d, y_d, **kwargs)
 
     # Label the diagonal subplots...
     for i, label in enumerate(names):
-        axes[i,i].annotate(label, (0.5, 0.5), xycoords='axes fraction',
-                ha='center', va='center')
+        axes[i, i].annotate(
+            label, (0.5, 0.5), xycoords="axes fraction", ha="center", va="center"
+        )
 
     # Turn on the proper x or y axes ticks.
     for i, j in zip(range(n_columns), itertools.cycle((-1, 0))):
-        axes[j,i].xaxis.set_visible(True)
-        axes[i,j].yaxis.set_visible(True)
+        axes[j, i].xaxis.set_visible(True)
+        axes[i, j].yaxis.set_visible(True)
 
     return fig
