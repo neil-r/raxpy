@@ -1,11 +1,8 @@
-from typing import Optional, List, Union, Generic, TypeVar, Any, Callable, Type, Dict
-from typing import List
+from typing import List, Callable
 
 import inspect
-from dataclasses import dataclass
 
-from raxpy.does.doe import DesignOfExperiment
-from raxpy.spaces import dim_tags, dimensions as dim
+from raxpy.spaces import dimensions as dim
 from raxpy.spaces.root import InputSpace, OutputSpace
 from .type_spec import map_type, UndefinedValue
 
@@ -15,6 +12,7 @@ def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
         # analyze static type for parameter specification of dimension
         t = param.annotation
         d = map_type(
+            "",
             name,
             t,
             (
@@ -26,15 +24,17 @@ def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
     else:
         if param.default is inspect.Parameter.empty:
             # no default value and no static type spec
-            d = dim.Float(id=name, nullable=False)
+            d = dim.Float(id=name, global_id=name, nullable=False)
         else:
             # infer type given type of default value
             if param.default is None:
-                d = dim.Float(id=name, nullable=True, default_value=None)
+                d = dim.Float(
+                    id=name, global_id=name, nullable=True, default_value=None
+                )
             else:
                 t = type(param.default)
 
-                d = map_type(name, t, None, param.default)
+                d = map_type("", name, t, param.default)
 
     return d
 
@@ -63,14 +63,6 @@ def extract_input_space(func: Callable) -> InputSpace:
 
 def extract_output_space(func: Callable) -> OutputSpace:
     output_dimensions: List[dim.Dimension] = []
+    # TODO implement return type introspection logic
     output_space = OutputSpace(dimensions=output_dimensions)
     return output_space
-
-
-def map_design_to_function_spec(design: DesignOfExperiment, func: Callable):
-    arg_sets = []
-
-    for inputs in design.input_set:
-        pass
-
-    return arg_sets

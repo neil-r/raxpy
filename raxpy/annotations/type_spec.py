@@ -1,19 +1,12 @@
 from typing import (
-    Optional,
     List,
     Union,
-    Generic,
-    TypeVar,
-    Any,
-    Callable,
     Type,
-    Dict,
     get_origin,
-    get_type_hints,
     get_args,
 )
-from raxpy.spaces import dim_tags, dimensions as dim
-from dataclasses import dataclass, fields, MISSING
+from raxpy.spaces import dimensions as dim
+from dataclasses import fields, MISSING
 
 
 UndefinedValue = object()
@@ -32,7 +25,7 @@ def _is_annotated_with_metadata(type_annotation):
 
 
 # Function to introspect and list the attributes of a dataclass
-def list_dataclass_attributes(cls):
+def list_dataclass_attributes(parent_prefix, cls):
     children_dims = []
     if not hasattr(cls, "__dataclass_fields__"):
         raise TypeError(f"{cls.__name__} is not a dataclass")
@@ -41,13 +34,16 @@ def list_dataclass_attributes(cls):
     for attr in attributes:
         t = attr.type
         child_dim = map_type(
-            attr.name, t, UndefinedValue if attr.default == MISSING else attr.default
+            parent_prefix,
+            attr.name,
+            t,
+            UndefinedValue if attr.default == MISSING else attr.default,
         )
         children_dims.append(child_dim)
     return children_dims
 
 
-def _map_base_type(t, initalization_values):
+def _map_base_type(parent_prefix, t, initalization_values):
 
     if t in _type_dimension_mapper:
         dt = _type_dimension_mapper[t]
@@ -58,28 +54,35 @@ def _map_base_type(t, initalization_values):
 
             a = get_args(t)
             if a is not None and len(a) == 1:
-                element_type = map_type("element", a[0])
+                element_type = map_type(parent_prefix, "_element", a[0])
             else:
                 raise NotImplementedError(f"Multiple List args not implemented: {a}")
 
             initalization_values["element_type"] = element_type
         elif hasattr(t, "__dataclass_fields__"):
             dt = dim.Composite
-            initalization_values["children"] = list_dataclass_attributes(t)
+            initalization_values["children"] = list_dataclass_attributes(
+                parent_prefix, t
+            )
+            initalization_values["type_class"] = t
         else:
             raise NotImplementedError(f"Type ({t}) not understood")
     return dt
 
 
-def map_type(name: str, base_type, default_value=UndefinedValue) -> dim.Dimension:
+def map_type(
+    parent_prefix: str, name: str, base_type, default_value=UndefinedValue
+) -> dim.Dimension:
 
     metadata = None
     if _is_annotated_with_metadata(base_type):
         metadata = base_type.__metadata__
         base_type = base_type.__origin__
 
+    global_id = parent_prefix + name
     initalization_values = {
         "id": name,
+        "global_id": global_id,
         "default_value": None if default_value is UndefinedValue else default_value,
         "specified_default": False if default_value is UndefinedValue else True,
         "nullable": True if default_value is None else False,
@@ -94,17 +97,18 @@ def map_type(name: str, base_type, default_value=UndefinedValue) -> dim.Dimensio
             args.remove(type(None))
         if len(args) == 1:
             child_type = args[0]
-            dt = _map_base_type(child_type, initalization_values)
+            dt = _map_base_type(global_id, child_type, initalization_values)
         else:
             dt = dim.Variant
             options = []
 
-            for a in args:
-                options.append(map_type("option", a))
+            for i, a in enumerate(args):
+
+                options.append(map_type(global_id, f"option_{i}", a))
 
             initalization_values["options"] = options
     else:
-        dt = _map_base_type(base_type, initalization_values)
+        dt = _map_base_type(parent_prefix, base_type, initalization_values)
 
     d = dt(**initalization_values)
 
