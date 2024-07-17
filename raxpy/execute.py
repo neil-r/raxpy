@@ -4,7 +4,7 @@ from raxpy.spaces.dimensions import convert_values_from_dict
 from raxpy.spaces.complexity import assign_null_portions
 from raxpy.spaces.root import InputSpace, create_level_iterable
 from raxpy.annotations import function_spec
-from raxpy.does import projected_lhs
+from raxpy.does import lhs
 
 
 T = TypeVar("T")
@@ -28,7 +28,7 @@ def _default_designer(input_space: InputSpace, target_number_of_runs: int) -> Li
     # assign unassigned null poritions using complexity hueristic
     assign_null_portions(create_level_iterable(input_space.children))
 
-    design = projected_lhs.generate_design(input_space, target_number_of_runs)
+    design = lhs.generate_design(input_space, target_number_of_runs)
 
     value_dicts = input_space.convert_flat_values_to_dict(
         design.input_sets, design.input_set_map

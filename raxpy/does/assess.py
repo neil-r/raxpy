@@ -7,6 +7,7 @@ from typing import List, Dict, Set
 
 import numpy as np
 from scipy.stats.qmc import discrepancy
+from scipy.spatial import distance_matrix
 
 from .doe import DesignOfExperiment
 from ..spaces import root as s
@@ -51,10 +52,14 @@ def compute_max_min_point_distance(context: SubSpaceMetricComputeContext) -> flo
     Returns:
     float: the maximum of the minimum-point-distance-for-each-point
     """
-    # TODO: compute the distances for each point combination
-    # TODO: find the min for each point
-    # TODO: take the max from all of these min distances
-    return 0.0
+    points = context.sub_space_doe.input_sets
+    # compute the distances for each point combination
+    dm = distance_matrix(points, points)
+    np.fill_diagonal(dm, np.inf)
+
+    # find the min distances to the each other point
+    min_distances_for_each_point = np.min(dm, axis=0)
+    return np.max(min_distances_for_each_point)
 
 
 def compute_discrepancy(context: SubSpaceMetricComputeContext) -> float:
@@ -100,7 +105,7 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
     DoeAssessment: results from an assessment for the whole design and sub-designs.
     """
     # determine every full-combination of input dimensions that could be defined in this space
-    sub_spaces = space.derive_subspaces()
+    sub_spaces = space.derive_full_subspaces()
 
     # assign a id/int to each sub space
     sub_space_index_map = {}

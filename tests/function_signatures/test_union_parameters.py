@@ -54,5 +54,5 @@ def test_union_choice_spec_param_func():
     assert len(input_space.dimensions) == 1
     dim = input_space.dimensions[0]
     assert isinstance(dim, d.Variant)
-    assert len(dim.children, 3)
+    assert len(dim.children) == 3
     assert dim.nullable is False

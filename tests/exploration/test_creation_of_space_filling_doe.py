@@ -1,6 +1,6 @@
 import raxpy.spaces.dimensions as d
 import raxpy.spaces.root as s
-import raxpy.does.projected_lhs as doe
+import raxpy.does.lhs as doe
 
 
 def test_creation_of_space_filling_doe():

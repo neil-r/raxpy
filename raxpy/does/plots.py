@@ -40,7 +40,7 @@ def scatterplot_matrix(data, names, **kwargs):
         for x, y in [(i, j), (j, i)]:
             x_d = [(xp if xp is not None else -0.1) for xp in data[:, x]]
             y_d = [(xp if xp is not None else -0.1) for xp in data[:, y]]
-            axes[x, y].scatter(x_d, y_d, **kwargs)
+            axes[x, y].scatter(y_d, x_d, **kwargs)
 
     # Label the diagonal subplots...
     for i, label in enumerate(names):
