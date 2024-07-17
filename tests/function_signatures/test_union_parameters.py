@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import raxpy
 import raxpy.annotations.function_spec as fs
+import raxpy.spaces.dimensions as d
 
 
 def test_union_choice_spec_param_func():
@@ -51,3 +52,7 @@ def test_union_choice_spec_param_func():
     assert input_space is not None
     assert input_space.dimensions is not None
     assert len(input_space.dimensions) == 1
+    dim = input_space.dimensions[0]
+    assert isinstance(dim, d.Variant)
+    assert len(dim.children, 3)
+    assert dim.nullable is False

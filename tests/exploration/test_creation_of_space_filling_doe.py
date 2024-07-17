@@ -22,6 +22,15 @@ def test_creation_of_space_filling_doe():
                     ),
                 ],
             ),
+            d.Variant(
+                id="x6",
+                nullable=True,
+                portion_null=0.33,
+                options=[
+                    d.Float(id="x7", lb=1.0, ub=2.0, nullable=False),
+                    d.Float(id="x8", lb=3.0, ub=4.0, nullable=False),
+                ],
+            ),
         ]
     )
 

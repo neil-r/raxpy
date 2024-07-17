@@ -79,10 +79,10 @@ def map_type(
         metadata = base_type.__metadata__
         base_type = base_type.__origin__
 
-    global_id = parent_prefix + name
+    id = parent_prefix + name
     initalization_values = {
-        "id": name,
-        "global_id": global_id,
+        "local_id": name,
+        "id": id,
         "default_value": None if default_value is UndefinedValue else default_value,
         "specified_default": False if default_value is UndefinedValue else True,
         "nullable": True if default_value is None else False,
@@ -97,14 +97,14 @@ def map_type(
             args.remove(type(None))
         if len(args) == 1:
             child_type = args[0]
-            dt = _map_base_type(global_id, child_type, initalization_values)
+            dt = _map_base_type(id, child_type, initalization_values)
         else:
             dt = dim.Variant
             options = []
 
             for i, a in enumerate(args):
 
-                options.append(map_type(global_id, f"option_{i}", a))
+                options.append(map_type(id, f"option_{i}", a))
 
             initalization_values["options"] = options
     else:

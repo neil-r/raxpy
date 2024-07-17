@@ -24,13 +24,11 @@ def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
     else:
         if param.default is inspect.Parameter.empty:
             # no default value and no static type spec
-            d = dim.Float(id=name, global_id=name, nullable=False)
+            d = dim.Float(id=name, local_id=name, nullable=False)
         else:
             # infer type given type of default value
             if param.default is None:
-                d = dim.Float(
-                    id=name, global_id=name, nullable=True, default_value=None
-                )
+                d = dim.Float(id=name, local_id=name, nullable=True, default_value=None)
             else:
                 t = type(param.default)
 

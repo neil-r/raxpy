@@ -39,19 +39,19 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
                     children_subspaces = derive_subspaces(
                         create_level_iterable(dim.children)
                     )
-                expansion_map[dim.id] = children_subspaces
-                optional_dims.append(dim.id)
+                expansion_map[dim.local_id] = children_subspaces
+                optional_dims.append(dim.local_id)
             else:
-                optional_dims.append(dim.id)
+                optional_dims.append(dim.local_id)
         else:
             if isinstance(dim, Variant):
-                optional_dims.append(dim.id)
+                optional_dims.append(dim.local_id)
                 children_subspaces = []
                 for o in dim.children:
                     children_subspaces += derive_subspaces(create_level_iterable([o]))
-                expansion_map[dim.id] = children_subspaces
+                expansion_map[dim.local_id] = children_subspaces
             else:
-                required_dims.append(dim.id)
+                required_dims.append(dim.local_id)
 
     base_dim_combinations = _generate_combinations(optional_dims)
 
@@ -141,9 +141,9 @@ def _create_dict_from_flat_values(
 
         if dim.has_child_dimensions():
             input_is_null = False
-            if dim.id in dim_to_index_mapping:
+            if dim.local_id in dim_to_index_mapping:
                 # check to see if the input is marked as none
-                dim_index = dim_to_index_mapping[dim.id]
+                dim_index = dim_to_index_mapping[dim.local_id]
                 if inputs[dim_index] is None:
                     input_is_null = True
 
@@ -152,11 +152,11 @@ def _create_dict_from_flat_values(
                     dim.children, inputs, dim_to_index_mapping
                 )
                 if len(children_dict) > 0:
-                    dict_values[dim.id] = children_dict
+                    dict_values[dim.local_id] = children_dict
         else:
-            if dim.id in dim_to_index_mapping:
-                dim_index = dim_to_index_mapping[dim.id]
-                dict_values[dim.id] = inputs[dim_index]
+            if dim.local_id in dim_to_index_mapping:
+                dim_index = dim_to_index_mapping[dim.local_id]
+                dict_values[dim.local_id] = inputs[dim_index]
 
     return dict_values
 
@@ -185,14 +185,50 @@ class Space:
         dim_map = {}
 
         for dim in create_all_iterable(self.dimensions):
-            dim_map[dim.id] = dim
+            dim_map[dim.local_id] = dim
 
         return dim_map
 
-    def derive_subspaces(self):
+    def derive_full_subspaces(self) -> List[List[str]]:
+        """
+        Discovers every combination of dimensions that are able to
+        be specified togehter. We call these the possible full subspaces.
+        A list is returned containing List of the dimensions' global identifer.
+        Children dimensions are also analyzed.
+
+        Returns
+        List[List[str]]    every combination of dimensions that are able to be specified together
+        """
         return derive_subspaces(create_level_iterable(self.children))
 
-    def count_dimensions(self):
+    def derive_spanning_subspaces(self) -> List[List[str]]:
+        """
+        Discovers every combination of dimensions that are always specified
+        together. We call these the spanning subspaces.
+
+        Returns
+        List[List[str]]    every combination of dimensions that must be specified together
+        """
+        subspaces = self.derive_full_subspaces()
+        spanning_subspaces = {}
+
+        dims = create_all_iterable(self.dimensions)
+        for dim in dims:
+            subspaces_key = ""
+            for i, subspace in enumerate(subspaces):
+                if dim.local_id in subspace:
+                    subspaces_key += f"{i}_"
+            if subspaces_key != "":
+                if subspaces_key not in spanning_subspaces:
+                    spanning_subspaces[subspaces_key] = []
+                spanning_subspaces[subspaces_key].append(dim.id)
+
+        return list(spanning_subspaces.values())
+
+    def count_dimensions(self) -> int:
+        """
+        Counts the dimensions of the space that are not only for structure.
+        """
         return sum(
             [
                 (
@@ -248,6 +284,16 @@ class Space:
                                     :, c_column_index
                                 ][non_nan_mask]
                                 x[:, c_column_index][nan_mask] = np.nan
+                    if isinstance(dim, Variant):
+                        # determine active child, null out others
+                        for i, c_dim in enumerate(dim.children):
+                            nan_mask = [x != i for x in decoded_column]
+
+                            for c_c_dim in create_all_iterable([c_dim]):
+                                if c_c_dim.id in dim_column_map:
+                                    c_column_index = dim_column_map[c_c_dim.id]
+                                    x[:, c_column_index][nan_mask] = np.nan
+
                 decoded_values[:, column_index] = decoded_column
         return decoded_values
 

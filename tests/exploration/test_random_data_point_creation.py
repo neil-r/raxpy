@@ -39,7 +39,7 @@ def test_collapse_of_random_numbers():
     flatted_dimensions = s.create_all_iterable(space.children)
     dim_map = {}
     for i, dim in enumerate(flatted_dimensions):
-        dim_map[dim.global_id] = i
+        dim_map[dim.local_id] = i
     random_x = np.random.rand(10, 8)
     collapsed_x = space.decode_zero_one_matrix(
         random_x, dim_map, map_null_to_children_dim=True
@@ -53,8 +53,19 @@ def test_collapse_of_random_numbers():
     assert np.all(np.isnan(x3_values) == np.isnan(x4_values))
 
     x6_values = collapsed_x[:, dim_map["x6"]]
-    # TODO make sure x7 is only specified when x6 is 0
+
+    # make sure x7 is only specified when x6 is 0
     x7_values = collapsed_x[:, dim_map["x7"]]
-    # TODO make sure x8 is only specified when x6 is 1
+    # make sure x8 is only specified when x6 is 1
     x8_values = collapsed_x[:, dim_map["x8"]]
-    raise Exception("Fix todo above")
+
+    for i, x6_value in enumerate(x6_values):
+        if np.isnan(x6_value):
+            assert np.isnan(x7_values[i])
+            assert np.isnan(x8_values[i])
+        elif x6_value == 0:
+            assert not np.isnan(x7_values[i])
+            assert np.isnan(x8_values[i])
+        elif x6_value == 1:
+            assert np.isnan(x7_values[i])
+            assert not np.isnan(x8_values[i])

@@ -51,9 +51,9 @@ def convert_values_from_dict(dimensions, input_value: Dict[str, Any]):
 
 @dataclass
 class Dimension(Generic[T]):
-    id: str
-    nullable: bool
-    global_id: str = ""
+    id: str = ""
+    local_id: str = ""
+    nullable: bool = False
     specified_default: bool = False
     label: Optional[str] = None
     default_value: Optional[T] = None
@@ -61,8 +61,12 @@ class Dimension(Generic[T]):
     portion_null: Optional[float] = None
 
     def __post_init__(self):
-        if self.global_id == "":
-            self.global_id = self.id
+        if self.id == "":
+            self.id = self.local_id
+        if self.local_id == "":
+            self.local_id = self.id
+        if self.id == "":
+            raise ValueError("Invalid identifier for dimension")
 
     def has_child_dimensions(self) -> bool:
         return False

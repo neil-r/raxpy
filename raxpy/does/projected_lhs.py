@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 from scipy.stats.qmc import LatinHypercube
 
-from ..spaces.dimensions import Dimension
+from ..spaces.dimensions import Dimension, Variant
 from ..spaces.root import InputSpace, create_level_iterable
 from .doe import DesignOfExperiment
 
@@ -46,42 +46,64 @@ def generate_design(
     ]
 
     input_set_map = {}
-
+    parent_dim = None
     while len(design_request_stack) > 0:
         design_request = design_request_stack.pop(0)
         points_to_create = n_points
         base_level = design_request[0] is None
+        parent_mask = None
         if not base_level:
             # Count the number of non-null data-points for parent dimension
             parent_dim = design_request[0]
-            parent_inputs = final_data_points[:, input_set_map[parent_dim.id]]
+            parent_inputs = final_data_points[:, input_set_map[parent_dim.local_id]]
             parent_mask = parent_inputs > parent_dim.portion_null
             points_to_create = np.sum(parent_mask)
 
         # addressed fixed dimensions
         active_dims = design_request[1]
-        encoded_flag, data_points = base_creator(active_dims, points_to_create)
 
-        if base_level:
-            # initalize input set
-            for i, dim in enumerate(active_dims):
-                column_map[active_index] = dim
-                input_set_map[dim.id] = active_index
-                final_data_points[:, active_index] = data_points[:, i]
-
-                active_index += 1
-                if dim.has_child_dimensions():
-                    design_request_stack.append((dim, dim.children))
+        if parent_dim is None or not isinstance(parent_dim, Variant):
+            parts = [(active_dims, parent_mask, points_to_create)]
         else:
-            # inject design into input set
-            for i, dim in enumerate(active_dims):
-                column_map[active_index] = dim
-                input_set_map[dim.id] = active_index
-                final_data_points[:, active_index][parent_mask] = data_points[:, i]
+            parts = []
+            parent_values = parent_dim.collapse_uniform(parent_inputs)
+            for option_index, option_dim in enumerate(active_dims):
+                parent_mask = [option_index == pv for pv in parent_values]
+                parts.append(
+                    (
+                        list(create_level_iterable([option_dim])),
+                        parent_mask,
+                        sum(parent_mask),
+                    )
+                )
 
-                if dim.has_child_dimensions():
-                    design_request_stack.append((dim, dim.children))
-                active_index += 1
+        for active_dims, parent_mask, points_to_create in parts:
+            encoded_flag, data_points = base_creator(active_dims, points_to_create)
+            if base_level:
+                # initalize input set
+                for i, dim in enumerate(active_dims):
+                    column_map[active_index] = dim
+                    input_set_map[dim.local_id] = active_index
+                    final_data_points[:, active_index] = data_points[:, i]
+
+                    active_index += 1
+                    if dim.has_child_dimensions():
+                        if isinstance(dim, Variant):
+                            design_request_stack.append((dim, dim.options))
+                        else:
+                            design_request_stack.append(
+                                (dim, list(create_level_iterable(dim.children)))
+                            )
+            else:
+                # inject design into input set
+                for i, dim in enumerate(active_dims):
+                    column_map[active_index] = dim
+                    input_set_map[dim.local_id] = active_index
+                    final_data_points[:, active_index][parent_mask] = data_points[:, i]
+
+                    if dim.has_child_dimensions():
+                        design_request_stack.append((dim, dim.children))
+                    active_index += 1
 
     decoded_values = space.decode_zero_one_matrix(final_data_points, input_set_map)
 
