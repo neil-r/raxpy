@@ -87,3 +87,7 @@ ipython_config.py
 
 # Virtual Environment files
 venv
+.venv
+
+# VS Code Files
+.vscode/launch.json
