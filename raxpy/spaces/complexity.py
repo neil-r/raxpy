@@ -1,4 +1,7 @@
 from typing import Iterable, List
+
+import math
+
 from . import dimensions as d
 from . import dim_tags
 from . import root as s
@@ -70,3 +73,51 @@ def assign_null_portions(
     # compute portions for children set dimensions
     for children_set in children_sets:
         assign_null_portions(children_set, complexity_estimator)
+
+
+def compute_subspace_portitions(
+    space: s.Space, full_subspace_sets: List[List[str]]
+) -> List[float]:
+    portitions = []
+    # compute portion of the n_points that each sub-design for each sub-space
+    # should address
+    for full_subspace in full_subspace_sets:
+        portition_components = []
+
+        l1 = s.create_level_iterable(space.children)
+
+        levels_to_process = [l1]
+
+        while len(levels_to_process) > 0:
+            active_level = levels_to_process.pop(0)
+
+            for dim in active_level:
+
+                if dim.id in full_subspace:
+                    if dim.nullable:
+                        p = 1.0 - dim.portion_null
+                    else:
+                        p = 1.0
+
+                    if dim.has_child_dimensions():
+                        if isinstance(dim, d.Variant):
+
+                            portition_components.append(1.0 / len(dim.children))
+                            # only add active child to be processed
+                            for child_dim in dim.children:
+                                if child_dim.id in full_subspace:
+                                    levels_to_process.append(
+                                        s.create_level_iterable([child_dim])
+                                    )
+                        else:
+                            levels_to_process.append(
+                                s.create_level_iterable(dim.children)
+                            )
+                else:
+                    p = dim.portion_null
+
+                portition_components.append(p)
+
+        portitions.append(math.prod(portition_components))
+
+    return portitions
