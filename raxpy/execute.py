@@ -13,7 +13,8 @@ I = ParamSpec("I")
 
 def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
     """
-    Simply executes the function f sequentially, saving and returning the results
+    Simply executes the function f sequentially,
+    saving and returning the results
     """
     results = []
 
@@ -46,16 +47,17 @@ def perform_batch_experiment(
     f: Callable[I, T],
     target_number_of_runs: int,
     designer: Callable[[InputSpace, int], List[I]] = _default_designer,
-    orchistrator: Callable[
-        [Callable[I, T], List[I]],
-        List[T],
-    ] = _default_orchistrator,
+    orchistrator: Callable[[Callable[I, T], List[I]], List[T]] = _default_orchistrator,
 ) -> Tuple[List[I], List[T]]:
     """
-    Executes a batch experiment for function f. Begins by inspecting the input space of f.
-    Then calls designer to design an experiment given the input space specifications.
-    Then calls the orchitstrator to orchistrate the calling of function f given the input sets.
-    The orchistration captures the returned values with calling f and returns the input sets and the outputs.
+    Executes a batch experiment for function f.
+    Begins by inspecting the input space of f.
+    Then calls designer to design an experiment
+    given the input space specifications.
+    Then calls the orchitstrator to orchistrate the
+    calling of function f given the input sets.
+    The orchistration captures the returned values
+    with calling f and returns the input sets and the outputs.
     """
 
     input_space = function_spec.extract_input_space(f)
