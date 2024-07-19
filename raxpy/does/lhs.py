@@ -8,7 +8,7 @@ import numpy as np
 from scipy.stats.qmc import LatinHypercube
 
 from ..spaces.dimensions import Dimension, Variant, Composite
-from ..spaces.root import InputSpace, create_level_iterable
+from ..spaces.root import InputSpace, create_level_iterable, create_all_iterable
 from ..spaces.complexity import compute_subspace_portitions
 from .doe import DesignOfExperiment
 
@@ -220,6 +220,25 @@ def generate_seperate_designs_by_full_subspace(
 
     return DesignOfExperiment(
         input_sets=final_data_points,
+        input_set_map=input_set_map,
+        encoded_flag=False,
+    )
+
+
+def generate_design_with_projection(
+    space: InputSpace, n_points: int, base_creator=_default_base_lhs_creator
+) -> DesignOfExperiment:
+    active_dims = list(create_all_iterable(space.children))
+    input_set_map = {}
+    for i, dim in enumerate(active_dims):
+        input_set_map[dim.id] = i
+
+    encoded_flag, data_points = base_creator(active_dims, n_points)
+
+    decoded_values = space.decode_zero_one_matrix(data_points, input_set_map, True)
+
+    return DesignOfExperiment(
+        input_sets=decoded_values,
         input_set_map=input_set_map,
         encoded_flag=False,
     )
