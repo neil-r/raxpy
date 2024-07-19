@@ -262,6 +262,7 @@ class Space:
         x: np.array,
         dim_column_map: Dict[str, int],
         map_null_to_children_dim=False,
+        utilize_null_portitions=True,
     ):
 
         decoded_values = np.array(x)
@@ -271,7 +272,9 @@ class Space:
             if dim.id in dim_column_map:
                 column_index = dim_column_map[dim.id]
                 encoded_column = x[:, column_index]
-                decoded_column = dim.collapse_uniform(encoded_column)
+                decoded_column = dim.collapse_uniform(
+                    encoded_column, utilize_null_portitions
+                )
                 if map_null_to_children_dim and dim.has_child_dimensions():
                     nan_mask = np.isnan(decoded_column)
                     if nan_mask.sum() > 0:

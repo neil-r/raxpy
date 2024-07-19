@@ -73,6 +73,19 @@ def test_creation_of_space_filling_by_subspaces():
     assert design is not None
 
 
+def test_creation_of_space_filling_by_subspaces_null_fill():
+    space = s.InputSpace(
+        dimensions=[
+            d.Float(id="x1", lb=-3.0, ub=-5.0, nullable=True, portion_null=1.0 / 10.0),
+            d.Float(id="x2", lb=-3.0, ub=-5.0, nullable=True, portion_null=1.0 / 10.0),
+            d.Float(id="x3", lb=-3.0, ub=-5.0, nullable=True, portion_null=1.0 / 10.0),
+        ]
+    )
+    design = doe.generate_seperate_designs_by_full_subspace(space, 100)
+
+    assert design is not None
+
+
 def test_creation_with_lhs_projection():
     space = s.InputSpace(
         dimensions=[

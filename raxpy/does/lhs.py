@@ -11,6 +11,7 @@ from ..spaces.dimensions import Dimension, Variant, Composite
 from ..spaces.root import InputSpace, create_level_iterable, create_all_iterable
 from ..spaces.complexity import compute_subspace_portitions
 from .doe import DesignOfExperiment
+from ..spaces.complexity import estimate_complexity
 
 
 def create_base_lhs_creator(scamble=True, strength=1, optimation: str = "random-cd"):
@@ -116,7 +117,10 @@ def generate_design(
 
 
 def generate_seperate_designs_by_full_subspace(
-    space: InputSpace, n_points: int, base_creator=_default_base_lhs_creator
+    space: InputSpace,
+    n_points: int,
+    base_creator=_default_base_lhs_creator,
+    ensure_at_least_one=True,
 ) -> DesignOfExperiment:
 
     total_dim_count = space.count_dimensions()
@@ -134,12 +138,48 @@ def generate_seperate_designs_by_full_subspace(
 
     dim_map = space.create_dim_map()
 
+    # check if any of the subspaces would create duplicates
+    # if any duplicates, we need to distribute these given the portitions
+    n_extra_counts = 0
+    point_count_override = {}
+    last_space_to_place_extras = 0
+    n_running_point_count = 0
+    for i, portition, subspace in zip(
+        range(len(full_subspace_sets)), portitions, full_subspace_sets
+    ):
+        points_to_create = round(portition * n_points)
+
+        level_complexity_factor = 1.0
+        for dim_id in subspace:
+            dim = dim_map[dim_id]
+            level_complexity_factor *= estimate_complexity(dim)
+        level_complexity_factor = int(level_complexity_factor)
+        if points_to_create > level_complexity_factor:
+            n_extra_counts += points_to_create - level_complexity_factor
+            point_count_override[i] = level_complexity_factor
+            n_running_point_count += points_to_create - level_complexity_factor
+        elif points_to_create < 1 and ensure_at_least_one:
+            point_count_override[i] = 1
+            n_extra_counts -= 1
+            n_running_point_count += 1
+        else:
+            last_space_to_place_extras = i
+            n_running_point_count += points_to_create
+
     points_left_to_allocate = n_points
+    portition_weight = (n_extra_counts + n_points) / n_points
     lb_index = 0
 
-    for portition, subspace in zip(portitions, full_subspace_sets):
+    for i, portition, subspace in zip(
+        range(len(full_subspace_sets)), portitions, full_subspace_sets
+    ):
+        if i in point_count_override:
+            points_to_create = point_count_override[i]
+        else:
+            points_to_create = round(portition * n_points * portition_weight)
 
-        points_to_create = int(portition * n_points)
+        if i == last_space_to_place_extras:
+            pass
 
         if points_left_to_allocate < points_to_create:
             points_to_create = points_left_to_allocate
@@ -176,7 +216,7 @@ def generate_seperate_designs_by_full_subspace(
                 part_input_set_map[dim.id] = i
 
             decoded_data_points = space.decode_zero_one_matrix(
-                data_points, part_input_set_map
+                data_points, part_input_set_map, utilize_null_portitions=False
             )
 
             for i, dim in enumerate(active_dims):

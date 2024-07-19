@@ -74,7 +74,7 @@ class Dimension(Generic[T]):
     def only_supports_spec_structure(self) -> bool:
         return False
 
-    def collapse_uniform(self, x):
+    def collapse_uniform(self, x, utilize_null_portitions=True):
         raise NotImplementedError(
             "Abstract method, subclass should implement this method"
         )
@@ -123,7 +123,7 @@ class Int(Dimension[int]):
     def convert_to_argument(self, input_value) -> T:
         return int(input_value)
 
-    def collapse_uniform(self, x):
+    def collapse_uniform(self, x, utilize_null_portitions=True):
         vs = None
         if self.value_set is not None:
             vs = self.value_set
@@ -132,7 +132,9 @@ class Int(Dimension[int]):
                 vs = list(range(self.lb, self.ub + 1))
 
         if vs is not None:
-            return _map_values(x, vs, self.portion_null)
+            return _map_values(
+                x, vs, self.portion_null if utilize_null_portitions else None
+            )
         raise ValueError("Unbounded Int dimension cannot transform a uniform 0-1 value")
 
     def validate(self, input_value, specified_input: bool):
@@ -164,13 +166,17 @@ class Float(Dimension[float]):
     def convert_to_argument(self, input_value) -> T:
         return float(input_value)
 
-    def collapse_uniform(self, x):
+    def collapse_uniform(self, x, utilize_null_portitions=True):
         if self.value_set is not None:
-            return _map_values(x, self.value_set, self.portion_null)
+            return _map_values(
+                x,
+                self.value_set,
+                self.portion_null if utilize_null_portitions else None,
+            )
 
         if self.lb is not None and self.ub is not None:
             r = self.ub - self.lb
-            if self.portion_null is not None:
+            if self.portion_null is not None and utilize_null_portitions:
                 return [
                     (
                         self.lb
@@ -250,11 +256,11 @@ class Variant(Dimension):
         option = self.options[input_value.option_index]
         return option.convert_to_argument(input_value.content)
 
-    def collapse_uniform(self, x):
+    def collapse_uniform(self, x, utilize_null_portitions=True):
         return _map_values(
             x,
             [i for i in range(len(self.options))],
-            self.portion_null,
+            self.portion_null if utilize_null_portitions else None,
         )
 
     def only_supports_spec_structure(self) -> bool:
@@ -303,13 +309,13 @@ class Composite(Dimension):
         args = convert_values_from_dict(self.children, input_value)
         return self.type_class(**args)
 
-    def collapse_uniform(self, x):
+    def collapse_uniform(self, x, utilize_null_portitions):
         return _map_values(
             x,
             [
                 1,
             ],
-            self.portion_null,
+            self.portion_null if utilize_null_portitions else None,
         )
 
     def only_supports_spec_structure(self) -> bool:
