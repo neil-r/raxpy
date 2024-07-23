@@ -97,5 +97,9 @@ def test_metric_computations():
         )
     )
 
-    # TODO: make the following more precise
-    assert a.compute_min_point_distance(sub_space_doe) > 0.0
+    # TODO: incorporate hand computed values to ensure the following are correct
+    mipd = a.compute_min_point_distance(sub_space_doe)
+    assert mipd > 0.0
+
+    ard = a.compute_average_reciprocal_distance_projection(sub_space_doe)
+    assert ard > 0.0

@@ -4,6 +4,8 @@
 
 from dataclasses import dataclass
 from typing import List, Dict, Set
+import math
+import itertools
 
 import numpy as np
 from scipy.stats.qmc import discrepancy
@@ -47,10 +49,11 @@ METRIC_MIN_POINT_DISTANCE = "max_min_point_distance"
 
 def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     """
-    Computes and returns the maximum of the minimum-point-distance-for-each-point
+    Computes and returns the minimum-interpoint-distance (MIPD) among every
+    pair of points
 
     Returns:
-    float: the maximum of the minimum-point-distance-for-each-point
+    float: the minimum-interpoint-distance
     """
     points = context.sub_space_doe.input_sets
     # compute the distances for each point combination
@@ -59,6 +62,49 @@ def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
 
     # find the min distances to the each other point
     return np.min(dm)
+
+
+def compute_average_reciprocal_distance_projection(
+    context: SubSpaceMetricComputeContext, lambda_hp=2, z_hp=2
+):
+    """
+    Implementation of the Average reciprocal distance projection metric as
+    denoted in: Draguljić, Santner, and Dean, “Noncollapsing Space-Filling
+    Designs for Bounded Nonrectangular Regions.”
+    """
+    n = context.sub_space_doe.point_count
+    p = context.sub_space_doe.dim_specification_count
+    big_p = list(range(0, p))
+    big_j = list(range(1, p + 1))
+
+    comb_count = 0
+
+    # compute the reciprocal sum for every subspace projection
+    running_sum = 0.0
+    for j in big_j:
+        index_combinations = itertools.combinations(big_p, j)
+
+        max_j_distance = j ** (1.0 / z_hp)
+
+        max_j_distance_m = np.ones((n, n)) * max_j_distance
+
+        for index_combination in index_combinations:
+
+            x_projection = context.sub_space_doe.input_sets[:, index_combination]
+
+            dm = distance_matrix(x_projection, x_projection, p=z_hp)
+            # fill diagonal to avoid divide by zero
+            # The equation does not need the diagonal elements anyway
+            np.fill_diagonal(dm, 1)
+            reciprocal_distances = (max_j_distance_m / dm) ** lambda_hp
+
+            # sum the upper triangle matrix elements, excluding the diagonal elements
+            reciprocal_distances_sum = np.sum(np.tril(reciprocal_distances, k=1))
+
+            running_sum += reciprocal_distances_sum
+            comb_count += 1
+
+    return (running_sum / (math.comb(n, 2) * comb_count)) ** (1.0 / lambda_hp)
 
 
 def compute_discrepancy(context: SubSpaceMetricComputeContext) -> float:
