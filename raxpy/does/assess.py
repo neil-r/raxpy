@@ -42,10 +42,10 @@ METRIC_PORTION_OF_TOTAL = "portion_of_total"
 
 METRIC_DISCREPANCY = "discrepancy"
 
-METRIC_MAX_MIN_POINT_DISTANCE = "max_min_point_distance"
+METRIC_MIN_POINT_DISTANCE = "max_min_point_distance"
 
 
-def compute_max_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
+def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     """
     Computes and returns the maximum of the minimum-point-distance-for-each-point
 
@@ -58,8 +58,7 @@ def compute_max_min_point_distance(context: SubSpaceMetricComputeContext) -> flo
     np.fill_diagonal(dm, np.inf)
 
     # find the min distances to the each other point
-    min_distances_for_each_point = np.min(dm, axis=0)
-    return np.max(min_distances_for_each_point)
+    return np.min(dm)
 
 
 def compute_discrepancy(context: SubSpaceMetricComputeContext) -> float:
@@ -78,7 +77,7 @@ subspace_metric_computation_map = {
     METRIC_DISCREPANCY: compute_discrepancy,
     METRIC_PORTION_OF_TOTAL: compute_portion_of_total,
     METRIC_AVG_PORTION_LEVELS_INCLUDED: compute_avg_portion_of_levels,
-    METRIC_MAX_MIN_POINT_DISTANCE: compute_max_min_point_distance,
+    METRIC_MIN_POINT_DISTANCE: compute_min_point_distance,
 }
 
 

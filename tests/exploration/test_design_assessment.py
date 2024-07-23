@@ -98,4 +98,4 @@ def test_metric_computations():
     )
 
     # TODO: make the following more precise
-    assert a.compute_max_min_point_distance(sub_space_doe) > 0.0
+    assert a.compute_min_point_distance(sub_space_doe) > 0.0
