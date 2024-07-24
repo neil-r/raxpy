@@ -34,7 +34,7 @@ def test_doe_assessments():
         encoded_flag=False,
     )
 
-    assessment = a.assess(design)
+    assessment = a.assess_with_all_metrics(design)
 
     assert assessment is not None
 
