@@ -103,3 +103,7 @@ def test_metric_computations():
 
     ard = a.compute_average_reciprocal_distance_projection(sub_space_doe)
     assert ard > 0.0
+
+    mst_mean, mst_std = a.compute_mst_stats(sub_space_doe)
+    assert mst_mean > 0.0
+    assert mst_std > 0.0

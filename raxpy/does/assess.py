@@ -4,13 +4,15 @@
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Tuple
 import math
 import itertools
 
 import numpy as np
 from scipy.stats.qmc import discrepancy
 from scipy.spatial import distance_matrix
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import minimum_spanning_tree
 
 from .doe import DesignOfExperiment
 from ..spaces import root as s
@@ -109,6 +111,33 @@ def compute_average_reciprocal_distance_projection(
             comb_count += 1
 
     return (running_sum / (math.comb(n, 2) * comb_count)) ** (1.0 / lambda_hp)
+
+
+def compute_mst_stats(context: SubSpaceMetricComputeContext) -> Tuple[float, float]:
+    """
+    Computes and returns the mean and standard deviation of the edge-values of
+    a minimum spanning tree (MST) of the design points. The edge-values
+    represent the distances between design points.
+
+    For more information see https://doi.org/10.1016/j.chemolab.2009.03.011
+
+    Returns:
+    Tuple[float, float]: a tuple of the mean and standard deviation of the MST
+        edges
+    """
+    points = context.sub_space_doe.input_sets
+    # compute the distances for each point combination
+    dm = distance_matrix(points, points)
+
+    mst = minimum_spanning_tree(dm)
+
+    edge_matrix = mst.toarray()
+    included_edge_idxs = np.flatnonzero(edge_matrix)
+    included_edges = edge_matrix.ravel()[included_edge_idxs]
+
+    mst_mean = np.mean(included_edges)
+    mst_std = np.std(included_edges)
+    return mst_mean, mst_std
 
 
 def compute_discrepancy(context: SubSpaceMetricComputeContext) -> float:
