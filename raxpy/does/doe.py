@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..spaces.root import InputSpace
+
 
 @dataclass
 class DesignOfExperiment:
@@ -14,6 +16,7 @@ class DesignOfExperiment:
     A class used to represent a design of an experiment.
     """
 
+    input_space: InputSpace
     input_sets: np.array
     input_set_map: Dict[str, int]
     encoded_flag: bool = False
@@ -55,6 +58,7 @@ class DesignOfExperiment:
         column_indexes = [self.input_set_map[dim_id] for dim_id in dim_set]
 
         return DesignOfExperiment(
+            input_space=self.input_space,
             input_sets=self.input_sets[point_row_mask][:, column_indexes],
             input_set_map={dim_id: i for i, dim_id in enumerate(dim_set)},
             encoded_flag=self.encoded_flag,

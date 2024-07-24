@@ -24,7 +24,6 @@ class SubSpaceMetricComputeContext:
     subspace design.
     """
 
-    space: s.InputSpace
     whole_doe: DesignOfExperiment
     sub_space_doe: DesignOfExperiment
 
@@ -36,8 +35,20 @@ METRIC_TARGET_PORTION_OFFSET = "target_portion_offset"
 
 METRIC_AVG_AVG_PORTION_OF_SUBSPACE_LEVELS = "avg_avg_subspace_levels"
 
+METRIC_WEIGHTED_DISCREPANCY = "weighted_discrepancy"
+
+METRIC_WEIGHTED_MIPD = "weighted_mipd"
+
+METRIC_WEIGHTED_MST_STATS = "weighted_mst_stats"
+
+
+def compute_weighted_discrepancy():
+
+    pass
+
+
 # the following map is used in the assess function to discover the metrics to compute
-doe_metric_computation_map = {}
+doe_metric_computation_map = {METRIC_WEIGHTED_DISCREPANCY: compute_weighted_discrepancy}
 
 # Complete SubDesign Metrics
 METRIC_AVG_PORTION_LEVELS_INCLUDED = "avg_portion_of_levels_included"
@@ -171,7 +182,7 @@ class DoeAssessment:
     measurements: Dict[str, float]
 
 
-def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
+def assess(doe: DesignOfExperiment) -> DoeAssessment:
     """
     Assesses the experiment design for the given input space.
 
@@ -179,7 +190,7 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
     DoeAssessment: results from an assessment for the whole design and sub-designs.
     """
     # determine every full-combination of input dimensions that could be defined in this space
-    sub_spaces = space.derive_full_subspaces()
+    sub_spaces = doe.input_space.derive_full_subspaces()
 
     # assign a id/int to each sub space
     sub_space_index_map = {}
@@ -206,7 +217,6 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
     total_point_count = len(mapped_values)
 
     full_sub_set_assessments = []
-    total_measurements = []
 
     ################################
     # full-sub-design metrics
@@ -218,7 +228,7 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
         measurements = {}
         space_attributes = set()
 
-        subspace_context = SubSpaceMetricComputeContext(space, doe, sub_space_doe)
+        subspace_context = SubSpaceMetricComputeContext(doe, sub_space_doe)
 
         for m_id, compute in subspace_metric_computation_map.items():
             try:
@@ -241,7 +251,13 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
     ################################
     # DOE metrics
     ################################
+    total_measurements = {}
+
     # TODO compute portion of complete sub-spaces sampled
+    for m_id, compute in doe_metric_computation_map.items():
+
+        total_measurements
+        compute()
 
     return DoeAssessment(
         total_point_count=total_point_count,
