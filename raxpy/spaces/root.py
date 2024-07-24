@@ -141,7 +141,7 @@ def create_all_iterable(
 
 def _create_dict_from_flat_values(
     dimensions: List[Dimension], inputs, dim_to_index_mapping
-):
+) -> Dict:
     dict_values = {}
     for dim in dimensions:
 

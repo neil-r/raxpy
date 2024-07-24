@@ -19,7 +19,7 @@ from dataclasses import dataclass
 T = TypeVar("T")
 
 
-def _map_values(x, value_set, portion_null):
+def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
     value_count = len(value_set)
     boundary_size = 1.0 / value_count
 
@@ -138,7 +138,7 @@ class Int(Dimension[int]):
     def convert_to_argument(self, input_value) -> T:
         return int(input_value)
 
-    def collapse_uniform(self, x, utilize_null_portitions=True):
+    def collapse_uniform(self, x, utilize_null_portitions=True) -> List[Union[int, float]]:
         vs = None
         if self.value_set is not None:
             vs = self.value_set
@@ -154,7 +154,7 @@ class Int(Dimension[int]):
             f"Unbounded Int dimension cannot transform a uniform 0-1 value"
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             if self.lb is not None and input_value < self.lb:
@@ -221,7 +221,7 @@ class Float(Dimension[float]):
             f"Unbounded Float dimension cannot transform a uniform 0-1 value"
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             if self.lb is not None and input_value < self.lb:
@@ -269,7 +269,7 @@ class Text(Dimension[str]):
             f"Unbounded Text dimension cannot transform a uniform 0-1 value"
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             if (
@@ -322,7 +322,7 @@ class Variant(Dimension):
             ]
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             for dim in self.options:
@@ -381,7 +381,7 @@ class Composite(Dimension):
             ]
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             for dim in self.children:
