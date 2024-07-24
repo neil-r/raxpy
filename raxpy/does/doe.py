@@ -21,7 +21,7 @@ class DesignOfExperiment:
 
     def __post_init__(self):
         """
-        Post-initialization processing to validate 
+        Post-initialization processing to validate
         the fields of the dataclass.
 
         Raises
@@ -42,8 +42,9 @@ class DesignOfExperiment:
         highest_column_index = self.dim_specification_count - 1
         for dim_id, dim_index in self.input_set_map.items():
             if dim_index in reverse_mapping:
-                raise ValueError("Duplicate column indexes specified "
-                                 "in input set map")
+                raise ValueError(
+                    "Duplicate column indexes specified " "in input set map"
+                )
             else:
                 if dim_index >= 0 and dim_index <= highest_column_index:
                     reverse_mapping[dim_index] = dim_id
@@ -68,7 +69,7 @@ class DesignOfExperiment:
     @property
     def point_count(self) -> int:
         """
-        Provides the number of points/rows 
+        Provides the number of points/rows
         within the experiment design.
 
         Returns:
@@ -79,11 +80,11 @@ class DesignOfExperiment:
     @property
     def dim_specification_count(self) -> int:
         """
-        Provides the number of dimensions/columns within 
+        Provides the number of dimensions/columns within
         the experiment design.
 
         Returns:
-        int: the count of dimensions/columns the design 
+        int: the count of dimensions/columns the design
              provides values.
         """
         return np.size(self.input_sets, axis=1)

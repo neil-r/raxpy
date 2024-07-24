@@ -55,11 +55,11 @@ def estimate_complexity(dim: d.Dimension) -> float:
 
 def assign_null_portions(
     dimensions: Iterable[d.Dimension], complexity_estimator=estimate_complexity
-):
+) -> None:
 
     children_sets: List[Iterable[d.Dimension]] = []
 
-    # compute porition for active dimensions
+    # compute portion for active dimensions
     for dim in dimensions:
 
         if dim.nullable:
@@ -83,11 +83,11 @@ def assign_null_portions(
 def compute_subspace_portitions(
     space: s.Space, full_subspace_sets: List[List[str]]
 ) -> List[float]:
-    portitions = []
-    # compute portion of the n_points that each sub-design for each sub-space
-    # should address
+    portitions = []                                    # <-----TODO Portions? or Portitions?
+    """ compute portion of the n_points that each sub-design
+    for each sub-space should address"""
     for full_subspace in full_subspace_sets:
-        portition_components = []
+        portition_components = []                      # <-----TODO Portions? or Portitions?
 
         l1 = s.create_level_iterable(space.children)
 

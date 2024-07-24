@@ -50,10 +50,9 @@ METRIC_DISCREPANCY = "discrepancy"
 METRIC_MIN_POINT_DISTANCE = "max_min_point_distance"
 
 
-def compute_min_point_distance(
-        context: SubSpaceMetricComputeContext) -> float:
+def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     """
-    Computes and returns the minimum-interpoint-distance (MIPD) 
+    Computes and returns the minimum-interpoint-distance (MIPD)
     among every pair of points
 
     Returns:
@@ -72,7 +71,7 @@ def compute_average_reciprocal_distance_projection(
     context: SubSpaceMetricComputeContext, lambda_hp=2, z_hp=2
 ):
     """
-    Implementation of the Average reciprocal distance projection 
+    Implementation of the Average reciprocal distance projection
     metric as denoted in: Draguljić, Santner, and Dean, “Noncollapsing
     Space-Filling Designs for Bounded Nonrectangular Regions.”
     """
@@ -94,8 +93,9 @@ def compute_average_reciprocal_distance_projection(
 
         for index_combination in index_combinations:
 
-            x_projection = context.sub_space_doe.input_sets[:, 
-                                                            index_combination]
+            x_projection = context.sub_space_doe.input_sets[
+                :, index_combination
+            ]
 
             dm = distance_matrix(x_projection, x_projection, p=z_hp)
             # fill diagonal to avoid divide by zero
@@ -104,8 +104,9 @@ def compute_average_reciprocal_distance_projection(
             reciprocal_distances = (max_j_distance_m / dm) ** lambda_hp
 
             # sum the upper triangle matrix elements, excluding the diagonal elements
-            reciprocal_distances_sum = np.sum(np.tril(reciprocal_distances, 
-                                                      k=1))
+            reciprocal_distances_sum = np.sum(
+                np.tril(reciprocal_distances, k=1)
+            )
 
             running_sum += reciprocal_distances_sum
             comb_count += 1
@@ -113,7 +114,9 @@ def compute_average_reciprocal_distance_projection(
     return (running_sum / (math.comb(n, 2) * comb_count)) ** (1.0 / lambda_hp)
 
 
-def compute_mst_stats(context: SubSpaceMetricComputeContext) -> Tuple[float, float]:
+def compute_mst_stats(
+    context: SubSpaceMetricComputeContext,
+) -> Tuple[float, float]:
     """
     Computes and returns the mean and standard deviation of the edge-values of
     a minimum spanning tree (MST) of the design points. The edge-values
@@ -123,7 +126,7 @@ def compute_mst_stats(context: SubSpaceMetricComputeContext) -> Tuple[float, flo
 
     Returns:
     Tuple[float, float]: a tuple of the mean and standard deviation of the MST
-        edges
+                         edges
     """
     points = context.sub_space_doe.input_sets
     # compute the distances for each point combination
@@ -149,7 +152,8 @@ def compute_portion_of_total(context: SubSpaceMetricComputeContext) -> float:
 
 
 def compute_avg_portion_of_levels(
-        context: SubSpaceMetricComputeContext) -> float:
+    context: SubSpaceMetricComputeContext,
+) -> float:
     pass
 
 
@@ -182,7 +186,7 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
 
     Returns:
     DoeAssessment: results from an assessment for the whole design
-    and sub-designs.
+                   and sub-designs.
     """
     # determine every full-combination of input dimensions that could be defined in this space
     sub_spaces = space.derive_full_subspaces()
@@ -220,13 +224,15 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
 
     for i, sub_space in enumerate(sub_spaces):
         point_row_mask = [v == i for v in mapped_values]
-        sub_space_doe = doe.extract_points_and_dimensions(point_row_mask, 
-                                                          sub_space)
+        sub_space_doe = doe.extract_points_and_dimensions(
+            point_row_mask, sub_space
+        )
         measurements = {}
         space_attributes = set()
 
-        subspace_context = SubSpaceMetricComputeContext(space, doe, 
-                                                        sub_space_doe)
+        subspace_context = SubSpaceMetricComputeContext(
+            space, doe, sub_space_doe
+        )
 
         for m_id, compute in subspace_metric_computation_map.items():
             try:
