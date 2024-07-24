@@ -1,5 +1,6 @@
 """
-    This module defines the data structures used to represent designs of experiments.
+    This module defines the data structures 
+    used to represent designs of experiments.
 """
 
 from typing import Dict, List
@@ -20,7 +21,8 @@ class DesignOfExperiment:
 
     def __post_init__(self):
         """
-        Post-initialization processing to validate the fields of the dataclass.
+        Post-initialization processing to validate 
+        the fields of the dataclass.
 
         Raises
         ------
@@ -30,22 +32,25 @@ class DesignOfExperiment:
         """
         if self.dim_specification_count != len(self.input_set_map):
             raise ValueError(
-                "Invalid inputs: number of columns of input sets, "
-                + f"{self.dim_specification_count}, does not match the number"
-                + " of dimension id mappings provided, {len(self.input_set_map)}"
+                f"Invalid inputs: number of columns of input sets, "
+                f"{self.dim_specification_count}, does not match the number "
+                f"of dimension id mappings provided, "
+                f"{len(self.input_set_map)}"
             )
         # ensure no duplicate index specifications
         reverse_mapping = {}
         highest_column_index = self.dim_specification_count - 1
         for dim_id, dim_index in self.input_set_map.items():
             if dim_index in reverse_mapping:
-                raise ValueError("Duplicate column indexes specified in input set map")
+                raise ValueError("Duplicate column indexes specified "
+                                 "in input set map")
             else:
                 if dim_index >= 0 and dim_index <= highest_column_index:
                     reverse_mapping[dim_index] = dim_id
                 else:
                     raise ValueError(
-                        f"Invalid column index, out-of-bounds: {dim_id}:{dim_index}"
+                        f"Invalid column index, "
+                        f"out-of-bounds: {dim_id}:{dim_index}"
                     )
 
     def extract_points_and_dimensions(
@@ -63,7 +68,8 @@ class DesignOfExperiment:
     @property
     def point_count(self) -> int:
         """
-        Provides the number of points/rows within the experiment design.
+        Provides the number of points/rows 
+        within the experiment design.
 
         Returns:
         int: the count of points/rows the design provides values.
@@ -73,9 +79,11 @@ class DesignOfExperiment:
     @property
     def dim_specification_count(self) -> int:
         """
-        Provides the number of dimensions/columns within the experiment design.
+        Provides the number of dimensions/columns within 
+        the experiment design.
 
         Returns:
-        int: the count of dimensions/columns the design provides values.
+        int: the count of dimensions/columns the design 
+             provides values.
         """
         return np.size(self.input_sets, axis=1)

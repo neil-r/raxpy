@@ -50,7 +50,14 @@ def test_single_param_func():
     assert input_space.dimensions is not None
     assert len(input_space.dimensions) == 1
     assert_parameters(
-        input_space.dimensions[0], d.Int, "x", 2, 0, 5, None, specified_default=True
+        input_space.dimensions[0],
+        d.Int,
+        "x",
+        2,
+        0,
+        5,
+        None,
+        specified_default=True,
     )
 
 
@@ -59,7 +66,9 @@ def test_mixed_spec_param_func():
         x1: Annotated[int, raxpy.Integer(lb=0, ub=5)],
         x2: Annotated[float, raxpy.Float(lb=1.7, ub=3.3)],
         x3: Annotated[int, raxpy.Integer(ub=5)],
-        x4: Annotated[Optional[int], raxpy.Integer(value_set={1, 2, 4})] = None,
+        x4: Annotated[
+            Optional[int], raxpy.Integer(value_set={1, 2, 4})
+        ] = None,
         x5: int = 3,
         x6: Optional[float] = None,
     ):
@@ -70,8 +79,12 @@ def test_mixed_spec_param_func():
     assert input_space.dimensions is not None
     assert len(input_space.dimensions) == 6
     assert_parameters(input_space.dimensions[0], d.Int, "x1", None, 0, 5, None)
-    assert_parameters(input_space.dimensions[1], d.Float, "x2", None, 1.7, 3.3, None)
-    assert_parameters(input_space.dimensions[2], d.Int, "x3", None, None, 5, None)
+    assert_parameters(
+        input_space.dimensions[1], d.Float, "x2", None, 1.7, 3.3, None
+    )
+    assert_parameters(
+        input_space.dimensions[2], d.Int, "x3", None, None, 5, None
+    )
     assert_parameters(
         input_space.dimensions[3],
         d.Int,
@@ -128,7 +141,9 @@ def test_complex_object_spec_param():
         caf1: float
         caf2: Optional[float]
         cas1: str
-        cas2: Annotated[str, raxpy.Categorical(value_set={"one", "two", "three"})]
+        cas2: Annotated[
+            str, raxpy.Categorical(value_set={"one", "two", "three"})
+        ]
 
     @dataclass
     class CustomObject:
@@ -150,7 +165,14 @@ def test_complex_object_spec_param():
 
     # test the conversion of a dictionary representation of the inputs
     co: CustomObject = input_space.dimensions[0].convert_to_argument(
-        {"ao1": {"caf1": 1.0, "caf2": 0.5, "cas1": "Hello world", "cas2": "one"}}
+        {
+            "ao1": {
+                "caf1": 1.0,
+                "caf2": 0.5,
+                "cas1": "Hello world",
+                "cas2": "one",
+            }
+        }
     )
 
     assert isinstance(co, CustomObject)

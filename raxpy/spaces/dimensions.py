@@ -1,4 +1,15 @@
-from typing import Optional, List, Tuple, Union, Generic, TypeVar, Set, Type, Dict, Any
+from typing import (
+    Optional,
+    List,
+    Tuple,
+    Union,
+    Generic,
+    TypeVar,
+    Set,
+    Type,
+    Dict,
+    Any,
+)
 
 import numpy as np
 
@@ -16,7 +27,10 @@ def _map_values(x, value_set, portion_null):
         return [
             (
                 value_set[
-                    int(((xp - portion_null) / (1.0 - portion_null)) // boundary_size)
+                    int(
+                        ((xp - portion_null) / (1.0 - portion_null))
+                        // boundary_size
+                    )
                 ]
                 if (not np.isnan(xp)) and xp > portion_null
                 else np.nan
@@ -153,7 +167,10 @@ class Int(Dimension[int]):
                     f"Invalid value, the value {input_value} is greater than "
                     f"the upper bound {self.ub}"
                 )
-            if self.value_set is not None and input_value not in self.value_set:
+            if (
+                self.value_set is not None
+                and input_value not in self.value_set
+            ):
                 raise ValueError(
                     f"Invalid value, the value {input_value} is not in the "
                     f"value set {self.value_set}"
@@ -186,19 +203,20 @@ class Float(Dimension[float]):
                 return [
                     (
                         self.lb
-                        + r * ((xp - self.portion_null) 
-                               / (1.0 - self.portion_null))
+                        + r
+                        * (
+                            (xp - self.portion_null)
+                            / (1.0 - self.portion_null)
+                        )
                         if xp is not None and xp > self.portion_null
                         else None
                     )
                     for xp in x
                 ]
             else:
-                return [self.lb + r * xp 
-                        if xp is not None 
-                        else None 
-                        for xp in x
-                        ]
+                return [
+                    self.lb + r * xp if xp is not None else None for xp in x
+                ]
         raise ValueError(
             f"Unbounded Float dimension cannot transform a uniform 0-1 value"
         )
@@ -216,7 +234,10 @@ class Float(Dimension[float]):
                     f"Invalid value, the value {input_value} is greater than "
                     f"the upper bound {self.ub}"
                 )
-            if self.value_set is not None and input_value not in self.value_set:
+            if (
+                self.value_set is not None
+                and input_value not in self.value_set
+            ):
                 raise ValueError(
                     f"Invalid value, the value {input_value} is not in the "
                     f"value set {self.value_set}"
@@ -241,9 +262,9 @@ class Text(Dimension[str]):
 
     def collapse_uniform(self, x):
         if self.value_set is not None:
-            return _map_values(x, 
-                               {v.value for v in self.value_set}, 
-                               self.portion_null)
+            return _map_values(
+                x, {v.value for v in self.value_set}, self.portion_null
+            )
         raise ValueError(
             f"Unbounded Text dimension cannot transform a uniform 0-1 value"
         )
@@ -251,8 +272,10 @@ class Text(Dimension[str]):
     def validate(self, input_value, specified_input: bool):
         super().validate(input_value, specified_input)
         if input_value is not None:
-            if (self.value_set is not None 
-                and input_value not in self.value_set):
+            if (
+                self.value_set is not None
+                and input_value not in self.value_set
+            ):
                 raise ValueError(
                     f"Invalid value, the value {input_value} is not in the "
                     f"value set {self.value_set}"
@@ -290,9 +313,11 @@ class Variant(Dimension):
     def count_children_dimensions(self) -> int:
         return sum(
             [
-                c.count_children_dimensions() 
-                if c.has_child_dimensions() 
-                else 1
+                (
+                    c.count_children_dimensions()
+                    if c.has_child_dimensions()
+                    else 1
+                )
                 for c in self.options
             ]
         )
@@ -347,9 +372,11 @@ class Composite(Dimension):
     def count_children_dimensions(self) -> int:
         return sum(
             [
-                c.count_children_dimensions() 
-                if c.has_child_dimensions() 
-                else 1
+                (
+                    c.count_children_dimensions()
+                    if c.has_child_dimensions()
+                    else 1
+                )
                 for c in self.children
             ]
         )

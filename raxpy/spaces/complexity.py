@@ -34,7 +34,9 @@ def estimate_complexity(dim: d.Dimension) -> float:
             complexity_estimate += estimate_complexity(child)
     elif isinstance(dim, d.Composite):
         complexity_estimate = 0.0
-        expected_significant_interactions = dim.has_tag(dim_tags.EXPECT_INTERACTIONS)
+        expected_significant_interactions = dim.has_tag(
+            dim_tags.EXPECT_INTERACTIONS
+        )
 
         if expected_significant_interactions:
             complexity_estimate = 1.0
@@ -67,7 +69,10 @@ def assign_null_portions(
         else:
             dim.portion_null = 0.0
 
-        if dim.has_child_dimensions() and not dim.only_supports_spec_structure():
+        if (
+            dim.has_child_dimensions()
+            and not dim.only_supports_spec_structure()
+        ):
             children_sets.append(s.create_level_iterable(dim.children))
 
     # compute portions for children set dimensions
@@ -102,7 +107,9 @@ def compute_subspace_portitions(
                     if dim.has_child_dimensions():
                         if isinstance(dim, d.Variant):
 
-                            portition_components.append(1.0 / len(dim.children))
+                            portition_components.append(
+                                1.0 / len(dim.children)
+                            )
                             # only add active child to be processed
                             for child_dim in dim.children:
                                 if child_dim.id in full_subspace:

@@ -48,7 +48,9 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
                 optional_dims.append(dim.local_id)
                 children_subspaces = []
                 for o in dim.children:
-                    children_subspaces += derive_subspaces(create_level_iterable([o]))
+                    children_subspaces += derive_subspaces(
+                        create_level_iterable([o])
+                    )
                 expansion_map[dim.local_id] = children_subspaces
             else:
                 required_dims.append(dim.local_id)
@@ -97,7 +99,9 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
     return condensed_lists
 
 
-def create_level_iterable(base_dimensions: List[Dimension]) -> Iterable[Dimension]:
+def create_level_iterable(
+    base_dimensions: List[Dimension],
+) -> Iterable[Dimension]:
     resolved_dimension_list: List[Dimension] = []
 
     dimension_stack = list(base_dimensions)
@@ -118,7 +122,9 @@ def create_level_iterable(base_dimensions: List[Dimension]) -> Iterable[Dimensio
     return resolved_dimension_list
 
 
-def create_all_iterable(base_dimensions: List[Dimension]) -> Iterable[Dimension]:
+def create_all_iterable(
+    base_dimensions: List[Dimension],
+) -> Iterable[Dimension]:
     resolved_dimension_list: List[Dimension] = []
 
     dimension_stack = list(base_dimensions)
@@ -192,22 +198,26 @@ class Space:
     def derive_full_subspaces(self) -> List[List[str]]:
         """
         Discovers every combination of dimensions that are able to
-        be specified togehter. We call these the possible full subspaces.
-        A list is returned containing List of the dimensions' global identifer.
+        be specified togehter. 
+        We call these the possible full subspaces.
+        A list is returned containing List of the dimensions' 
+        global identifer.
         Children dimensions are also analyzed.
 
         Returns
-        List[List[str]]    every combination of dimensions that are able to be specified together
+        List[List[str]]    every combination of dimensions that are 
+                           able to be specified together
         """
         return derive_subspaces(create_level_iterable(self.children))
 
     def derive_spanning_subspaces(self) -> List[List[str]]:
         """
-        Discovers every combination of dimensions that are always specified
-        together. We call these the spanning subspaces.
+        Discovers every combination of dimensions that are always 
+        specified together. We call these the spanning subspaces.
 
         Returns
-        List[List[str]]    every combination of dimensions that must be specified together
+        List[List[str]]    every combination of dimensions that must
+                           be specified together
         """
         subspaces = self.derive_full_subspaces()
         spanning_subspaces = {}
@@ -227,7 +237,8 @@ class Space:
 
     def count_dimensions(self) -> int:
         """
-        Counts the dimensions of the space that are not only for structure.
+        Counts the dimensions of the space 
+        that are not only for structure.
         """
         return sum(
             [

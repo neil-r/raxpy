@@ -58,7 +58,7 @@ def _map_base_type(parent_prefix, t, initalization_values):
             else:
                 raise NotImplementedError(
                     f"Multiple List args not implemented: {a}"
-                    )
+                )
 
             initalization_values["element_type"] = element_type
         elif hasattr(t, "__dataclass_fields__"):
@@ -72,8 +72,9 @@ def _map_base_type(parent_prefix, t, initalization_values):
     return dt
 
 
-def map_type(parent_prefix: str, name: str, 
-             base_type, default_value=UndefinedValue) -> dim.Dimension:
+def map_type(
+    parent_prefix: str, name: str, base_type, default_value=UndefinedValue
+) -> dim.Dimension:
 
     metadata = None
     if _is_annotated_with_metadata(base_type):
@@ -84,10 +85,12 @@ def map_type(parent_prefix: str, name: str,
     initalization_values = {
         "local_id": name,
         "id": id,
-        "default_value": (None if default_value is UndefinedValue 
-                          else default_value),
-        "specified_default": (False if default_value is UndefinedValue 
-                              else True),
+        "default_value": (
+            None if default_value is UndefinedValue else default_value
+        ),
+        "specified_default": (
+            False if default_value is UndefinedValue else True
+        ),
         "nullable": True if default_value is None else False,
     }
 

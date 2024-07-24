@@ -1,5 +1,6 @@
 """
-    This modules provides logic to compute assessments of an experiment design.
+    This modules provides logic to compute 
+    assessments of an experiment design.
 """
 
 from dataclasses import dataclass
@@ -47,13 +48,14 @@ METRIC_DISCREPANCY = "discrepancy"
 METRIC_MIN_POINT_DISTANCE = "max_min_point_distance"
 
 
-def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
+def compute_min_point_distance(
+        context: SubSpaceMetricComputeContext) -> float:
     """
-    Computes and returns the minimum-interpoint-distance (MIPD) among every
-    pair of points
+    Computes and returns the minimum-interpoint-distance (MIPD) 
+    among every pair of points
 
     Returns:
-    float: the minimum-interpoint-distance
+        float: the minimum-interpoint-distance
     """
     points = context.sub_space_doe.input_sets
     # compute the distances for each point combination
@@ -68,9 +70,9 @@ def compute_average_reciprocal_distance_projection(
     context: SubSpaceMetricComputeContext, lambda_hp=2, z_hp=2
 ):
     """
-    Implementation of the Average reciprocal distance projection metric as
-    denoted in: Draguljić, Santner, and Dean, “Noncollapsing Space-Filling
-    Designs for Bounded Nonrectangular Regions.”
+    Implementation of the Average reciprocal distance projection 
+    metric as denoted in: Draguljić, Santner, and Dean, “Noncollapsing
+    Space-Filling Designs for Bounded Nonrectangular Regions.”
     """
     n = context.sub_space_doe.point_count
     p = context.sub_space_doe.dim_specification_count
@@ -90,7 +92,8 @@ def compute_average_reciprocal_distance_projection(
 
         for index_combination in index_combinations:
 
-            x_projection = context.sub_space_doe.input_sets[:, index_combination]
+            x_projection = context.sub_space_doe.input_sets[:, 
+                                                            index_combination]
 
             dm = distance_matrix(x_projection, x_projection, p=z_hp)
             # fill diagonal to avoid divide by zero
@@ -99,7 +102,8 @@ def compute_average_reciprocal_distance_projection(
             reciprocal_distances = (max_j_distance_m / dm) ** lambda_hp
 
             # sum the upper triangle matrix elements, excluding the diagonal elements
-            reciprocal_distances_sum = np.sum(np.tril(reciprocal_distances, k=1))
+            reciprocal_distances_sum = np.sum(np.tril(reciprocal_distances, 
+                                                      k=1))
 
             running_sum += reciprocal_distances_sum
             comb_count += 1
@@ -115,7 +119,8 @@ def compute_portion_of_total(context: SubSpaceMetricComputeContext) -> float:
     return context.sub_space_doe.point_count / context.whole_doe.point_count
 
 
-def compute_avg_portion_of_levels(context: SubSpaceMetricComputeContext) -> float:
+def compute_avg_portion_of_levels(
+        context: SubSpaceMetricComputeContext) -> float:
     pass
 
 
@@ -147,7 +152,8 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
     Assesses the experiment design for the given input space.
 
     Returns:
-    DoeAssessment: results from an assessment for the whole design and sub-designs.
+    DoeAssessment: results from an assessment for the whole design
+    and sub-designs.
     """
     # determine every full-combination of input dimensions that could be defined in this space
     sub_spaces = space.derive_full_subspaces()
@@ -185,11 +191,13 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
 
     for i, sub_space in enumerate(sub_spaces):
         point_row_mask = [v == i for v in mapped_values]
-        sub_space_doe = doe.extract_points_and_dimensions(point_row_mask, sub_space)
+        sub_space_doe = doe.extract_points_and_dimensions(point_row_mask, 
+                                                          sub_space)
         measurements = {}
         space_attributes = set()
 
-        subspace_context = SubSpaceMetricComputeContext(space, doe, sub_space_doe)
+        subspace_context = SubSpaceMetricComputeContext(space, doe, 
+                                                        sub_space_doe)
 
         for m_id, compute in subspace_metric_computation_map.items():
             try:
@@ -197,7 +205,8 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
                 measurements[m_id] = value
             except Exception as e:
                 print(
-                    f"WARNING: failed to compute metric {m_id} given this error {e}; skipping"
+                    f"WARNING: failed to compute metric {m_id} "
+                    f"given this error {e}; skipping"
                 )
 
         full_sub_set_assessments.append(

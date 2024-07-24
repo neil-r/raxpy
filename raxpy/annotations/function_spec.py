@@ -28,7 +28,9 @@ def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
         else:
             # infer type given type of default value
             if param.default is None:
-                d = dim.Float(id=name, local_id=name, nullable=True, default_value=None)
+                d = dim.Float(
+                    id=name, local_id=name, nullable=True, default_value=None
+                )
             else:
                 t = type(param.default)
 

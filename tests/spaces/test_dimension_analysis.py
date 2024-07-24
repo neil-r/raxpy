@@ -6,7 +6,9 @@ def test_deriving_subspaces():
     space = s.Space(
         dimensions=[
             d.Float(id="x1", lb=3.0, ub=5.0, nullable=False),
-            d.Float(id="x2", lb=-3.0, ub=-5.0, nullable=True, portion_null=0.33),
+            d.Float(
+                id="x2", lb=-3.0, ub=-5.0, nullable=True, portion_null=0.33
+            ),
             d.Composite(
                 id="x3",
                 nullable=True,
@@ -74,7 +76,9 @@ def test_deriving_spanning_subspaces():
         dimensions=[
             d.Float(id="x1", lb=3.0, ub=5.0, nullable=False),
             d.Float(id="x1-2", lb=3.0, ub=5.0, nullable=False),
-            d.Float(id="x2", lb=-3.0, ub=-5.0, nullable=True, portion_null=0.33),
+            d.Float(
+                id="x2", lb=-3.0, ub=-5.0, nullable=True, portion_null=0.33
+            ),
             d.Composite(
                 id="x3",
                 nullable=True,
