@@ -12,11 +12,24 @@ class Base:
     label:Optional[str] = None
     tags:Optional[List[str]] = None
 
+    def apply_to(self, d:d.Dimension):
+        if self.label is not None:
+            d.label = self.label
+        if self.tags is not None:
+            if d.tags is None:
+                d.tags = self.tags
+            else:
+                d.tags.extend(self.tags)
+
 
 @dataclass(frozen=True, eq=True)
 class Categorical(Base):
     value_set:Optional[List[CategorySpec]] = None
 
+    def apply_to(self, dim:d.Text):
+        super().apply_to(dim)
+        if self.value_set is not None:
+            dim.value_set = [d.CategoryValue(value=v) if isinstance(v,str) else d.CategoryValue(value=v[0], label=v[1])  for v in self.value_set]
 
 
 @dataclass(frozen=True, eq=True)
@@ -26,6 +39,7 @@ class Float(Base):
     value_set:Optional[Set[float]] = None
 
     def apply_to(self, d:d.Float):
+        super().apply_to(d)
         d.lb = self.lb
         d.ub = self.ub
         d.value_set = self.value_set
@@ -39,6 +53,7 @@ class Integer(Base):
 
 
     def apply_to(self, d:d.Int):
+        super().apply_to(d)
         d.lb = self.lb
         d.ub = self.ub
         d.value_set = self.value_set

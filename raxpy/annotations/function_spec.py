@@ -1,4 +1,4 @@
-from typing import List, Callable
+from typing import List, Callable, get_type_hints
 
 import inspect
 
@@ -6,6 +6,8 @@ from raxpy.spaces import dimensions as dim
 from raxpy.spaces.root import InputSpace, OutputSpace
 from .type_spec import map_type, UndefinedValue
 
+
+ID_ROOT_RETURN = "y"
 
 def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
     if param.annotation is not inspect.Parameter.empty:
@@ -61,6 +63,18 @@ def extract_input_space(func: Callable) -> InputSpace:
 
 def extract_output_space(func: Callable) -> OutputSpace:
     output_dimensions: List[dim.Dimension] = []
-    # TODO implement return type introspection logic
-    output_space = OutputSpace(dimensions=output_dimensions)
-    return output_space
+    signature = inspect.signature(func)
+
+    return_annotation = signature.return_annotation
+
+    # TODO remove the following if not needed for older versions of Python    
+    # Get the type hints, including the return type
+    # type_hints = get_type_hints(func)
+
+    # TODO find way to avoid inspect._empty reference
+    if return_annotation is not None and return_annotation != inspect._empty:
+        base_output_dim = map_type("",ID_ROOT_RETURN,return_annotation)
+
+        output_dimensions.append(base_output_dim)
+    
+    return OutputSpace(dimensions=output_dimensions)
