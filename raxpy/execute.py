@@ -24,7 +24,9 @@ def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
     return results
 
 
-def _default_designer(input_space: InputSpace, target_number_of_runs: int) -> List[I]:
+def _default_designer(
+    input_space: InputSpace, target_number_of_runs: int
+) -> List[I]:
 
     # assign unassigned null poritions using complexity hueristic
     assign_null_portions(create_level_iterable(input_space.children))
@@ -47,7 +49,9 @@ def perform_batch_experiment(
     f: Callable[I, T],
     target_number_of_runs: int,
     designer: Callable[[InputSpace, int], List[I]] = _default_designer,
-    orchistrator: Callable[[Callable[I, T], List[I]], List[T]] = _default_orchistrator,
+    orchistrator: Callable[
+        [Callable[I, T], List[I]], List[T]
+    ] = _default_orchistrator,
 ) -> Tuple[List[I], List[T]]:
     """
     Executes a batch experiment for function f.

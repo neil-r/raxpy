@@ -105,7 +105,9 @@ def test_subspace_portitions_computations():
     assert portitions is not None
     assert len(portitions) == len(full_subspace_sets)
 
-    index_of_check = full_subspace_sets.index(["x1", "x3", "x4", "x5", "x6", "x8"])
+    index_of_check = full_subspace_sets.index(
+        ["x1", "x3", "x4", "x5", "x6", "x8"]
+    )
     p_check = portitions[index_of_check]
     p_expected = (
         1.0 * 0.1 * 0.5 * 0.8 * 0.75 * 0.5

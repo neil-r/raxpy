@@ -1,4 +1,15 @@
-from typing import Optional, List, Tuple, Union, Generic, TypeVar, Set, Type, Dict, Any
+from typing import (
+    Optional,
+    List,
+    Tuple,
+    Union,
+    Generic,
+    TypeVar,
+    Set,
+    Type,
+    Dict,
+    Any,
+)
 
 import numpy as np
 
@@ -8,7 +19,7 @@ from dataclasses import dataclass
 T = TypeVar("T")
 
 
-def _map_values(x, value_set, portion_null):
+def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
     value_count = len(value_set)
     boundary_size = 1.0 / value_count
 
@@ -16,7 +27,10 @@ def _map_values(x, value_set, portion_null):
         return [
             (
                 value_set[
-                    int(((xp - portion_null) / (1.0 - portion_null)) // boundary_size)
+                    int(
+                        ((xp - portion_null) / (1.0 - portion_null))
+                        // boundary_size
+                    )
                 ]
                 if (not np.isnan(xp)) and xp > portion_null
                 else np.nan
@@ -30,7 +44,7 @@ def _map_values(x, value_set, portion_null):
         ]
 
 
-def convert_values_from_dict(dimensions, input_value: Dict[str, Any]):
+def convert_values_from_dict(dimensions, input_value: Dict[str, Any]) -> Dict:
     args = {}
 
     for dim in dimensions:
@@ -103,7 +117,8 @@ class Dimension(Generic[T]):
                 )
             if not self.specified_default:
                 raise ValueError(
-                    f"Invalid value, dimension '{self.id}' should be specified, no default provided"
+                    f"Invalid value, dimension '{self.id}' should be "
+                    f"specified, no default provided"
                 )
 
             return
@@ -123,7 +138,7 @@ class Int(Dimension[int]):
     def convert_to_argument(self, input_value) -> T:
         return int(input_value)
 
-    def collapse_uniform(self, x, utilize_null_portitions=True):
+    def collapse_uniform(self, x, utilize_null_portitions=True) -> List[Union[int, float]]:
         vs = None
         if self.value_set is not None:
             vs = self.value_set
@@ -135,22 +150,30 @@ class Int(Dimension[int]):
             return _map_values(
                 x, vs, self.portion_null if utilize_null_portitions else None
             )
-        raise ValueError("Unbounded Int dimension cannot transform a uniform 0-1 value")
+        raise ValueError(
+            f"Unbounded Int dimension cannot transform a uniform 0-1 value"
+        )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             if self.lb is not None and input_value < self.lb:
                 raise ValueError(
-                    f"Invalid value, the value {input_value} is lower than the lower bound {self.lb}"
+                    f"Invalid value, the value {input_value} is lower than "
+                    f"the lower bound {self.lb}"
                 )
             if self.ub is not None and input_value > self.ub:
                 raise ValueError(
-                    f"Invalid value, the value {input_value} is greater than the upper bound {self.ub}"
+                    f"Invalid value, the value {input_value} is greater than "
+                    f"the upper bound {self.ub}"
                 )
-            if self.value_set is not None and input_value not in self.value_set:
+            if (
+                self.value_set is not None
+                and input_value not in self.value_set
+            ):
                 raise ValueError(
-                    f"Invalid value, the value {input_value} is not in the value set {self.value_set}"
+                    f"Invalid value, the value {input_value} is not in the "
+                    f"value set {self.value_set}"
                 )
 
     def acceptable_types(self):
@@ -180,32 +203,44 @@ class Float(Dimension[float]):
                 return [
                     (
                         self.lb
-                        + r * ((xp - self.portion_null) / (1.0 - self.portion_null))
+                        + r
+                        * (
+                            (xp - self.portion_null)
+                            / (1.0 - self.portion_null)
+                        )
                         if xp is not None and xp > self.portion_null
                         else None
                     )
                     for xp in x
                 ]
             else:
-                return [self.lb + r * xp if xp is not None else None for xp in x]
+                return [
+                    self.lb + r * xp if xp is not None else None for xp in x
+                ]
         raise ValueError(
-            "Unbounded Float dimension cannot transform a uniform 0-1 value"
+            f"Unbounded Float dimension cannot transform a uniform 0-1 value"
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             if self.lb is not None and input_value < self.lb:
                 raise ValueError(
-                    f"Invalid value, the value {input_value} is lower than the lower bound {self.lb}"
+                    f"Invalid value, the value {input_value} is lower than "
+                    f"the lower bound {self.lb}"
                 )
             if self.ub is not None and input_value > self.ub:
                 raise ValueError(
-                    f"Invalid value, the value {input_value} is greater than the upper bound {self.ub}"
+                    f"Invalid value, the value {input_value} is greater than "
+                    f"the upper bound {self.ub}"
                 )
-            if self.value_set is not None and input_value not in self.value_set:
+            if (
+                self.value_set is not None
+                and input_value not in self.value_set
+            ):
                 raise ValueError(
-                    f"Invalid value, the value {input_value} is not in the value set {self.value_set}"
+                    f"Invalid value, the value {input_value} is not in the "
+                    f"value set {self.value_set}"
                 )
 
     def acceptable_types(self):
@@ -228,17 +263,23 @@ class Text(Dimension[str]):
 
     def collapse_uniform(self, x):
         if self.value_set is not None:
-            return _map_values(x, {v.value for v in self.value_set}, self.portion_null)
+            return _map_values(
+                x, {v.value for v in self.value_set}, self.portion_null
+            )
         raise ValueError(
-            "Unbounded Text dimension cannot transform a uniform 0-1 value"
+            f"Unbounded Text dimension cannot transform a uniform 0-1 value"
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
-            if self.value_set is not None and input_value not in self.value_set:
+            if (
+                self.value_set is not None
+                and input_value not in self.value_set
+            ):
                 raise ValueError(
-                    f"Invalid value, the value {input_value} is not in the value set {self.value_set}"
+                    f"Invalid value, the value {input_value} is not in the "
+                    f"value set {self.value_set}"
                 )
 
     def acceptable_types(self):
@@ -273,12 +314,16 @@ class Variant(Dimension):
     def count_children_dimensions(self) -> int:
         return sum(
             [
-                c.count_children_dimensions() if c.has_child_dimensions() else 1
+                (
+                    c.count_children_dimensions()
+                    if c.has_child_dimensions()
+                    else 1
+                )
                 for c in self.options
             ]
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             for dim in self.options:
@@ -328,12 +373,16 @@ class Composite(Dimension):
     def count_children_dimensions(self) -> int:
         return sum(
             [
-                c.count_children_dimensions() if c.has_child_dimensions() else 1
+                (
+                    c.count_children_dimensions()
+                    if c.has_child_dimensions()
+                    else 1
+                )
                 for c in self.children
             ]
         )
 
-    def validate(self, input_value, specified_input: bool):
+    def validate(self, input_value, specified_input: bool) -> None:
         super().validate(input_value, specified_input)
         if input_value is not None:
             for dim in self.children:

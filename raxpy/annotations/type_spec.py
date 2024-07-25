@@ -20,12 +20,12 @@ _type_dimension_mapper: Type = {
 }
 
 
-def _is_annotated_with_metadata(type_annotation):
+def _is_annotated_with_metadata(type_annotation) -> bool:
     return hasattr(type_annotation, "__metadata__")
 
 
 # Function to introspect and list the attributes of a dataclass
-def list_dataclass_attributes(parent_prefix, cls):
+def list_dataclass_attributes(parent_prefix, cls) -> List:
     children_dims = []
     if not hasattr(cls, "__dataclass_fields__"):
         raise TypeError(f"{cls.__name__} is not a dataclass")
@@ -56,7 +56,9 @@ def _map_base_type(parent_prefix, t, initalization_values):
             if a is not None and len(a) == 1:
                 element_type = map_type(parent_prefix, "_element", a[0])
             else:
-                raise NotImplementedError(f"Multiple List args not implemented: {a}")
+                raise NotImplementedError(
+                    f"Multiple List args not implemented: {a}"
+                )
 
             initalization_values["element_type"] = element_type
         elif hasattr(t, "__dataclass_fields__"):
@@ -79,12 +81,16 @@ def map_type(
         metadata = base_type.__metadata__
         base_type = base_type.__origin__
 
-    id = parent_prefix + name
+    id: str = parent_prefix + name
     initalization_values = {
         "local_id": name,
         "id": id,
-        "default_value": None if default_value is UndefinedValue else default_value,
-        "specified_default": False if default_value is UndefinedValue else True,
+        "default_value": (
+            None if default_value is UndefinedValue else default_value
+        ),
+        "specified_default": (
+            False if default_value is UndefinedValue else True
+        ),
         "nullable": True if default_value is None else False,
     }
 
@@ -119,5 +125,5 @@ def map_type(
     return d
 
 
-def map_primative_input(d: dim.Dimension, input):
+def map_primative_input(d: dim.Dimension, input) -> None:
     pass
