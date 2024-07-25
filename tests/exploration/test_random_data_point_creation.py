@@ -1,3 +1,5 @@
+""" TODO Explain Module """
+
 import numpy as np
 
 import raxpy.spaces.dimensions as d
@@ -5,6 +7,14 @@ import raxpy.spaces.root as s
 
 
 def test_collapse_of_random_numbers():
+    """
+    TODO Explain the Function
+
+    Asserts
+    -------
+    **Explanation**
+
+    """
     space = s.Space(
         dimensions=[
             d.Float(id="x1", lb=3.0, ub=5.0, nullable=False),

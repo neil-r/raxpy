@@ -1,3 +1,5 @@
+""" TODO Explain Module """
+
 from typing import Iterable, List, Optional, Dict
 from dataclasses import dataclass
 import numpy as np
@@ -6,7 +8,20 @@ import itertools
 from .dimensions import Dimension, Variant
 
 
-def _generate_combinations(base_list):
+def _generate_combinations(base_list: list) -> list:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    base_list : list
+        **Explanation**
+
+    Returns
+    -------
+    all_combinations : list
+        **Explanation**
+    """
     # Create an empty list to store all combinations
     all_combinations = []
 
@@ -21,6 +36,19 @@ def _generate_combinations(base_list):
 
 
 def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    level : Interable[Dimension]
+        **Explanation**
+
+    Returns
+    -------
+    condensed_lists : List[List[str]]
+        **Explanation**
+    """
 
     optional_dims = []
     expansion_map = {}
@@ -102,6 +130,20 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
 def create_level_iterable(
     base_dimensions: List[Dimension],
 ) -> Iterable[Dimension]:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    base_dimensions : List[Dimension]
+        **Explanation**
+
+    Returns
+    -------
+    resolved_dimension_list : Iterable[Dimension]
+        **Explanation**
+
+    """
     resolved_dimension_list: List[Dimension] = []
 
     dimension_stack = list(base_dimensions)
@@ -125,6 +167,19 @@ def create_level_iterable(
 def create_all_iterable(
     base_dimensions: List[Dimension],
 ) -> Iterable[Dimension]:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    base_dimensions : List[Dimension]
+        **Explanation**
+
+    Returns
+    -------
+    resolved_dimension_list : Iterable[Dimension]
+        **Explanation**
+    """
     resolved_dimension_list: List[Dimension] = []
 
     dimension_stack = list(base_dimensions)
@@ -142,6 +197,23 @@ def create_all_iterable(
 def _create_dict_from_flat_values(
     dimensions: List[Dimension], inputs, dim_to_index_mapping
 ) -> Dict:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    dimensions : List[Dimension]
+        **Explanation**
+    inputs : 
+        **Explanation**
+    dim_to_index_mapping : 
+        **Explanation**
+
+    Returns
+    -------
+    dict_values : Dict
+        **Explanation**
+    """
     dict_values = {}
     for dim in dimensions:
 
@@ -169,6 +241,10 @@ def _create_dict_from_flat_values(
 
 @dataclass
 class SubSpace:
+    """
+    TODO Explain Class
+    """
+
     active_dimensions: Dict
     target_sample_count = 0
 
@@ -176,18 +252,65 @@ class SubSpace:
 
 
 def _project_null(x1, x2):
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    x1 : 
+        **Explanation**
+    x2 : 
+        **Explanation**
+
+    Returns
+    -------
+    np.nan : 
+        **Explanation**
+
+    """
     return [(np.nan if np.isnan(xp2) else xp1) for xp1, xp2 in zip(x1, x2)]
 
 
 @dataclass
 class Space:
+    """
+    TODO Explain Class
+
+    """
+
     dimensions: List[Dimension]
 
     @property
     def children(self) -> List[Dimension]:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+
+        Returns
+        -------
+        self.dimension : List[Dimension]
+            **Explanation**
+        """
         return self.dimensions
 
     def create_dim_map(self) -> Dict[str, Dimension]:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+
+        Returns
+        -------
+        dim_map : Dict[str, Dimension]
+            **Explanation**
+        """
         dim_map = {}
 
         for dim in create_all_iterable(self.dimensions):
@@ -198,26 +321,30 @@ class Space:
     def derive_full_subspaces(self) -> List[List[str]]:
         """
         Discovers every combination of dimensions that are able to
-        be specified togehter. 
+        be specified togehter.
         We call these the possible full subspaces.
-        A list is returned containing List of the dimensions' 
+        A list is returned containing List of the dimensions'
         global identifer.
         Children dimensions are also analyzed.
 
         Returns
-        List[List[str]]    every combination of dimensions that are 
-                           able to be specified together
+        -------
+        derive_subspaces : List[List[str]]    
+            Every combination of dimensions that must be 
+            specified together
         """
         return derive_subspaces(create_level_iterable(self.children))
 
     def derive_spanning_subspaces(self) -> List[List[str]]:
         """
-        Discovers every combination of dimensions that are always 
+        Discovers every combination of dimensions that are always
         specified together. We call these the spanning subspaces.
 
         Returns
-        List[List[str]]    every combination of dimensions that must
-                           be specified together
+        -------
+        spanning_subspaces : List[List[str]]    
+            Every combination of dimensions that must be 
+            specified together
         """
         subspaces = self.derive_full_subspaces()
         spanning_subspaces = {}
@@ -237,8 +364,8 @@ class Space:
 
     def count_dimensions(self) -> int:
         """
-        Counts the dimensions of the space 
-        that are not only for structure.
+        Counts and returns the dimensions of the space
+        that are not only for structure. TODO Look at wording       
         """
         return sum(
             [
@@ -257,6 +384,23 @@ class Space:
     def convert_flat_values_to_dict(
         self, input_sets, dim_index_mapping: Dict[str, int]
     ):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        input_sets : 
+            **Explanation**
+        dim_index_mapping : Dict[str, int]
+            **Explanation**
+
+        Returns
+        -------
+        value_dicts : 
+            **Explanation**
+        """
         value_dicts = []
 
         for inputs in input_sets:
@@ -275,6 +419,28 @@ class Space:
         map_null_to_children_dim=False,
         utilize_null_portitions=True,
     ):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        x : np.array
+            **Explanation**
+        dim_column_map : Dict[str, int]
+            **Explanation**
+        map_null_to_children_dim=False
+            **Explanation**
+        utilize_null_portitions=True
+            **Explanation**
+
+        Returns
+        -------
+        decoded_values : 
+            **Explanation**
+
+        """
 
         decoded_values = np.array(x)
         flatted_dimensions = create_all_iterable(self.children)
@@ -314,9 +480,17 @@ class Space:
 
 @dataclass
 class InputSpace(Space):
+    """
+    TODO Explain Class
+    """
+
     multi_dim_contraints: Optional[List] = None
 
 
 @dataclass
 class OutputSpace(Space):
+    """
+    TODO Explain Class
+    """
+
     dimensions: List[Dimension]

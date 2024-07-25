@@ -57,6 +57,24 @@ class DesignOfExperiment:
     def extract_points_and_dimensions(
         self, point_row_mask, dim_set: List[str]
     ) -> "DesignOfExperiment":
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        point_row_mask : 
+            **Explanation**
+        dim_set : List[str]
+            **Explanation**
+
+        Returns
+        -------
+        DesignOfExperiment : 
+            **Explanation**
+        
+        """
 
         column_indexes = [self.input_set_map[dim_id] for dim_id in dim_set]
 
@@ -72,8 +90,10 @@ class DesignOfExperiment:
         Provides the number of points/rows
         within the experiment design.
 
-        Returns:
-        int: the count of points/rows the design provides values.
+        Returns
+        -------
+        np.size : int
+            The count of points/rows the design provides values.
         """
         return np.size(self.input_sets, axis=0)
 
@@ -83,8 +103,9 @@ class DesignOfExperiment:
         Provides the number of dimensions/columns within
         the experiment design.
 
-        Returns:
-        int: the count of dimensions/columns the design
-             provides values.
+        Returns
+        -------
+        np.size : int
+            The count of dimensions/columns the design provides values.
         """
         return np.size(self.input_sets, axis=1)

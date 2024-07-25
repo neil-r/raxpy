@@ -1,3 +1,5 @@
+""" TODO Explain Module"""
+
 import numpy as np
 
 from ..spaces import dimensions as d
@@ -6,6 +8,22 @@ from .doe import DesignOfExperiment
 
 
 def generate_design(space: s.InputSpace, n_points: int) -> DesignOfExperiment:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    space : s.InputSpace
+        **Explanation**
+    n_points : int
+        **Explanation**
+
+    Returns
+    -------
+    DesignOfExperiment : 
+        **Explanation**
+
+    """
 
     flatted_dimensions = s.create_all_iterable(space.children)
     dim_map = {}

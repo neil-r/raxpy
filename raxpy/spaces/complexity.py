@@ -1,3 +1,5 @@
+""" TODO Explain Module"""
+
 from typing import Iterable, List
 
 import math
@@ -8,6 +10,20 @@ from . import root as s
 
 
 def estimate_complexity(dim: d.Dimension) -> float:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    dim : d.Dimension
+        **Explanation**
+    
+    Returns
+    -------
+    complexity_estimate : float
+        **Explanation**
+
+    """
     complexity_estimate = 1.0
 
     # default complexity heuristics
@@ -56,6 +72,17 @@ def estimate_complexity(dim: d.Dimension) -> float:
 def assign_null_portions(
     dimensions: Iterable[d.Dimension], complexity_estimator=estimate_complexity
 ) -> None:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    dimensions : Iterable[d.Dimension]
+        **Explanation**
+    complexity_estimator=estimate_complexity
+        **Explanation**
+
+    """
 
     children_sets: List[Iterable[d.Dimension]] = []
 
@@ -80,14 +107,30 @@ def assign_null_portions(
         assign_null_portions(children_set, complexity_estimator)
 
 
-def compute_subspace_portitions(
+def compute_subspace_portions(
     space: s.Space, full_subspace_sets: List[List[str]]
 ) -> List[float]:
-    portitions = []                                    # <-----TODO Portions? or Portitions?
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    space : s.Space
+        **Explanation**
+    full_subspace_sets : List[List[str]]
+        **Explanation**
+
+    Returns
+    -------
+    portions : List[float]
+        **Explanation**
+
+    """
+    portions = []
     """ compute portion of the n_points that each sub-design
     for each sub-space should address"""
     for full_subspace in full_subspace_sets:
-        portition_components = []                      # <-----TODO Portions? or Portitions?
+        portion_components = []
 
         l1 = s.create_level_iterable(space.children)
 
@@ -107,7 +150,7 @@ def compute_subspace_portitions(
                     if dim.has_child_dimensions():
                         if isinstance(dim, d.Variant):
 
-                            portition_components.append(
+                            portion_components.append(
                                 1.0 / len(dim.children)
                             )
                             # only add active child to be processed
@@ -123,8 +166,8 @@ def compute_subspace_portitions(
                 else:
                     p = dim.portion_null
 
-                portition_components.append(p)
+                portion_components.append(p)
 
-        portitions.append(math.prod(portition_components))
+        portions.append(math.prod(portion_components))
 
-    return portitions
+    return portions

@@ -8,14 +8,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def scatterplot_matrix(data, names, **kwargs):
+def scatterplot_matrix(data, names: str, **kwargs):
     """
     Plots a scatterplot matrix of subplots.  Each row of "data" is
-    plotted against other rows, resulting in a nrows by nrows grid of 
-    subplots with the diagonal subplots labeled with "names".  
-    Additional keyword arguments are passed on to matplotlib's "plot" 
-    command. Returns the matplotlib figure object containg the 
+    plotted against other rows, resulting in a nrows by nrows grid of
+    subplots with the diagonal subplots labeled with "names".
+
+    Arguments
+    ---------
+    data : 
+        TODO **Explanation**
+    names : str
+        Labels for subplot names
+    **kwargs : 
+        Additional keyword arguments are passed on to matplotlib's 
+        "plot" command.
+
+    Returns
+    -------
+    Returns the matplotlib figure object containg the
     subplot grid.
+
     """
     n_points, n_columns = data.shape
     fig, axes = plt.subplots(nrows=n_columns, ncols=n_columns, figsize=(8, 8))

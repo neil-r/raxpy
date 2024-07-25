@@ -22,7 +22,42 @@ from ..spaces.complexity import estimate_complexity
 def create_base_lhs_creator(
     scamble=True, strength=1, optimation: str = "random-cd"
 ):
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    scramble=True
+        **Explanation**
+    strength=1
+        **Explanation**
+    optimation : str
+        random-cd **Explanation**
+
+    Returns
+    -------
+    create : Function
+        **Explanation**
+    
+    """
+
     def create(dims: List[Dimension], n_points: int):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        dims : List[Dimension]
+            **Explanation**
+        n_points : int
+            **Explanation**
+
+        Returns
+        -------
+        encoded_flag, data_points : Tuple
+            **Explanation**
+
+        """
         n_dim_count = len(dims)
         sampler = LatinHypercube(
             d=n_dim_count,
@@ -45,6 +80,24 @@ _default_base_lhs_creator = create_base_lhs_creator()
 def generate_design(
     space: InputSpace, n_points: int, base_creator=_default_base_lhs_creator
 ) -> DesignOfExperiment:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    space : InputSpace
+        **Explanation**
+    n_points : int
+        **Explanation**
+    base_creator=_default_base_lhs_creator
+        **Explanation**
+
+    Returns
+    -------
+    DesignOfExperiment : 
+        **Explanation**
+
+    """
 
     total_dim_count = space.count_dimensions()
 
@@ -143,6 +196,26 @@ def generate_seperate_designs_by_full_subspace(
     base_creator=_default_base_lhs_creator,
     ensure_at_least_one=True,
 ) -> DesignOfExperiment:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    space : InputSpace
+        **Explanation**
+    n_points : int
+        **Explanation**
+    base_creator=_default_base_lhs_creator
+        **Explanation**
+    ensure_at_least_one=True
+        **Explanation**
+
+    Returns
+    -------
+    DesignOfExperiment : 
+        **Explanation**
+
+    """
 
     total_dim_count = space.count_dimensions()
 
@@ -293,6 +366,24 @@ def generate_seperate_designs_by_full_subspace(
 def generate_design_with_projection(
     space: InputSpace, n_points: int, base_creator=_default_base_lhs_creator
 ) -> DesignOfExperiment:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    space : InputSpace
+        **Explanation**
+    n_points : int
+        **Explanation**
+    base_creator=_default_base_lhs_creator
+        **Explanation**
+
+    Returns
+    -------
+    DesignOfExperiment : 
+        **Explanation**
+
+    """
     active_dims = list(create_all_iterable(space.children))
     input_set_map = {}
     for i, dim in enumerate(active_dims):

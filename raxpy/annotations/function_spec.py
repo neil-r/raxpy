@@ -1,3 +1,5 @@
+""" TODO """
+
 from typing import List, Callable
 
 import inspect
@@ -8,6 +10,21 @@ from .type_spec import map_type, UndefinedValue
 
 
 def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    name : str
+        **Explanation**
+    param : inspect.Parameter
+        **Explanation**
+
+    Returns
+    -------
+    d : Dimension
+        TODO **Map Type**?
+    """
     if param.annotation is not inspect.Parameter.empty:
         # analyze static type for parameter specification of dimension
         t = param.annotation
@@ -44,8 +61,15 @@ def extract_input_space(func: Callable) -> InputSpace:
     Takes a function and derives the input space of the function from
     the function parameters' static types and annotations.
 
-    Args:
-        func (function): The function to introspect.
+    Arguments
+    ---------
+    func (function) : Callable
+        The function to introspect.
+
+    Returns
+    -------
+    input_space: Type InputSpace
+        TODO**What is input Space?**
     """
     input_dimensions: List[dim.Dimension] = []
 
@@ -62,6 +86,20 @@ def extract_input_space(func: Callable) -> InputSpace:
 
 
 def extract_output_space(func: Callable) -> OutputSpace:
+    """
+    Takes a function and derives the output space of the function from
+    the function parameters' static types and annotations.
+
+    Arguments
+    ---------
+    func (function) : Callable
+        The function to introspect.
+
+    Returns
+    -------
+    input_space: Type OutputSpace
+        TODO **Explanation**
+    """
     output_dimensions: List[dim.Dimension] = []
     # TODO implement return type introspection logic
     output_space = OutputSpace(dimensions=output_dimensions)

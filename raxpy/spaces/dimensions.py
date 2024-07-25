@@ -1,8 +1,9 @@
+""" TODO Explain Module """
+
 from typing import (
     Optional,
     List,
     Tuple,
-    Union,
     Generic,
     TypeVar,
     Set,
@@ -19,7 +20,25 @@ from dataclasses import dataclass
 T = TypeVar("T")
 
 
-def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
+def _map_values(x, value_set, portion_null) -> List[int | float]:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    x : 
+        **Explanation**
+    value_set : 
+        **Explanation**
+    portion_null : 
+        **Explanation**
+
+    Returns
+    -------
+    value_set : List[int | float]
+        **Explanation**
+
+    """
     value_count = len(value_set)
     boundary_size = 1.0 / value_count
 
@@ -45,6 +64,22 @@ def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
 
 
 def convert_values_from_dict(dimensions, input_value: Dict[str, Any]) -> Dict:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    dimensions : 
+        **Explanation**
+    input_value : Dict[str, Any]
+        **Explanation**
+
+    Returns
+    -------
+    args : Dict
+        **Explanation**
+
+    """
     args = {}
 
     for dim in dimensions:
@@ -65,6 +100,10 @@ def convert_values_from_dict(dimensions, input_value: Dict[str, Any]) -> Dict:
 
 @dataclass
 class Dimension(Generic[T]):
+    """
+    TODO Explain Class
+    """
+
     id: str = ""
     local_id: str = ""
     nullable: bool = False
@@ -75,6 +114,15 @@ class Dimension(Generic[T]):
     portion_null: Optional[float] = None
 
     def __post_init__(self):
+        """
+        TODO Explain the Function
+
+        Raises
+        ------
+        ValueError:
+            **If value is invalid**
+
+        """
         if self.id == "":
             self.id = self.local_id
         if self.local_id == "":
@@ -83,30 +131,102 @@ class Dimension(Generic[T]):
             raise ValueError("Invalid identifier for dimension")
 
     def has_child_dimensions(self) -> bool:
+        """
+        TODO Explain the Function **Not Implemented?**
+        """
         return False
 
     def only_supports_spec_structure(self) -> bool:
+        """
+        TODO Explain the Function **Not Implemented?**
+        """
         return False
 
-    def collapse_uniform(self, x, utilize_null_portitions=True):
+    def collapse_uniform(self, x, utilize_null_portions=True):
+        """
+        TODO Explain the Function **Not Implemented?**
+
+        Arguments 
+        ---------
+        self : 
+            **Explanation**
+        x : 
+            **Explanation**
+        utilize_null_portions=True
+            **Explanation**
+
+        """
         raise NotImplementedError(
             "Abstract method, subclass should implement this method"
         )
 
     def has_tag(self, tag: str) -> bool:
+        """
+        Function validates if there is a valid tag.
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        tag : str
+            **Explanation**
+
+        Returns
+        -------
+        Returns True if there is a valid tag and 
+        False if there is not a tag
+
+        """
         return self.tags is not None and tag in self.tags
 
     def convert_to_argument(self, input_value) -> T:
+        """
+        TODO Explain the Function **Not Implemented?**
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        input_value : 
+            **Explanation**
+
+        """
         raise NotImplementedError(
             "Abstract method, subclass should implement this method"
         )
 
     def acceptable_types(self) -> Tuple[Type]:
+        """
+        TODO Explain the Function**Not Implemented?**
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        
+        """
         raise NotImplementedError(
             "Abstract method, subclass should implement this method"
         )
 
     def validate(self, input_value, specified_input: bool):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        input_value : 
+            **Explanation**
+        specified_input : bool
+            **Explanation**
+
+        Returns
+        -------
+        TODO **Explanation**
+
+        """
         if input_value is None:
             if self.nullable:
                 return
@@ -131,14 +251,57 @@ class Dimension(Generic[T]):
 
 @dataclass
 class Int(Dimension[int]):
+    """
+    TODO Explain Class
+    """
+
     lb: Optional[int] = None
     ub: Optional[int] = None
     value_set: Optional[List[int]] = None
 
     def convert_to_argument(self, input_value) -> T:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        input_value : 
+            **Explanation**
+
+        Returns
+        -------
+        Returns input value as an integer
+        """
         return int(input_value)
 
-    def collapse_uniform(self, x, utilize_null_portitions=True) -> List[Union[int, float]]:
+    def collapse_uniform(
+        self, x, utilize_null_portions=True
+    ) -> List[int | float]:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        x : 
+            **Explanation**
+        utilize_null_portions=True
+            **Explanation**
+
+        Returns
+        -------
+        _map_values : List[int | float]
+            **Explanation**
+        
+        Raises
+        ------
+        ValueError:
+            If dimension cannot transform a uniform 0-1 value
+        
+        """
         vs = None
         if self.value_set is not None:
             vs = self.value_set
@@ -148,13 +311,32 @@ class Int(Dimension[int]):
 
         if vs is not None:
             return _map_values(
-                x, vs, self.portion_null if utilize_null_portitions else None
+                x, vs, self.portion_null if utilize_null_portions else None
             )
         raise ValueError(
             f"Unbounded Int dimension cannot transform a uniform 0-1 value"
         )
 
     def validate(self, input_value, specified_input: bool) -> None:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self :  
+            **Explanation**
+        input_value :   
+            **Explanation**
+        specified_input : bool
+            **Explanation**
+
+        Raises
+        ------
+        ValueError:
+            If input value, lower bound and upper bound 
+            are out of range/not in set
+
+        """
         super().validate(input_value, specified_input)
         if input_value is not None:
             if self.lb is not None and input_value < self.lb:
@@ -177,19 +359,65 @@ class Int(Dimension[int]):
                 )
 
     def acceptable_types(self):
+        """
+        TODO Explain the Function
+        """
         return (int,)
 
 
 @dataclass
 class Float(Dimension[float]):
+    """
+    TODO Explain the Function
+    """
+
     lb: Optional[float] = None
     ub: Optional[float] = None
     value_set: Optional[List[float]] = None
 
     def convert_to_argument(self, input_value) -> T:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        input_value : 
+            **Explanation**
+
+        Returns
+        -------
+        Returns input value as a float
+
+        """
         return float(input_value)
 
     def collapse_uniform(self, x, utilize_null_portitions=True):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        x : 
+            **Explanation**
+        utilize_null_portions=True
+            **Explanation**
+
+        Returns
+        -------
+        _map_values : List[int | float]
+            **Explanation**
+        TODO **Explain one-line if/for return statement**
+        
+        Raises
+        ------
+        ValueError:
+            If dimension cannot transform a uniform 0-1 value
+
+        """
         if self.value_set is not None:
             return _map_values(
                 x,
@@ -222,6 +450,25 @@ class Float(Dimension[float]):
         )
 
     def validate(self, input_value, specified_input: bool) -> None:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self :  
+            **Explanation**
+        input_value :   
+            **Explanation**
+        specified_input : bool
+            **Explanation**
+
+        Raises
+        ------
+        ValueError:
+            If input value, lower bound and upper bound 
+            are out of range/not in set
+
+        """
         super().validate(input_value, specified_input)
         if input_value is not None:
             if self.lb is not None and input_value < self.lb:
@@ -244,23 +491,71 @@ class Float(Dimension[float]):
                 )
 
     def acceptable_types(self):
+        """
+        TODO Explain the Function
+
+        """
         return (float,)
 
 
 @dataclass
 class CategoryValue:
+    """
+    TODO Explain Class
+    """
+
     value: str
 
 
 @dataclass
 class Text(Dimension[str]):
+    """
+    TODO Explain Class
+    """
+
     length_limit: Optional[int] = None
-    value_set: Optional[List[Union[CategoryValue, str]]] = None
+    value_set: Optional[List[CategoryValue | str]] = None
 
     def convert_to_argument(self, input_value) -> T:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        input_value : 
+            **Explanation**
+
+        Returns
+        -------
+        Returns input value as a string
+
+        """
         return str(input_value)
 
     def collapse_uniform(self, x):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        x : 
+            **Explanation**
+
+        Returns
+        -------
+        _map_values : List[int | float]
+            **Explanation**
+        
+        Raises
+        ------
+        ValueError:
+            If dimension cannot transform a uniform 0-1 value
+
+        """
         if self.value_set is not None:
             return _map_values(
                 x, {v.value for v in self.value_set}, self.portion_null
@@ -270,6 +565,24 @@ class Text(Dimension[str]):
         )
 
     def validate(self, input_value, specified_input: bool) -> None:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self :  
+            **Explanation**
+        input_value :   
+            **Explanation**
+        specified_input : bool
+            **Explanation**
+
+        Raises
+        ------
+        ValueError:
+            If input value is not in the value set
+
+        """
         super().validate(input_value, specified_input)
         if input_value is not None:
             if (
@@ -282,35 +595,97 @@ class Text(Dimension[str]):
                 )
 
     def acceptable_types(self):
+        """
+        TODO Explain the Function
+        """
         return (str,)
 
 
 @dataclass
 class Variant(Dimension):
+    """
+    TODO Explain Class
+    """
+
     options: Optional[List[Dimension]] = None
 
     @property
     def children(self):
+        """
+        TODO Explain the Function
+
+        Returns
+        -------
+        **Explanation**
+
+        """
         return self.options
 
     def convert_to_argument(self, input_value):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        input_value : 
+            **Explanation**
+
+        Returns
+        -------
+        TODO **Explanation**
+
+        """
         option = self.options[input_value.option_index]
         return option.convert_to_argument(input_value.content)
 
-    def collapse_uniform(self, x, utilize_null_portitions=True):
+    def collapse_uniform(self, x, utilize_null_portions=True):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        x : 
+            **Explanation**
+        utilize_null_portions=True
+            **Explanation**
+
+        Returns
+        -------
+        _map_values : List[int | float]
+            **Explanation**
+        
+        Raises
+        ------
+        ValueError:
+            If dimension cannot transform a uniform 0-1 value
+
+        """
         return _map_values(
             x,
             [i for i in range(len(self.options))],
-            self.portion_null if utilize_null_portitions else None,
+            self.portion_null if utilize_null_portions else None,
         )
 
     def only_supports_spec_structure(self) -> bool:
+        """
+        TODO Explain the Function
+        """
         return False
 
     def has_child_dimensions(self) -> bool:
+        """
+        TODO Explain the Function
+        """
         return True
 
     def count_children_dimensions(self) -> int:
+        """
+        TODO Explain the Function
+        """
         return sum(
             [
                 (
@@ -323,6 +698,18 @@ class Variant(Dimension):
         )
 
     def validate(self, input_value, specified_input: bool) -> None:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self :  
+            **Explanation**
+        input_value :   
+            **Explanation**
+        specified_input : bool
+            **Explanation**
+        """
         super().validate(input_value, specified_input)
         if input_value is not None:
             for dim in self.options:
@@ -331,6 +718,18 @@ class Variant(Dimension):
                     dim.validate(value, specified_input)
 
     def acceptable_types(self):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+
+        Returns
+        -------
+        **Explanation** 
+        """
         at = []
         for option in self.options:
             at += option.acceptable_types()
@@ -339,6 +738,10 @@ class Variant(Dimension):
 
 @dataclass
 class Listing(Dimension[List]):
+    """
+    TODO Explain Class
+    """
+
     element_type: Optional[Dimension] = None
     cardinality_lb: Optional[int] = None
     cardinality_ub: Optional[int] = None
@@ -346,30 +749,76 @@ class Listing(Dimension[List]):
 
 @dataclass
 class Composite(Dimension):
+    """
+    TODO Explain Class
+    """
+
     class_name: Optional[str] = ""
     children: Optional[List[Dimension]] = None
     type_class: Optional[Type] = None
 
     def convert_to_argument(self, input_value):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        input_value : 
+            **Explanation**
+
+        Returns
+        -------
+        Returns input value as a TODO**Explanation**
+
+        """
         args = convert_values_from_dict(self.children, input_value)
         return self.type_class(**args)
 
-    def collapse_uniform(self, x, utilize_null_portitions):
+    def collapse_uniform(self, x, utilize_null_portions):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : 
+            **Explanation**
+        x : 
+            **Explanation**
+        utilize_null_portions : 
+            **Explanation**
+
+        Returns
+        -------
+        _map_values : List[int | float]
+            **Explanation**
+
+        """
         return _map_values(
             x,
             [
                 1,
             ],
-            self.portion_null if utilize_null_portitions else None,
+            self.portion_null if utilize_null_portions else None,
         )
 
     def only_supports_spec_structure(self) -> bool:
+        """
+        TODO Explain the Function
+        """
         return not self.nullable
 
     def has_child_dimensions(self) -> bool:
+        """
+        TODO Explain the Function
+        """
         return True
 
     def count_children_dimensions(self) -> int:
+        """
+        TODO Explain the Function
+        """
         return sum(
             [
                 (
@@ -382,6 +831,19 @@ class Composite(Dimension):
         )
 
     def validate(self, input_value, specified_input: bool) -> None:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self :  
+            **Explanation**
+        input_value :   
+            **Explanation**
+        specified_input : bool
+            **Explanation**
+
+        """
         super().validate(input_value, specified_input)
         if input_value is not None:
             for dim in self.children:
@@ -394,4 +856,7 @@ class Composite(Dimension):
                 dim.validate(value, specified_child_input)
 
     def acceptable_types(self):
+        """
+        TODO Explain the Function
+        """
         return (self.type_class,)

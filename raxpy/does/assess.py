@@ -55,8 +55,15 @@ def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     Computes and returns the minimum-interpoint-distance (MIPD)
     among every pair of points
 
-    Returns:
-        float: the minimum-interpoint-distance
+    Arguments 
+    ---------
+    context : SubSpaceMetricComputeContext
+        **Explanation**
+
+    Returns
+    -------
+    np.min(dm) : float
+        The minimum-interpoint-distance
     """
     points = context.sub_space_doe.input_sets
     # compute the distances for each point combination
@@ -74,6 +81,19 @@ def compute_average_reciprocal_distance_projection(
     Implementation of the Average reciprocal distance projection
     metric as denoted in: Draguljić, Santner, and Dean, “Noncollapsing
     Space-Filling Designs for Bounded Nonrectangular Regions.”
+
+    Arguments 
+    ---------
+    context : SubSpaceMetricComputeContext
+        **Explanation**
+    lambda_hp=2 : int
+        **Explanation**
+    z_hp=2 : int
+        **Explanation**
+    
+    Returns
+    -------
+    TODO **Explanation**
     """
     n = context.sub_space_doe.point_count
     p = context.sub_space_doe.dim_specification_count
@@ -123,10 +143,16 @@ def compute_mst_stats(
     represent the distances between design points.
 
     For more information see https://doi.org/10.1016/j.chemolab.2009.03.011
-
-    Returns:
-    Tuple[float, float]: a tuple of the mean and standard deviation of the MST
-                         edges
+    
+    Arguments 
+    ---------
+    context : SubSpaceMetricComputeContext
+        **Explanation**
+    
+    Returns
+    -------
+    mst_mean, mst_std : Tuple[float, float]
+        a tuple of the mean and standard deviation of the MST edges
     """
     points = context.sub_space_doe.input_sets
     # compute the distances for each point combination
@@ -144,16 +170,56 @@ def compute_mst_stats(
 
 
 def compute_discrepancy(context: SubSpaceMetricComputeContext) -> float:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    context : SubSpaceMetricComputeContext
+        **Explanation**
+
+    Returns
+    -------
+    discrepancy : float
+        **Explanation**
+
+    """
     return discrepancy(context.sub_space_doe.input_sets)
 
 
 def compute_portion_of_total(context: SubSpaceMetricComputeContext) -> float:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    context : SubSpaceMetricComputeContext
+        **Explanation**
+
+    Returns
+    -------
+    Portion of whole DoE as a float
+
+    """
     return context.sub_space_doe.point_count / context.whole_doe.point_count
 
 
 def compute_avg_portion_of_levels(
     context: SubSpaceMetricComputeContext,
 ) -> float:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    context : SubSpaceMetricComputeContext
+        **Explanation**
+
+    Returns
+    -------
+    Not Implemented
+
+    """
     pass
 
 
@@ -167,6 +233,10 @@ subspace_metric_computation_map = {
 
 @dataclass
 class CompleteSubDesignAssessment:
+    """
+    TODO Explain Class
+    """
+
     point_count: int
     active_dimensions: List[str]
     measurements: Dict[str, float]
@@ -175,6 +245,10 @@ class CompleteSubDesignAssessment:
 
 @dataclass
 class DoeAssessment:
+    """
+    TODO Explain Class
+    """
+
     total_point_count: int
     full_sub_set_assessments: List[CompleteSubDesignAssessment]
     measurements: Dict[str, float]
@@ -184,9 +258,10 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
     """
     Assesses the experiment design for the given input space.
 
-    Returns:
-    DoeAssessment: results from an assessment for the whole design
-                   and sub-designs.
+    Returns
+    -------
+    DoeAssessment : 
+        Results from an assessment for the whole design and sub-designs.
     """
     # determine every full-combination of input dimensions that could be defined in this space
     sub_spaces = space.derive_full_subspaces()
