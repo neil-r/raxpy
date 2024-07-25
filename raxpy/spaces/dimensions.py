@@ -250,6 +250,7 @@ class Float(Dimension[float]):
 @dataclass
 class CategoryValue:
     value: str
+    label: Optional[str] = None
 
 
 @dataclass

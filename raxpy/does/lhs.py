@@ -131,6 +131,7 @@ def generate_design(
     )
 
     return DesignOfExperiment(
+        input_space=space,
         input_sets=decoded_values,
         input_set_map=input_set_map,
         encoded_flag=False,
@@ -284,6 +285,7 @@ def generate_seperate_designs_by_full_subspace(
         points_left_to_allocate = points_left_to_allocate - points_to_create
 
     return DesignOfExperiment(
+        input_space=space,
         input_sets=final_data_points,
         input_set_map=input_set_map,
         encoded_flag=False,
@@ -305,6 +307,7 @@ def generate_design_with_projection(
     )
 
     return DesignOfExperiment(
+        input_space=space,
         input_sets=decoded_values,
         input_set_map=input_set_map,
         encoded_flag=False,

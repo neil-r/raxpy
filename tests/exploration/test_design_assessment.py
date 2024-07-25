@@ -17,6 +17,7 @@ def test_doe_assessments():
     )
 
     design = doe.DesignOfExperiment(
+        input_space=space,
         input_set_map={"x1": 0, "x2": 1, "x3": 2},
         input_sets=np.array(
             [
@@ -33,7 +34,7 @@ def test_doe_assessments():
         encoded_flag=False,
     )
 
-    assessment = a.assess(space, design)
+    assessment = a.assess_with_all_metrics(design)
 
     assert assessment is not None
 
@@ -48,6 +49,7 @@ def test_metric_computations():
     )
 
     whole_doe = doe.DesignOfExperiment(
+        input_space=space,
         input_set_map={"x1": 0, "x2": 1, "x3": 2},
         input_sets=np.array(
             [
@@ -67,7 +69,6 @@ def test_metric_computations():
     assert (
         a.compute_portion_of_total(
             a.SubSpaceMetricComputeContext(
-                space=space,
                 whole_doe=whole_doe,
                 sub_space_doe=whole_doe.extract_points_and_dimensions(
                     [i == 2 for i in range(8)], dim_set=["x3"]
@@ -78,7 +79,6 @@ def test_metric_computations():
     )
 
     sub_space_doe = a.SubSpaceMetricComputeContext(
-        space=space,
         whole_doe=whole_doe,
         sub_space_doe=whole_doe.extract_points_and_dimensions(
             [i in [3, 4, 5, 6] for i in range(8)], dim_set=["x1", "x2", "x3"]
