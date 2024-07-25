@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 import raxpy.does.doe as doe
+from raxpy.spaces.root import InputSpace
 
 
 def test_doe_counts():
@@ -17,6 +18,7 @@ def test_doe_counts():
 
     """
     design = doe.DesignOfExperiment(
+        input_space=InputSpace(dimensions=[]),
         input_sets=np.array(
             [
                 [1, 2, 3],  # point #1
@@ -38,6 +40,7 @@ def test_error_init_doe():
     with pytest.raises(ValueError):
         # create a design with one column not specified
         doe.DesignOfExperiment(
+            input_space=InputSpace(dimensions=[]),
             input_sets=np.array(
                 [
                     [1, 2, 3],
@@ -53,6 +56,7 @@ def test_error_init_doe():
     with pytest.raises(ValueError):
         # create a design with one column specification out-of-bounds
         doe.DesignOfExperiment(
+            input_space=InputSpace(dimensions=[]),
             input_sets=np.array(
                 [
                     [1, 2, 3],
@@ -69,6 +73,7 @@ def test_error_init_doe():
     with pytest.raises(ValueError):
         # create a design with two column specification to the same index
         doe.DesignOfExperiment(
+            input_space=InputSpace(dimensions=[]),
             input_sets=np.array(
                 [
                     [1, 2, 3],

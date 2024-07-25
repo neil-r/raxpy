@@ -505,6 +505,7 @@ class CategoryValue:
     """
 
     value: str
+    label: Optional[str] = None
 
 
 @dataclass

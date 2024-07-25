@@ -25,7 +25,6 @@ class SubSpaceMetricComputeContext:
     subspace design.
     """
 
-    space: s.InputSpace
     whole_doe: DesignOfExperiment
     sub_space_doe: DesignOfExperiment
 
@@ -37,8 +36,11 @@ METRIC_TARGET_PORTION_OFFSET = "target_portion_offset"
 
 METRIC_AVG_AVG_PORTION_OF_SUBSPACE_LEVELS = "avg_avg_subspace_levels"
 
-# the following map is used in the assess function to discover the metrics to compute
-doe_metric_computation_map = {}
+METRIC_WEIGHTED_DISCREPANCY = "weighted_discrepancy"
+
+METRIC_WEIGHTED_MIPD = "weighted_mipd"
+
+METRIC_WEIGHTED_MST_STATS = "weighted_mst_stats"
 
 # Complete SubDesign Metrics
 METRIC_AVG_PORTION_LEVELS_INCLUDED = "avg_portion_of_levels_included"
@@ -65,6 +67,8 @@ def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     np.min(dm) : float
         The minimum-interpoint-distance
     """
+    if context.sub_space_doe.point_count <= 1:
+        raise ValueError("Not enough points to compute min point distance")
     points = context.sub_space_doe.input_sets
     # compute the distances for each point combination
     dm = distance_matrix(points, points)
@@ -76,7 +80,7 @@ def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
 
 def compute_average_reciprocal_distance_projection(
     context: SubSpaceMetricComputeContext, lambda_hp=2, z_hp=2
-):
+) -> float:
     """
     Implementation of the Average reciprocal distance projection
     metric as denoted in: Draguljić, Santner, and Dean, “Noncollapsing
@@ -95,6 +99,8 @@ def compute_average_reciprocal_distance_projection(
     -------
     TODO **Explanation**
     """
+    if context.sub_space_doe.point_count <= 1:
+        raise ValueError("Not enough points to compute ard")
     n = context.sub_space_doe.point_count
     p = context.sub_space_doe.dim_specification_count
     big_p = list(range(0, p))
@@ -254,7 +260,48 @@ class DoeAssessment:
     measurements: Dict[str, float]
 
 
-def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
+def compute_weighted_discrepancy(
+    doe: DesignOfExperiment,
+    full_design_assessments: List[CompleteSubDesignAssessment],
+    weighting_metric=METRIC_PORTION_OF_TOTAL,
+) -> float:
+    discrepancies = []
+    weights = []
+    for full_design in full_design_assessments:
+        if METRIC_DISCREPANCY in full_design.measurements:
+            discrepancies.append(full_design.measurements[METRIC_DISCREPANCY])
+            weights.append(full_design.measurements[weighting_metric])
+
+    weight_sum = sum(weights)
+
+    return sum(d * w / weight_sum for d, w in zip(discrepancies, weights))
+
+
+def compute_weighted_mipd(
+    doe: DesignOfExperiment,
+    full_design_assessments: List[CompleteSubDesignAssessment],
+    weighting_metric=METRIC_PORTION_OF_TOTAL,
+) -> float:
+    discrepancies = []
+    weights = []
+    for full_design in full_design_assessments:
+        if METRIC_MIN_POINT_DISTANCE in full_design.measurements:
+            discrepancies.append(full_design.measurements[METRIC_MIN_POINT_DISTANCE])
+            weights.append(full_design.measurements[weighting_metric])
+
+    weight_sum = sum(weights)
+
+    return sum(d * w / weight_sum for d, w in zip(discrepancies, weights))
+
+
+# the following map is used in the assess function to discover the metrics to compute
+doe_metric_computation_map = {
+    METRIC_WEIGHTED_DISCREPANCY: compute_weighted_discrepancy,
+    METRIC_WEIGHTED_MIPD: compute_weighted_mipd,
+}
+
+
+def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
     """
     Assesses the experiment design for the given input space.
 
@@ -264,7 +311,7 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
         Results from an assessment for the whole design and sub-designs.
     """
     # determine every full-combination of input dimensions that could be defined in this space
-    sub_spaces = space.derive_full_subspaces()
+    sub_spaces = doe.input_space.derive_full_subspaces()
 
     # assign a id/int to each sub space
     sub_space_index_map = {}
@@ -290,8 +337,7 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
     # prepare data structures for returned assessment structure
     total_point_count = len(mapped_values)
 
-    full_sub_set_assessments = []
-    total_measurements = []
+    full_sub_set_assessments: List[CompleteSubDesignAssessment] = []
 
     ################################
     # full-sub-design metrics
@@ -305,14 +351,17 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
         measurements = {}
         space_attributes = set()
 
-        subspace_context = SubSpaceMetricComputeContext(
-            space, doe, sub_space_doe
-        )
+        subspace_context = SubSpaceMetricComputeContext(doe, sub_space_doe)
+
 
         for m_id, compute in subspace_metric_computation_map.items():
             try:
                 value = compute(subspace_context)
-                measurements[m_id] = value
+                if isinstance(value, Tuple):
+                    for i, v in enumerate(value):
+                        measurements[f"{m_id}-{i}"] = v
+                else:
+                    measurements[m_id] = value
             except Exception as e:
                 print(
                     f"WARNING: failed to compute metric {m_id} "
@@ -331,7 +380,16 @@ def assess(space: s.InputSpace, doe: DesignOfExperiment) -> DoeAssessment:
     ################################
     # DOE metrics
     ################################
-    # TODO compute portion of complete sub-spaces sampled
+    total_measurements = {}
+
+    for m_id, compute in doe_metric_computation_map.items():
+
+        value = compute(doe, full_sub_set_assessments)
+        if isinstance(value, Tuple):
+            for i, v in enumerate(value):
+                total_measurements[f"{m_id}-{i}"] = v
+        else:
+            total_measurements[m_id] = value
 
     return DoeAssessment(
         total_point_count=total_point_count,

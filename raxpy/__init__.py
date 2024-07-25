@@ -7,3 +7,4 @@ from .annotations.values import *
 from .annotations.mixture import *
 from .execute import perform_batch_experiment
 from .decorators import validate_at_runtime
+from .spaces import dim_tags as tags

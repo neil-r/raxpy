@@ -34,4 +34,6 @@ def generate_design(space: s.InputSpace, n_points: int) -> DesignOfExperiment:
         random_x, dim_map, map_null_to_children_dim=True
     )
 
-    return DesignOfExperiment(input_sets=input_sets, input_set_map=dim_map)
+    return DesignOfExperiment(
+        input_sets=input_sets, input_set_map=dim_map, input_space=space
+    )

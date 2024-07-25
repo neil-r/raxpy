@@ -18,6 +18,15 @@ class Base:
     label: Optional[str] = None
     tags: Optional[List[str]] = None
 
+    def apply_to(self, d:d.Dimension):
+        if self.label is not None:
+            d.label = self.label
+        if self.tags is not None:
+            if d.tags is None:
+                d.tags = self.tags
+            else:
+                d.tags.extend(self.tags)
+
 
 @dataclass(frozen=True, eq=True)
 class Categorical(Base):
@@ -38,10 +47,13 @@ class Float(Base):
     lb: Optional[float] = None
     value_set: Optional[Set[float]] = None
 
-    def apply_to(self, d: d.Float):
+
+    def apply_to(self, d:d.Float):
+        super().apply_to(d)
         d.lb = self.lb
         d.ub = self.ub
         d.value_set = self.value_set
+
 
 
 @dataclass(frozen=True, eq=True)
@@ -66,6 +78,7 @@ class Integer(Base):
             **Explanation**
 
         """
+        super().apply_to(d)
         d.lb = self.lb
         d.ub = self.ub
         d.value_set = self.value_set
