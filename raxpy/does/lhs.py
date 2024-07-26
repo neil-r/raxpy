@@ -14,7 +14,7 @@ from ..spaces.root import (
     create_level_iterable,
     create_all_iterable,
 )
-from ..spaces.complexity import compute_subspace_portitions
+from ..spaces.complexity import compute_subspace_portions
 from .doe import DesignOfExperiment
 from ..spaces.complexity import estimate_complexity
 
@@ -38,7 +38,7 @@ def create_base_lhs_creator(
     -------
     create : Function
         **Explanation**
-    
+
     """
 
     def create(dims: List[Dimension], n_points: int):
@@ -94,7 +94,7 @@ def generate_design(
 
     Returns
     -------
-    DesignOfExperiment : 
+    DesignOfExperiment :
         **Explanation**
 
     """
@@ -213,7 +213,7 @@ def generate_seperate_designs_by_full_subspace(
 
     Returns
     -------
-    DesignOfExperiment : 
+    DesignOfExperiment :
         **Explanation**
 
     """
@@ -229,7 +229,7 @@ def generate_seperate_designs_by_full_subspace(
 
     # compute portion of the n_points that each sub-design for each sub-space
     # should address
-    portitions = compute_subspace_portitions(space, full_subspace_sets)
+    portitions = compute_subspace_portions(space, full_subspace_sets)
 
     dim_map = space.create_dim_map()
 
@@ -382,7 +382,7 @@ def generate_design_with_projection(
 
     Returns
     -------
-    DesignOfExperiment : 
+    DesignOfExperiment :
         **Explanation**
 
     """

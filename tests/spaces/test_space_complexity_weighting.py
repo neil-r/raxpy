@@ -117,7 +117,7 @@ def test_subspace_portitions_computations():
         ]
     )
     full_subspace_sets = space.derive_full_subspaces()
-    portitions = c.compute_subspace_portitions(space, full_subspace_sets)
+    portitions = c.compute_subspace_portions(space, full_subspace_sets)
 
     assert portitions is not None
     assert len(portitions) == len(full_subspace_sets)
