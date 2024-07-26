@@ -1,3 +1,5 @@
+""" TODO Explain Module """
+
 import numpy as np
 import pytest
 
@@ -6,6 +8,15 @@ from raxpy.spaces.root import InputSpace
 
 
 def test_doe_counts():
+    """
+    TODO Explain the Function
+
+    Asserts
+    -------
+    design.point_count == 2
+    design.dim_specification_count == 3
+
+    """
     design = doe.DesignOfExperiment(
         input_space=InputSpace(dimensions=[]),
         input_sets=np.array(
@@ -22,6 +33,9 @@ def test_doe_counts():
 
 
 def test_error_init_doe():
+    """
+    TODO Explain the Function
+    """
 
     with pytest.raises(ValueError):
         # create a design with one column not specified

@@ -1,3 +1,5 @@
+""" TODO Explain Module"""
+
 import numpy as np
 from scipy.stats.qmc import discrepancy
 
@@ -8,6 +10,14 @@ import raxpy.does.doe as doe
 
 
 def test_doe_assessments():
+    """
+    TODO Explain the Function
+
+    Asserts
+    -------
+    Design is not None
+
+    """
     space = s.InputSpace(
         dimensions=[
             d.Float(id="x1", lb=0.0, ub=1.0, nullable=True),
@@ -40,6 +50,20 @@ def test_doe_assessments():
 
 
 def test_metric_computations():
+    """
+    TODO Explain the Function
+
+    Asserts
+    -------
+    a.compute_portion_of_total == 1.0 / 8.0
+    assert a.compute_portion_of_total(sub_space_doe) == 4.0 / 8.0
+    assert a.compute_discrepancy(sub_space_doe) == discrepancy()
+    assert mipd > 0.0
+    assert ard > 0.0
+    assert mst_mean > 0.0
+    assert mst_std > 0.0
+
+    """
     space = s.InputSpace(
         dimensions=[
             d.Float(id="x1", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),

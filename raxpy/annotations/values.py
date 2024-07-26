@@ -1,16 +1,22 @@
-from dataclasses import dataclass
+""" TODO Explain Module"""
+
 from typing import Optional, Set, Union, Tuple, List
+from dataclasses import dataclass
 
 from ..spaces import dimensions as d
 
 
-CategorySpec = Union[str, Tuple[str,str]]
+CategorySpec = Union[str, Tuple[str, str]]
 
 
 @dataclass(frozen=True, eq=True)
 class Base:
-    label:Optional[str] = None
-    tags:Optional[List[str]] = None
+    """
+    TODO Explain Class
+    """
+
+    label: Optional[str] = None
+    tags: Optional[List[str]] = None
 
     def apply_to(self, d:d.Dimension):
         if self.label is not None:
@@ -24,19 +30,23 @@ class Base:
 
 @dataclass(frozen=True, eq=True)
 class Categorical(Base):
-    value_set:Optional[List[CategorySpec]] = None
+    """
+    TODO Explain Class
+    """
 
-    def apply_to(self, dim:d.Text):
-        super().apply_to(dim)
-        if self.value_set is not None:
-            dim.value_set = [d.CategoryValue(value=v) if isinstance(v,str) else d.CategoryValue(value=v[0], label=v[1])  for v in self.value_set]
+    value_set: Optional[List[CategorySpec]] = None
 
 
 @dataclass(frozen=True, eq=True)
 class Float(Base):
-    ub:Optional[float] = None
-    lb:Optional[float] = None
-    value_set:Optional[Set[float]] = None
+    """
+    TODO Explain Class
+    """
+
+    ub: Optional[float] = None
+    lb: Optional[float] = None
+    value_set: Optional[Set[float]] = None
+
 
     def apply_to(self, d:d.Float):
         super().apply_to(d)
@@ -45,14 +55,29 @@ class Float(Base):
         d.value_set = self.value_set
 
 
+
 @dataclass(frozen=True, eq=True)
 class Integer(Base):
-    ub:Optional[int] = None
-    lb:Optional[int] = None
-    value_set:Optional[Set[int]] = None
+    """
+    TODO Explain Class
+    """
 
+    ub: Optional[int] = None
+    lb: Optional[int] = None
+    value_set: Optional[Set[int]] = None
 
-    def apply_to(self, d:d.Int):
+    def apply_to(self, d: d.Int):
+        """
+        TODO Explain the Function
+
+        Arguments 
+        ---------
+        self : 
+            **Explanation**
+        d : d.Int
+            **Explanation**
+
+        """
         super().apply_to(d)
         d.lb = self.lb
         d.ub = self.ub
@@ -61,5 +86,11 @@ class Integer(Base):
 
 @dataclass(frozen=True, eq=True)
 class Binary(Base):
+    """
+    TODO Explain Class
+
+    **Not Implemented**
+
+    """
 
     pass

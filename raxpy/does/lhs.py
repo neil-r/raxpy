@@ -1,5 +1,6 @@
 """
-    This module provide logic to create LatinHypercube designs for InputSpaces.
+    This module provide logic to create 
+    LatinHypercube designs for InputSpaces.
 """
 
 from typing import Dict, List, Optional, Tuple
@@ -8,17 +9,61 @@ import numpy as np
 from scipy.stats.qmc import LatinHypercube
 
 from ..spaces.dimensions import Dimension, Variant, Composite
-from ..spaces.root import InputSpace, create_level_iterable, create_all_iterable
+from ..spaces.root import (
+    InputSpace,
+    create_level_iterable,
+    create_all_iterable,
+)
 from ..spaces.complexity import compute_subspace_portitions
 from .doe import DesignOfExperiment
 from ..spaces.complexity import estimate_complexity
 
 
-def create_base_lhs_creator(scamble=True, strength=1, optimation: str = "random-cd"):
+def create_base_lhs_creator(
+    scamble=True, strength=1, optimation: str = "random-cd"
+):
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    scramble=True
+        **Explanation**
+    strength=1
+        **Explanation**
+    optimation : str
+        random-cd **Explanation**
+
+    Returns
+    -------
+    create : Function
+        **Explanation**
+    
+    """
+
     def create(dims: List[Dimension], n_points: int):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        dims : List[Dimension]
+            **Explanation**
+        n_points : int
+            **Explanation**
+
+        Returns
+        -------
+        encoded_flag, data_points : Tuple
+            **Explanation**
+
+        """
         n_dim_count = len(dims)
         sampler = LatinHypercube(
-            d=n_dim_count, strength=strength, scramble=scamble, optimization=optimation
+            d=n_dim_count,
+            strength=strength,
+            scramble=scamble,
+            optimization=optimation,
         )
 
         data_points = sampler.random(n=n_points)
@@ -35,6 +80,24 @@ _default_base_lhs_creator = create_base_lhs_creator()
 def generate_design(
     space: InputSpace, n_points: int, base_creator=_default_base_lhs_creator
 ) -> DesignOfExperiment:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    space : InputSpace
+        **Explanation**
+    n_points : int
+        **Explanation**
+    base_creator=_default_base_lhs_creator
+        **Explanation**
+
+    Returns
+    -------
+    DesignOfExperiment : 
+        **Explanation**
+
+    """
 
     total_dim_count = space.count_dimensions()
 
@@ -57,7 +120,9 @@ def generate_design(
         if not base_level:
             # Count the number of non-null data-points for parent dimension
             parent_dim = design_request[0]
-            parent_inputs = final_data_points[:, input_set_map[parent_dim.local_id]]
+            parent_inputs = final_data_points[
+                :, input_set_map[parent_dim.local_id]
+            ]
             parent_mask = parent_inputs > parent_dim.portion_null
             points_to_create = np.sum(parent_mask)
 
@@ -80,7 +145,9 @@ def generate_design(
                 )
 
         for active_dims, parent_mask, points_to_create in parts:
-            encoded_flag, data_points = base_creator(active_dims, points_to_create)
+            encoded_flag, data_points = base_creator(
+                active_dims, points_to_create
+            )
             if base_level:
                 # initalize input set
                 for i, dim in enumerate(active_dims):
@@ -94,20 +161,27 @@ def generate_design(
                             design_request_stack.append((dim, dim.options))
                         else:
                             design_request_stack.append(
-                                (dim, list(create_level_iterable(dim.children)))
+                                (
+                                    dim,
+                                    list(create_level_iterable(dim.children)),
+                                )
                             )
             else:
                 # inject design into input set
                 for i, dim in enumerate(active_dims):
                     column_map[active_index] = dim
                     input_set_map[dim.local_id] = active_index
-                    final_data_points[:, active_index][parent_mask] = data_points[:, i]
+                    final_data_points[:, active_index][parent_mask] = (
+                        data_points[:, i]
+                    )
 
                     if dim.has_child_dimensions():
                         design_request_stack.append((dim, dim.children))
                     active_index += 1
 
-    decoded_values = space.decode_zero_one_matrix(final_data_points, input_set_map)
+    decoded_values = space.decode_zero_one_matrix(
+        final_data_points, input_set_map
+    )
 
     return DesignOfExperiment(
         input_space=space,
@@ -123,6 +197,26 @@ def generate_seperate_designs_by_full_subspace(
     base_creator=_default_base_lhs_creator,
     ensure_at_least_one=True,
 ) -> DesignOfExperiment:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    space : InputSpace
+        **Explanation**
+    n_points : int
+        **Explanation**
+    base_creator=_default_base_lhs_creator
+        **Explanation**
+    ensure_at_least_one=True
+        **Explanation**
+
+    Returns
+    -------
+    DesignOfExperiment : 
+        **Explanation**
+
+    """
 
     total_dim_count = space.count_dimensions()
 
@@ -211,7 +305,9 @@ def generate_seperate_designs_by_full_subspace(
                 active_dims.append(dim)
 
         if len(active_dims) > 0:
-            encoded_flag, data_points = base_creator(active_dims, points_to_create)
+            encoded_flag, data_points = base_creator(
+                active_dims, points_to_create
+            )
             part_input_set_map = {}
             for i, dim in enumerate(active_dims):
                 part_input_set_map[dim.id] = i
@@ -231,7 +327,9 @@ def generate_seperate_designs_by_full_subspace(
                 else:
                     dim_index = input_set_map[dim.id]
 
-                final_data_points[:, dim_index][row_mask] = decoded_data_points[:, i]
+                final_data_points[:, dim_index][row_mask] = (
+                    decoded_data_points[:, i]
+                )
 
         if len(fixed_dims) > 0:
 
@@ -270,6 +368,24 @@ def generate_seperate_designs_by_full_subspace(
 def generate_design_with_projection(
     space: InputSpace, n_points: int, base_creator=_default_base_lhs_creator
 ) -> DesignOfExperiment:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    space : InputSpace
+        **Explanation**
+    n_points : int
+        **Explanation**
+    base_creator=_default_base_lhs_creator
+        **Explanation**
+
+    Returns
+    -------
+    DesignOfExperiment : 
+        **Explanation**
+
+    """
     active_dims = list(create_all_iterable(space.children))
     input_set_map = {}
     for i, dim in enumerate(active_dims):
@@ -277,7 +393,9 @@ def generate_design_with_projection(
 
     encoded_flag, data_points = base_creator(active_dims, n_points)
 
-    decoded_values = space.decode_zero_one_matrix(data_points, input_set_map, True)
+    decoded_values = space.decode_zero_one_matrix(
+        data_points, input_set_map, True
+    )
 
     return DesignOfExperiment(
         input_space=space,

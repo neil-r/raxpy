@@ -1,3 +1,5 @@
+""" TODO Explain Module """
+
 import math
 from typing import List, Tuple, Iterable
 import raxpy.spaces.dimensions as d
@@ -6,6 +8,14 @@ import raxpy.spaces.root as s
 
 
 def test_assign_null_portions():
+    """
+    TODO Explain the Function
+
+    Asserts
+    -------
+    **Explanation**
+
+    """
     space = s.Space(
         dimensions=[
             d.Float(id="x1", lb=3.0, ub=5.0),
@@ -58,6 +68,13 @@ def test_assign_null_portions():
 
 
 def test_subspace_portitions_computations():
+    """
+    TODO Explain the Function
+
+    Asserts
+    -------
+    **Explanation**
+    """
     space = s.Space(
         dimensions=[
             d.Float(id="x1", lb=3.0, ub=5.0),
@@ -105,7 +122,9 @@ def test_subspace_portitions_computations():
     assert portitions is not None
     assert len(portitions) == len(full_subspace_sets)
 
-    index_of_check = full_subspace_sets.index(["x1", "x3", "x4", "x5", "x6", "x8"])
+    index_of_check = full_subspace_sets.index(
+        ["x1", "x3", "x4", "x5", "x6", "x8"]
+    )
     p_check = portitions[index_of_check]
     p_expected = (
         1.0 * 0.1 * 0.5 * 0.8 * 0.75 * 0.5

@@ -1,3 +1,5 @@
+""" TODO Explain Module"""
+
 from typing import (
     List,
     Union,
@@ -20,12 +22,41 @@ _type_dimension_mapper: Type = {
 }
 
 
-def _is_annotated_with_metadata(type_annotation):
+def _is_annotated_with_metadata(type_annotation) -> bool:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    type_annotation : 
+        **Explanation**
+
+    Returns
+    -------
+    hasattr : bool
+        **Explanation**
+
+    """
     return hasattr(type_annotation, "__metadata__")
 
 
-# Function to introspect and list the attributes of a dataclass
-def list_dataclass_attributes(parent_prefix, cls):
+def list_dataclass_attributes(parent_prefix: str, cls) -> List:
+    """
+    TODO Function to introspect and list the attributes of a dataclass
+
+    Arguments
+    ---------
+    parent_prefix : str
+        **Explanation**
+    cls : 
+        **Explanation**
+    
+    Returns
+    -------
+    children_dims : List
+        **Explanation**
+
+    """
     children_dims = []
     if not hasattr(cls, "__dataclass_fields__"):
         raise TypeError(f"{cls.__name__} is not a dataclass")
@@ -43,8 +74,25 @@ def list_dataclass_attributes(parent_prefix, cls):
     return children_dims
 
 
-def _map_base_type(parent_prefix, t, initalization_values):
+def _map_base_type(parent_prefix: str, t, initialization_values):
+    """
+    TODO Explain the Function
 
+    Arguments
+    ---------
+    parent_prefix : str
+        **Explanation**
+    t : 
+        **Explanation**
+    initialization_values : 
+        **Explanation**
+
+    Returns
+    -------
+    dt : 
+        **Explanation**
+
+    """
     if t in _type_dimension_mapper:
         dt = _type_dimension_mapper[t]
     else:
@@ -56,15 +104,17 @@ def _map_base_type(parent_prefix, t, initalization_values):
             if a is not None and len(a) == 1:
                 element_type = map_type(parent_prefix, "_element", a[0])
             else:
-                raise NotImplementedError(f"Multiple List args not implemented: {a}")
+                raise NotImplementedError(
+                    f"Multiple List args not implemented: {a}"
+                )
 
-            initalization_values["element_type"] = element_type
+            initialization_values["element_type"] = element_type
         elif hasattr(t, "__dataclass_fields__"):
             dt = dim.Composite
-            initalization_values["children"] = list_dataclass_attributes(
+            initialization_values["children"] = list_dataclass_attributes(
                 parent_prefix, t
             )
-            initalization_values["type_class"] = t
+            initialization_values["type_class"] = t
         else:
             raise NotImplementedError(f"Type ({t}) not understood")
     return dt
@@ -73,18 +123,42 @@ def _map_base_type(parent_prefix, t, initalization_values):
 def map_type(
     parent_prefix: str, name: str, base_type, default_value=UndefinedValue
 ) -> dim.Dimension:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    parent_prefix : str
+        **Explanation**
+    name : str
+        **Explanation**
+    base_type : 
+        **Explanation**
+    default_value=UndefinedValue
+        **Explanation**
+
+    Returns
+    -------
+    d : Dimension
+        **Explanation**
+    
+    """
 
     metadata = None
     if _is_annotated_with_metadata(base_type):
         metadata = base_type.__metadata__
         base_type = base_type.__origin__
 
-    id = parent_prefix + name
+    id: str = parent_prefix + name
     initalization_values = {
         "local_id": name,
         "id": id,
-        "default_value": None if default_value is UndefinedValue else default_value,
-        "specified_default": False if default_value is UndefinedValue else True,
+        "default_value": (
+            None if default_value is UndefinedValue else default_value
+        ),
+        "specified_default": (
+            False if default_value is UndefinedValue else True
+        ),
         "nullable": True if default_value is None else False,
     }
 
@@ -119,5 +193,19 @@ def map_type(
     return d
 
 
-def map_primative_input(d: dim.Dimension, input):
+def map_primative_input(d: dim.Dimension, input) -> None:
+    """
+    Explain the Function **Not Implemented**
+
+    Arguments
+    ---------
+    d : Dimension
+        **Explanation**
+    input : 
+        **Explanation**
+
+    Returns
+    -------
+
+    """
     pass

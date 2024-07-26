@@ -1,3 +1,5 @@
+""" TODO """
+
 from typing import Callable, TypeVar, List, ParamSpec, Tuple
 
 from raxpy.spaces.dimensions import convert_values_from_dict
@@ -15,6 +17,19 @@ def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
     """
     Simply executes the function f sequentially,
     saving and returning the results
+
+    Arguments
+    ---------
+    f (Function) : Callable[I, T]
+        TODO **Explanation**
+    inputs : List[I]
+        **Explanation**
+
+    Returns
+    -------
+    results : List[T]
+        List of sequential results from input function
+
     """
     results = []
 
@@ -24,7 +39,24 @@ def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
     return results
 
 
-def _default_designer(input_space: InputSpace, target_number_of_runs: int) -> List[I]:
+def _default_designer(
+    input_space: InputSpace, target_number_of_runs: int
+) -> List[I]:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    input_space : InputSpace
+        **Explanation**
+    target_number_of_runs : int
+        **Explanation**
+
+    Returns
+    -------
+    arg_set : List[I]
+        **Explanation**
+    """
 
     # assign unassigned null poritions using complexity hueristic
     assign_null_portions(create_level_iterable(input_space.children))
@@ -47,7 +79,9 @@ def perform_batch_experiment(
     f: Callable[I, T],
     target_number_of_runs: int,
     designer: Callable[[InputSpace, int], List[I]] = _default_designer,
-    orchistrator: Callable[[Callable[I, T], List[I]], List[T]] = _default_orchistrator,
+    orchistrator: Callable[
+        [Callable[I, T], List[I]], List[T]
+    ] = _default_orchistrator,
 ) -> Tuple[List[I], List[T]]:
     """
     Executes a batch experiment for function f.
@@ -58,6 +92,27 @@ def perform_batch_experiment(
     calling of function f given the input sets.
     The orchistration captures the returned values
     with calling f and returns the input sets and the outputs.
+    """
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    f : Callable[I, T]
+        **Explanation**
+    target_number_of_runs : int
+        **Explanation**
+    designer : Callable[[InputSpace, int], List[I]] 
+        Set to default= _default_designer TODO**Explanation**
+    orchistrator : Callable[[Callable[I, T], List[I]], List[T]]
+        Set to default= _default_orchistrator TODO**Explanation**
+
+    Returns
+    -------
+    arg_sets : 
+        **Explanation**
+    results : 
+        **Explanation**
     """
 
     input_space = function_spec.extract_input_space(f)

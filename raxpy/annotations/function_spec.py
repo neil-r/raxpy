@@ -10,6 +10,21 @@ from .type_spec import map_type, UndefinedValue
 ID_ROOT_RETURN = "y"
 
 def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    name : str
+        **Explanation**
+    param : inspect.Parameter
+        **Explanation**
+
+    Returns
+    -------
+    d : Dimension
+        TODO **Map Type**?
+    """
     if param.annotation is not inspect.Parameter.empty:
         # analyze static type for parameter specification of dimension
         t = param.annotation
@@ -30,7 +45,9 @@ def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
         else:
             # infer type given type of default value
             if param.default is None:
-                d = dim.Float(id=name, local_id=name, nullable=True, default_value=None)
+                d = dim.Float(
+                    id=name, local_id=name, nullable=True, default_value=None
+                )
             else:
                 t = type(param.default)
 
@@ -41,11 +58,18 @@ def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
 
 def extract_input_space(func: Callable) -> InputSpace:
     """
-    Takes a function and dervies the input space of the function from the
-    function parameters' static types and annotations.
+    Takes a function and derives the input space of the function from
+    the function parameters' static types and annotations.
 
-    Args:
-        func (function): The function to introspect.
+    Arguments
+    ---------
+    func (function) : Callable
+        The function to introspect.
+
+    Returns
+    -------
+    input_space: Type InputSpace
+        TODO**What is input Space?**
     """
     input_dimensions: List[dim.Dimension] = []
 
@@ -62,6 +86,20 @@ def extract_input_space(func: Callable) -> InputSpace:
 
 
 def extract_output_space(func: Callable) -> OutputSpace:
+    """
+    Takes a function and derives the output space of the function from
+    the function parameters' static types and annotations.
+
+    Arguments
+    ---------
+    func (function) : Callable
+        The function to introspect.
+
+    Returns
+    -------
+    input_space: Type OutputSpace
+        TODO **Explanation**
+    """
     output_dimensions: List[dim.Dimension] = []
     signature = inspect.signature(func)
 
