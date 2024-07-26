@@ -91,6 +91,26 @@ def test_union_choice_spec_param_func():
     assert len(dim.children) == 3
     assert dim.nullable is False
 
+    def f2(x1: _CustomCls1 | _CustomCls2 | _CustomCls3 | None):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        x1 : CustomCls1 | CustomCls2 | CustomCls3
+            **Explanation**
+        """
+        x1.execute()
+
+    input_space2 = fs.extract_input_space(f2)
+    assert input_space2 is not None
+    assert input_space2.dimensions is not None
+    assert len(input_space2.dimensions) == 1
+    dim = input_space2.dimensions[0]
+    assert isinstance(dim, d.Variant)
+    assert len(dim.children) == 3
+    assert dim.nullable is True
+
 
 def test_union_choice_spec_param_func_long():
     """
