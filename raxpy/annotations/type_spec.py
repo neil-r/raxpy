@@ -7,6 +7,7 @@ from typing import (
     get_origin,
     get_args,
 )
+import types
 from raxpy.spaces import dimensions as dim
 from dataclasses import fields, MISSING
 
@@ -28,7 +29,7 @@ def _is_annotated_with_metadata(type_annotation) -> bool:
 
     Arguments
     ---------
-    type_annotation : 
+    type_annotation :
         **Explanation**
 
     Returns
@@ -48,9 +49,9 @@ def list_dataclass_attributes(parent_prefix: str, cls) -> List:
     ---------
     parent_prefix : str
         **Explanation**
-    cls : 
+    cls :
         **Explanation**
-    
+
     Returns
     -------
     children_dims : List
@@ -82,14 +83,14 @@ def _map_base_type(parent_prefix: str, t, initialization_values):
     ---------
     parent_prefix : str
         **Explanation**
-    t : 
+    t :
         **Explanation**
-    initialization_values : 
+    initialization_values :
         **Explanation**
 
     Returns
     -------
-    dt : 
+    dt :
         **Explanation**
 
     """
@@ -132,7 +133,7 @@ def map_type(
         **Explanation**
     name : str
         **Explanation**
-    base_type : 
+    base_type :
         **Explanation**
     default_value=UndefinedValue
         **Explanation**
@@ -141,7 +142,7 @@ def map_type(
     -------
     d : Dimension
         **Explanation**
-    
+
     """
 
     metadata = None
@@ -164,7 +165,7 @@ def map_type(
 
     dt = dim.Float
     o = get_origin(base_type)
-    if o is not None and o is Union:
+    if o is not None and (o is Union or o == types.UnionType):
         args = list(base_type.__args__)
         if type(None) in args:
             initalization_values["nullable"] = True
@@ -201,7 +202,7 @@ def map_primative_input(d: dim.Dimension, input) -> None:
     ---------
     d : Dimension
         **Explanation**
-    input : 
+    input :
         **Explanation**
 
     Returns
