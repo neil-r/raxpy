@@ -97,7 +97,7 @@ def test_union_choice_spec_param_func():
 
         Arguments
         ---------
-        x1 : CustomCls1 | CustomCls2 | CustomCls3
+        x1 : CustomCls1 | CustomCls2 | CustomCls3 | None
             **Explanation**
         """
         x1.execute()
@@ -106,10 +106,10 @@ def test_union_choice_spec_param_func():
     assert input_space2 is not None
     assert input_space2.dimensions is not None
     assert len(input_space2.dimensions) == 1
-    dim = input_space2.dimensions[0]
-    assert isinstance(dim, d.Variant)
-    assert len(dim.children) == 3
-    assert dim.nullable is True
+    dim2 = input_space2.dimensions[0]
+    assert isinstance(dim2, d.Variant)
+    assert len(dim2.children) == 3
+    assert dim2.nullable is True
 
 
 def test_union_choice_spec_param_func_long():
