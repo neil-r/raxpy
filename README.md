@@ -1,5 +1,6 @@
 # raxpy, Pythom Library to simplify experimentation over complex search spaces
 
+| Testing | [![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fneil-r%2Fraxpy%2Fmain%2Fcoverage.json%3Ftoken%3DGHSAT0AAAAAACUX5ZW2MVFDOHOSRRM7FLBUZVJFBRQ&query=%24.totals.percent_covered_display&label=Code%20Coverage&color=Green)]
 
 - Python static typing annotation configuration, self-contained documentation
 - Exploration heuristics
