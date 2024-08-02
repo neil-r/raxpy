@@ -6,6 +6,9 @@ from . import values
 
 @dataclass
 class Mixture:
+    """
+    TODO Explain Class
+    """
     label: str
     limit: float = 1.0
 

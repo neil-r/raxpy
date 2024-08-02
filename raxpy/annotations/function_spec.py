@@ -1,4 +1,6 @@
-from typing import List, Callable, get_type_hints
+""" TODO Explain Module"""
+
+from typing import List, Callable
 
 import inspect
 
@@ -105,7 +107,7 @@ def extract_output_space(func: Callable) -> OutputSpace:
 
     return_annotation = signature.return_annotation
 
-    # TODO remove the following if not needed for older versions of Python    
+    # TODO remove the following if not needed for older versions of Python
     # Get the type hints, including the return type
     # type_hints = get_type_hints(func)
 
@@ -114,5 +116,5 @@ def extract_output_space(func: Callable) -> OutputSpace:
         base_output_dim = map_type("",ID_ROOT_RETURN,return_annotation)
 
         output_dimensions.append(base_output_dim)
-    
+        
     return OutputSpace(dimensions=output_dimensions)

@@ -18,7 +18,15 @@ class Base:
     label: Optional[str] = None
     tags: Optional[List[str]] = None
 
-    def apply_to(self, d:d.Dimension):
+    def apply_to(self, d: d.Dimension) -> None:
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        d : d.Dimension
+            **Explanation**
+        """
         if self.label is not None:
             d.label = self.label
         if self.tags is not None:
@@ -48,7 +56,7 @@ class Float(Base):
     value_set: Optional[Set[float]] = None
 
 
-    def apply_to(self, d:d.Float):
+    def apply_to(self, d: d.Float):
         super().apply_to(d)
         d.lb = self.lb
         d.ub = self.ub

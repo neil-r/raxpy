@@ -1,9 +1,10 @@
 """ TODO Explain Module """
 
-from typing import Iterable, List, Optional, Dict
-from dataclasses import dataclass
-import numpy as np
 import itertools
+from dataclasses import dataclass
+from typing import Dict, Iterable, List, Optional
+
+import numpy as np
 
 from .dimensions import Dimension, Variant
 

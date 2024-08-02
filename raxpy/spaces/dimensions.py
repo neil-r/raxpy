@@ -314,7 +314,7 @@ class Int(Dimension[int]):
                 x, vs, self.portion_null if utilize_null_portions else None
             )
         raise ValueError(
-            f"Unbounded Int dimension cannot transform a uniform 0-1 value"
+            "Unbounded Int dimension cannot transform a uniform 0-1 value"
         )
 
     def validate(self, input_value, specified_input: bool) -> None:
@@ -393,7 +393,7 @@ class Float(Dimension[float]):
         """
         return float(input_value)
 
-    def collapse_uniform(self, x, utilize_null_portitions=True):
+    def collapse_uniform(self, x, utilize_null_portions=True):
         """
         TODO Explain the Function
 
@@ -422,12 +422,12 @@ class Float(Dimension[float]):
             return _map_values(
                 x,
                 self.value_set,
-                self.portion_null if utilize_null_portitions else None,
+                self.portion_null if utilize_null_portions else None,
             )
 
         if self.lb is not None and self.ub is not None:
             r = self.ub - self.lb
-            if self.portion_null is not None and utilize_null_portitions:
+            if self.portion_null is not None and utilize_null_portions:
                 return [
                     (
                         self.lb
@@ -446,7 +446,7 @@ class Float(Dimension[float]):
                     self.lb + r * xp if xp is not None else None for xp in x
                 ]
         raise ValueError(
-            f"Unbounded Float dimension cannot transform a uniform 0-1 value"
+            "Unbounded Float dimension cannot transform a uniform 0-1 value"
         )
 
     def validate(self, input_value, specified_input: bool) -> None:
@@ -562,7 +562,7 @@ class Text(Dimension[str]):
                 x, {v.value for v in self.value_set}, self.portion_null
             )
         raise ValueError(
-            f"Unbounded Text dimension cannot transform a uniform 0-1 value"
+            "Unbounded Text dimension cannot transform a uniform 0-1 value"
         )
 
     def validate(self, input_value, specified_input: bool) -> None:

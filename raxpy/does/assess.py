@@ -265,6 +265,23 @@ def compute_weighted_discrepancy(
     full_design_assessments: List[CompleteSubDesignAssessment],
     weighting_metric=METRIC_PORTION_OF_TOTAL,
 ) -> float:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        **Explanation**
+    full_design_assessments : List[CompleteSubDesignAssessment]
+        **Explanation**
+    weighting_metric=METRIC_PORTION_OF_TOTAL
+        **Explanation**
+
+    Returns
+    -------
+        **Explanation**
+
+    """
     discrepancies = []
     weights = []
     for full_design in full_design_assessments:
@@ -282,6 +299,23 @@ def compute_weighted_mipd(
     full_design_assessments: List[CompleteSubDesignAssessment],
     weighting_metric=METRIC_PORTION_OF_TOTAL,
 ) -> float:
+    """
+    TODO Explain the Function
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        **Explanation**
+    full_design_assessments : List[CompleteSubDesignAssessment]
+        **Explanation**
+    weighting_metric=METRIC_PORTION_OF_TOTAL
+        **Explanation**
+
+    Returns
+    -------
+        **Explanation**
+
+    """
     discrepancies = []
     weights = []
     for full_design in full_design_assessments:

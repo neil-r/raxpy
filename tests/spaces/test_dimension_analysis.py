@@ -26,7 +26,9 @@ def test_deriving_subspaces():
                 children=[
                     d.Int(id="x4", lb=6, ub=7, nullable=False),
                     d.Composite(
-                        id="x6",  # Note that x6 is ignore since it is just for the specification's structure
+                        # Note that x6 is ignore since it is
+                        # just for the specification's structure
+                        id="x6",
                         nullable=False,
                         children=[
                             d.Float(

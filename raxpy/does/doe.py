@@ -46,7 +46,7 @@ class DesignOfExperiment:
         for dim_id, dim_index in self.input_set_map.items():
             if dim_index in reverse_mapping:
                 raise ValueError(
-                    "Duplicate column indexes specified " "in input set map"
+                    "Duplicate column indexes specified in input set map"
                 )
             else:
                 if dim_index >= 0 and dim_index <= highest_column_index:
