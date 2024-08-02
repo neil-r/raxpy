@@ -92,9 +92,6 @@ def perform_batch_experiment(
     calling of function f given the input sets.
     The orchistration captures the returned values
     with calling f and returns the input sets and the outputs.
-    """
-    """
-    TODO Explain the Function
 
     Arguments
     ---------

@@ -228,6 +228,9 @@ def test_blank_object_spec_param_func():
 
     @dataclass
     class CustomObject:
+        """
+        TODO Explain Class
+        """
         pass
 
     def f(obj1: CustomObject):
