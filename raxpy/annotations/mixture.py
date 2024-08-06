@@ -18,9 +18,9 @@ class Mixture:
 
         Arguments
         ---------
-        self : 
+        self
             **Explanation**
-        component_label : 
+        component_label
             **Explanation**
 
         Returns

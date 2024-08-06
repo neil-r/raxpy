@@ -20,7 +20,7 @@ def generate_design(space: s.InputSpace, n_points: int) -> DesignOfExperiment:
 
     Returns
     -------
-    DesignOfExperiment : 
+    DesignOfExperiment
         **Explanation**
 
     """

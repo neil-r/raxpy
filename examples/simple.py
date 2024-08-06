@@ -13,10 +13,6 @@ def range_check(*a, **k):
         **Explanation**
     **k : dict[str, any]
         **Explanation**
-    
-    Returns
-    -------
-    
 
     """
     lower = 10 if "lower" not in k else k["lower"]
@@ -28,13 +24,13 @@ def range_check(*a, **k):
 
         Arguments
         ---------
-        f : 
+        f
             **Explanation**
 
         Returns
         -------
         real_decorator :
-            **Explanation** 
+            **Explanation**
 
         """
 
@@ -58,6 +54,7 @@ def range_check(*a, **k):
 
 @range_check(lower=-10, upper=100)
 def add_one(a):
+    """ Funciton adds 1 to input """
     return a + 1
 
 

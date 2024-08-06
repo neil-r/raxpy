@@ -121,7 +121,8 @@ def test_metric_computations():
         )
     )
 
-    # TODO: incorporate hand computed values to ensure the following are correct
+    # TODO: incorporate hand computed values
+    # to ensure the following are correct
     mipd = a.compute_min_point_distance(sub_space_doe)
     assert mipd > 0.0
 

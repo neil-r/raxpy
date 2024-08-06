@@ -1,5 +1,5 @@
 """
-    This module defines the data structures 
+    This module defines the data structures
     used to represent designs of experiments.
 """
 
@@ -65,18 +65,18 @@ class DesignOfExperiment:
 
         Arguments
         ---------
-        self : 
+        self
             **Explanation**
-        point_row_mask : 
+        point_row_mask
             **Explanation**
         dim_set : List[str]
             **Explanation**
 
         Returns
         -------
-        DesignOfExperiment : 
+        DesignOfExperiment
             **Explanation**
-        
+
         """
 
         column_indexes = [self.input_set_map[dim_id] for dim_id in dim_set]

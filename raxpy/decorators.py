@@ -21,9 +21,9 @@ def validate_function_inputs(space: InputSpace, args, kwargs) -> None:
     ---------
     space : InputSpace
         **Explanation**
-    args : 
+    args
         **Explanation**
-    kwargs : 
+    kwargs
         **Explanation**
     """
 
@@ -54,7 +54,7 @@ def validate_at_runtime(check_inputs=True, check_outputs=True):
 
     Returns
     -------
-    _validate_at_runtime : 
+    _validate_at_runtime
         **Explanation**
     """
 

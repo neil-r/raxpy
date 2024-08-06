@@ -11,6 +11,7 @@ from .type_spec import map_type, UndefinedValue
 
 ID_ROOT_RETURN = "y"
 
+
 def _convert_param(name: str, param: inspect.Parameter) -> dim.Dimension:
     """
     TODO Explain the Function
@@ -113,8 +114,8 @@ def extract_output_space(func: Callable) -> OutputSpace:
 
     # TODO find way to avoid inspect._empty reference
     if return_annotation is not None and return_annotation != inspect._empty:
-        base_output_dim = map_type("",ID_ROOT_RETURN,return_annotation)
+        base_output_dim = map_type("", ID_ROOT_RETURN, return_annotation)
 
         output_dimensions.append(base_output_dim)
-        
+
     return OutputSpace(dimensions=output_dimensions)

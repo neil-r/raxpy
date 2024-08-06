@@ -1,5 +1,5 @@
 """
-    This modules provides logic to compute 
+    This modules provides logic to compute
     assessments of an experiment design.
 """
 
@@ -57,7 +57,7 @@ def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     Computes and returns the minimum-interpoint-distance (MIPD)
     among every pair of points
 
-    Arguments 
+    Arguments
     ---------
     context : SubSpaceMetricComputeContext
         **Explanation**
@@ -86,7 +86,7 @@ def compute_average_reciprocal_distance_projection(
     metric as denoted in: Draguljić, Santner, and Dean, “Noncollapsing
     Space-Filling Designs for Bounded Nonrectangular Regions.”
 
-    Arguments 
+    Arguments
     ---------
     context : SubSpaceMetricComputeContext
         **Explanation**
@@ -94,7 +94,7 @@ def compute_average_reciprocal_distance_projection(
         **Explanation**
     z_hp=2 : int
         **Explanation**
-    
+
     Returns
     -------
     TODO **Explanation**
@@ -129,7 +129,8 @@ def compute_average_reciprocal_distance_projection(
             np.fill_diagonal(dm, 1)
             reciprocal_distances = (max_j_distance_m / dm) ** lambda_hp
 
-            # sum the upper triangle matrix elements, excluding the diagonal elements
+            # sum the upper triangle matrix elements,
+            # excluding the diagonal elements
             reciprocal_distances_sum = np.sum(
                 np.tril(reciprocal_distances, k=1)
             )
@@ -149,12 +150,12 @@ def compute_mst_stats(
     represent the distances between design points.
 
     For more information see https://doi.org/10.1016/j.chemolab.2009.03.011
-    
-    Arguments 
+
+    Arguments
     ---------
     context : SubSpaceMetricComputeContext
         **Explanation**
-    
+
     Returns
     -------
     mst_mean, mst_std : Tuple[float, float]
@@ -320,7 +321,8 @@ def compute_weighted_mipd(
     weights = []
     for full_design in full_design_assessments:
         if METRIC_MIN_POINT_DISTANCE in full_design.measurements:
-            discrepancies.append(full_design.measurements[METRIC_MIN_POINT_DISTANCE])
+            discrepancies.append(
+                full_design.measurements[METRIC_MIN_POINT_DISTANCE])
             weights.append(full_design.measurements[weighting_metric])
 
     weight_sum = sum(weights)
@@ -328,7 +330,8 @@ def compute_weighted_mipd(
     return sum(d * w / weight_sum for d, w in zip(discrepancies, weights))
 
 
-# the following map is used in the assess function to discover the metrics to compute
+# the following map is used in the assess function
+# to discover the metrics to compute
 doe_metric_computation_map = {
     METRIC_WEIGHTED_DISCREPANCY: compute_weighted_discrepancy,
     METRIC_WEIGHTED_MIPD: compute_weighted_mipd,
@@ -339,12 +342,18 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
     """
     Assesses the experiment design for the given input space.
 
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        **Explanation**
+
     Returns
     -------
-    DoeAssessment : 
+    DoeAssessment
         Results from an assessment for the whole design and sub-designs.
     """
-    # determine every full-combination of input dimensions that could be defined in this space
+    # determine every full-combination of input dimensions
+    # that could be defined in this space
     sub_spaces = doe.input_space.derive_full_subspaces()
 
     # assign a id/int to each sub space
@@ -386,7 +395,6 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
         space_attributes = set()
 
         subspace_context = SubSpaceMetricComputeContext(doe, sub_space_doe)
-
 
         for m_id, compute in subspace_metric_computation_map.items():
             try:

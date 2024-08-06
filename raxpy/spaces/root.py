@@ -108,7 +108,8 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
                     for css in children_spaces:
                         expanded_dim_list.append([base_dim_id] + css)
                 else:
-                    # must mix each existing combination with each child combination
+                    # must mix each existing combination
+                    # with each child combination
                     for css in children_spaces:
                         i = 0
                         while i < base_list_len:
@@ -154,7 +155,8 @@ def create_level_iterable(
 
         if dim1.has_child_dimensions():
             if dim1.only_supports_spec_structure():
-                # insert children dimensions to stack to be processed in same level
+                # insert children dimensions to stack
+                # to be processed in same level
                 for child_dim in reversed(dim1.children):
                     dimension_stack.insert(0, child_dim)
             else:
@@ -205,9 +207,9 @@ def _create_dict_from_flat_values(
     ---------
     dimensions : List[Dimension]
         **Explanation**
-    inputs : 
+    inputs
         **Explanation**
-    dim_to_index_mapping : 
+    dim_to_index_mapping
         **Explanation**
 
     Returns
@@ -258,14 +260,14 @@ def _project_null(x1, x2):
 
     Arguments
     ---------
-    x1 : 
+    x1
         **Explanation**
-    x2 : 
+    x2
         **Explanation**
 
     Returns
     -------
-    np.nan : 
+    np.nan
         **Explanation**
 
     """
@@ -288,7 +290,7 @@ class Space:
 
         Arguments
         ---------
-        self : 
+        self : Space
             **Explanation**
 
         Returns
@@ -304,7 +306,7 @@ class Space:
 
         Arguments
         ---------
-        self : 
+        self : Space
             **Explanation**
 
         Returns
@@ -330,8 +332,8 @@ class Space:
 
         Returns
         -------
-        derive_subspaces : List[List[str]]    
-            Every combination of dimensions that must be 
+        derive_subspaces : List[List[str]]
+            Every combination of dimensions that must be
             specified together
         """
         return derive_subspaces(create_level_iterable(self.children))
@@ -343,8 +345,8 @@ class Space:
 
         Returns
         -------
-        spanning_subspaces : List[List[str]]    
-            Every combination of dimensions that must be 
+        spanning_subspaces : List[List[str]]
+            Every combination of dimensions that must be
             specified together
         """
         subspaces = self.derive_full_subspaces()
@@ -366,7 +368,7 @@ class Space:
     def count_dimensions(self) -> int:
         """
         Counts and returns the dimensions of the space
-        that are not only for structure. TODO Look at wording       
+        that are not only for structure. TODO Look at wording
         """
         return sum(
             [
@@ -390,16 +392,16 @@ class Space:
 
         Arguments
         ---------
-        self : 
+        self : Space
             **Explanation**
-        input_sets : 
+        input_sets
             **Explanation**
         dim_index_mapping : Dict[str, int]
             **Explanation**
 
         Returns
         -------
-        value_dicts : 
+        value_dicts : List
             **Explanation**
         """
         value_dicts = []
@@ -425,7 +427,7 @@ class Space:
 
         Arguments
         ---------
-        self : 
+        self : Space
             **Explanation**
         x : np.array
             **Explanation**
@@ -438,7 +440,7 @@ class Space:
 
         Returns
         -------
-        decoded_values : 
+        decoded_values : ndarray
             **Explanation**
 
         """

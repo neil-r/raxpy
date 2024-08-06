@@ -1,6 +1,6 @@
 """
-  This module defines Dimension object tags that can be attached 
-  to dimensions to provide suggestions to algorithms in how to 
+  This module defines Dimension object tags that can be attached
+  to dimensions to provide suggestions to algorithms in how to
   treat the dimensions.
 """
 
@@ -8,20 +8,20 @@
 
 FIXED = "fixed"
 """
-Flag to indicate an input dimension as fixed or static (not to change 
+Flag to indicate an input dimension as fixed or static (not to change
 and to always use the default value during exploration).
 """
 
 DEPENDENT = "dependent"
 """
-Flag to indicate an input dimension as dependent on other inputs and 
+Flag to indicate an input dimension as dependent on other inputs and
 should be dynamically derived from the values of inputs; the expression
 attribute specifies this computation.
 """
 
 EXPECT_INTERACTIONS = "expect_interactions"
 """
-Flag to indicate a composite input dimension as having children 
+Flag to indicate a composite input dimension as having children
 dimensions that cause significant interaction effects to the outputs
 of interest.
 
@@ -40,7 +40,7 @@ during optimization.
 
 MINIMIZE = "minimize"
 """
-Flag to indicate an output dimension as a target dimension to minimize 
+Flag to indicate an output dimension as a target dimension to minimize
 during optimization.
 """
 

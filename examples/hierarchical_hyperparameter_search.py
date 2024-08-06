@@ -38,16 +38,16 @@ def train(
     preprocessing_conf,
 ):
     """
-    TODO 
+    TODO
     **Explain the Function**
 
-    Arguments 
+    Arguments
     ---------
     technique_conf: Type: RandomForestTrainer | LinearRegressionTrainer
         **Explanation**
-    preprocessing_conf:
+    preprocessing_conf
         **Explanation**
-    
+
     Returns
     -------
     Not Implemented
