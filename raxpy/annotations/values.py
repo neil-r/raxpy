@@ -24,6 +24,8 @@ class Base:
 
         Arguments
         ---------
+        self : Base
+            **Explanation**
         d : d.Dimension
             **Explanation**
         """
@@ -55,13 +57,22 @@ class Float(Base):
     lb: Optional[float] = None
     value_set: Optional[Set[float]] = None
 
-
     def apply_to(self, d: d.Float):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : Float
+            **Explanation**
+        d : d.Float
+            **Explanation**
+
+        """
         super().apply_to(d)
         d.lb = self.lb
         d.ub = self.ub
         d.value_set = self.value_set
-
 
 
 @dataclass(frozen=True, eq=True)
@@ -78,9 +89,9 @@ class Integer(Base):
         """
         TODO Explain the Function
 
-        Arguments 
+        Arguments
         ---------
-        self : 
+        self : Integer
             **Explanation**
         d : d.Int
             **Explanation**
