@@ -47,19 +47,19 @@ def assert_parameters(
 
     Arguments
     ---------
-    d : 
+    d
         **Explanation**
-    t : 
+    t
         **Explanation**
-    id : 
+    id
         **Explanation**
-    default_value : 
+    default_value
         **Explanation**
-    lb : 
+    lb
         **Explanation**
-    ub : 
+    ub
         **Explanation**
-    value_set : 
+    value_set
         **Explanation**
     nullable=False
         **Explanation**
@@ -73,7 +73,7 @@ def assert_parameters(
     **Explanation**
 
     """
-    assert type(d) == t
+    assert isinstance(d, t)
     assert d.id == id
     assert d.default_value == default_value
     assert d.lb == lb
