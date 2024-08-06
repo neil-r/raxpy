@@ -17,7 +17,7 @@ def estimate_complexity(dim: d.Dimension) -> float:
     ---------
     dim : d.Dimension
         **Explanation**
-    
+
     Returns
     -------
     complexity_estimate : float
@@ -33,7 +33,8 @@ def estimate_complexity(dim: d.Dimension) -> float:
         elif dim.value_set is not None:
             complexity_estimate = len(dim.value_set)
         else:
-            # TODO issue warning about not supporting complexity of unbounded floats
+            # TODO issue warning about not supporting
+            # complexity of unbounded floats
             return 0.0
     elif isinstance(dim, d.Int):
         if dim.value_set is not None:
@@ -127,8 +128,8 @@ def compute_subspace_portions(
 
     """
     portions = []
-    """ compute portion of the n_points that each sub-design
-    for each sub-space should address"""
+    # compute portion of the n_points that each sub-design
+    # for each sub-space should address
     for full_subspace in full_subspace_sets:
         portion_components = []
 

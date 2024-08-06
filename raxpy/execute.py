@@ -99,16 +99,16 @@ def perform_batch_experiment(
         **Explanation**
     target_number_of_runs : int
         **Explanation**
-    designer : Callable[[InputSpace, int], List[I]] 
+    designer : Callable[[InputSpace, int], List[I]]
         Set to default= _default_designer TODO**Explanation**
     orchistrator : Callable[[Callable[I, T], List[I]], List[T]]
         Set to default= _default_orchistrator TODO**Explanation**
 
     Returns
     -------
-    arg_sets : 
+    arg_sets : List[I@perform_batch_experiment]
         **Explanation**
-    results : 
+    results : List[T@perform_batch_experiment]
         **Explanation**
     """
 

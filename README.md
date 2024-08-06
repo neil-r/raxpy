@@ -2,6 +2,7 @@
 | | |
 |---|---|
 | Testing | [![CI - Test](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/pandas-dev/pandas/actions/workflows/unit-tests.yml) ![Code Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fneil-r%2Fraxpy%2Fmain%2Fcoverage.json%3Ftoken%3DGHSAT0AAAAAACUX5ZW2YBA4DDCOU27KJPKSZVKMFCA&query=%24.totals.percent_covered_display&suffix=%25&label=Code%20Coverage&color=Green) |
+| Meta | [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/neil-r/raxpy/blob/main/LICENSE)
 
 
 - Python static typing annotation configuration, self-contained documentation

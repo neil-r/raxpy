@@ -1,21 +1,10 @@
 """ TODO Explain Module """
 
-from typing import (
-    Optional,
-    List,
-    Tuple,
-    Generic,
-    TypeVar,
-    Set,
-    Type,
-    Dict,
-    Any,
-)
+from dataclasses import dataclass
+from typing import (Any, Dict, Generic, List, Optional, Set, Tuple, Type,
+                    TypeVar)
 
 import numpy as np
-
-from dataclasses import dataclass
-
 
 T = TypeVar("T")
 
@@ -26,11 +15,11 @@ def _map_values(x, value_set, portion_null) -> List[int | float]:
 
     Arguments
     ---------
-    x : 
+    x
         **Explanation**
-    value_set : 
+    value_set
         **Explanation**
-    portion_null : 
+    portion_null
         **Explanation**
 
     Returns
@@ -69,7 +58,7 @@ def convert_values_from_dict(dimensions, input_value: Dict[str, Any]) -> Dict:
 
     Arguments
     ---------
-    dimensions : 
+    dimensions
         **Explanation**
     input_value : Dict[str, Any]
         **Explanation**
@@ -146,11 +135,11 @@ class Dimension(Generic[T]):
         """
         TODO Explain the Function **Not Implemented?**
 
-        Arguments 
+        Arguments
         ---------
-        self : 
+        self
             **Explanation**
-        x : 
+        x
             **Explanation**
         utilize_null_portions=True
             **Explanation**
@@ -166,14 +155,14 @@ class Dimension(Generic[T]):
 
         Arguments
         ---------
-        self : 
+        self
             **Explanation**
         tag : str
             **Explanation**
 
         Returns
         -------
-        Returns True if there is a valid tag and 
+        Returns True if there is a valid tag and
         False if there is not a tag
 
         """
@@ -185,9 +174,9 @@ class Dimension(Generic[T]):
 
         Arguments
         ---------
-        self : 
+        self
             **Explanation**
-        input_value : 
+        input_value
             **Explanation**
 
         """
@@ -201,9 +190,9 @@ class Dimension(Generic[T]):
 
         Arguments
         ---------
-        self : 
+        self
             **Explanation**
-        
+
         """
         raise NotImplementedError(
             "Abstract method, subclass should implement this method"
@@ -215,9 +204,9 @@ class Dimension(Generic[T]):
 
         Arguments
         ---------
-        self : 
+        self
             **Explanation**
-        input_value : 
+        input_value
             **Explanation**
         specified_input : bool
             **Explanation**
@@ -265,9 +254,9 @@ class Int(Dimension[int]):
 
         Arguments
         ---------
-        self : 
+        self
             **Explanation**
-        input_value : 
+        input_value
             **Explanation**
 
         Returns
@@ -284,9 +273,9 @@ class Int(Dimension[int]):
 
         Arguments
         ---------
-        self : 
+        self
             **Explanation**
-        x : 
+        x
             **Explanation**
         utilize_null_portions=True
             **Explanation**
@@ -295,12 +284,12 @@ class Int(Dimension[int]):
         -------
         _map_values : List[int | float]
             **Explanation**
-        
+
         Raises
         ------
         ValueError:
             If dimension cannot transform a uniform 0-1 value
-        
+
         """
         vs = None
         if self.value_set is not None:
@@ -323,9 +312,9 @@ class Int(Dimension[int]):
 
         Arguments
         ---------
-        self :  
+        self
             **Explanation**
-        input_value :   
+        input_value
             **Explanation**
         specified_input : bool
             **Explanation**
@@ -333,7 +322,7 @@ class Int(Dimension[int]):
         Raises
         ------
         ValueError:
-            If input value, lower bound and upper bound 
+            If input value, lower bound and upper bound
             are out of range/not in set
 
         """
@@ -381,9 +370,9 @@ class Float(Dimension[float]):
 
         Arguments
         ---------
-        self : 
+        self : float
             **Explanation**
-        input_value : 
+        input_value
             **Explanation**
 
         Returns
@@ -399,9 +388,9 @@ class Float(Dimension[float]):
 
         Arguments
         ---------
-        self : 
+        self : float
             **Explanation**
-        x : 
+        x
             **Explanation**
         utilize_null_portions=True
             **Explanation**
@@ -411,7 +400,7 @@ class Float(Dimension[float]):
         _map_values : List[int | float]
             **Explanation**
         TODO **Explain one-line if/for return statement**
-        
+
         Raises
         ------
         ValueError:
@@ -455,9 +444,9 @@ class Float(Dimension[float]):
 
         Arguments
         ---------
-        self :  
+        self : float
             **Explanation**
-        input_value :   
+        input_value
             **Explanation**
         specified_input : bool
             **Explanation**
@@ -465,7 +454,7 @@ class Float(Dimension[float]):
         Raises
         ------
         ValueError:
-            If input value, lower bound and upper bound 
+            If input value, lower bound and upper bound
             are out of range/not in set
 
         """
@@ -523,9 +512,9 @@ class Text(Dimension[str]):
 
         Arguments
         ---------
-        self : 
+        self : str
             **Explanation**
-        input_value : 
+        input_value
             **Explanation**
 
         Returns
@@ -535,22 +524,22 @@ class Text(Dimension[str]):
         """
         return str(input_value)
 
-    def collapse_uniform(self, x):
+    def collapse_uniform(self, x, utilize_null_portions=True):
         """
         TODO Explain the Function
 
         Arguments
         ---------
-        self : 
+        self : str
             **Explanation**
-        x : 
+        x
             **Explanation**
 
         Returns
         -------
         _map_values : List[int | float]
             **Explanation**
-        
+
         Raises
         ------
         ValueError:
@@ -571,9 +560,9 @@ class Text(Dimension[str]):
 
         Arguments
         ---------
-        self :  
+        self : str
             **Explanation**
-        input_value :   
+        input_value
             **Explanation**
         specified_input : bool
             **Explanation**
@@ -628,9 +617,9 @@ class Variant(Dimension):
 
         Arguments
         ---------
-        self : 
+        self : Variant
             **Explanation**
-        input_value : 
+        input_value
             **Explanation**
 
         Returns
@@ -647,9 +636,9 @@ class Variant(Dimension):
 
         Arguments
         ---------
-        self : 
+        self : Variant
             **Explanation**
-        x : 
+        x
             **Explanation**
         utilize_null_portions=True
             **Explanation**
@@ -658,7 +647,7 @@ class Variant(Dimension):
         -------
         _map_values : List[int | float]
             **Explanation**
-        
+
         Raises
         ------
         ValueError:
@@ -704,9 +693,9 @@ class Variant(Dimension):
 
         Arguments
         ---------
-        self :  
+        self : Variant
             **Explanation**
-        input_value :   
+        input_value
             **Explanation**
         specified_input : bool
             **Explanation**
@@ -724,12 +713,12 @@ class Variant(Dimension):
 
         Arguments
         ---------
-        self : 
+        self : Variant
             **Explanation**
 
         Returns
         -------
-        **Explanation** 
+        **Explanation**
         """
         at = []
         for option in self.options:
@@ -764,9 +753,9 @@ class Composite(Dimension):
 
         Arguments
         ---------
-        self : 
+        self : Composite
             **Explanation**
-        input_value : 
+        input_value
             **Explanation**
 
         Returns
@@ -777,17 +766,17 @@ class Composite(Dimension):
         args = convert_values_from_dict(self.children, input_value)
         return self.type_class(**args)
 
-    def collapse_uniform(self, x, utilize_null_portions):
+    def collapse_uniform(self, x, utilize_null_portions=True):
         """
         TODO Explain the Function
 
         Arguments
         ---------
-        self : 
+        self : Composite
             **Explanation**
-        x : 
+        x
             **Explanation**
-        utilize_null_portions : 
+        utilize_null_portions=True
             **Explanation**
 
         Returns
@@ -837,9 +826,9 @@ class Composite(Dimension):
 
         Arguments
         ---------
-        self :  
+        self : Composite
             **Explanation**
-        input_value :   
+        input_value
             **Explanation**
         specified_input : bool
             **Explanation**

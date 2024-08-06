@@ -44,7 +44,7 @@ def assert_parameters(
     """
     TODO Explain the Function
     """
-    assert type(d) == t
+    assert isinstance(d, t)
     assert d.id == id
     assert d.default_value == default_value
     assert d.lb == lb
@@ -87,7 +87,7 @@ def test_unannotated_single_value_return_type_func():
         None, None, None, None, nullable=True
     )
 
-    def f3() -> Union[int,None]:
+    def f3() -> Union[int, None]:
         """
         TODO Explain the Function
         """
@@ -101,11 +101,12 @@ def test_unannotated_single_value_return_type_func():
         None, None, None, None, nullable=True
     )
 
+
 def test_annotated_single_value_return_type_func():
     """
     TODO Explain the Function
     """
-    def f() -> Annotated[float,raxpy.Float(label="Zero")]:
+    def f() -> Annotated[float, raxpy.Float(label="Zero")]:
         """
         TODO Explain the Function
         """
@@ -135,8 +136,8 @@ def test_annotated_single_value_return_type_func():
         label="ZeroOrNone"
     )
 
-    def f3() -> Annotated[Union[int,None], raxpy.Integer(label="Int",
-                                                         lb=0,ub=4)]:
+    def f3() -> Annotated[Union[int, None], raxpy.Integer(label="Int",
+                                                          lb=0, ub=4)]:
         return 0
     output_space3 = fs.extract_output_space(f3)
     assert output_space3 is not None

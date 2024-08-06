@@ -14,8 +14,8 @@ def f(
 ):
     """
     The following code should execute the computations with these
-    values, such as running a simulation or training a machine 
-    learning model to keep it simple for this demonstration, we 
+    values, such as running a simulation or training a machine
+    learning model to keep it simple for this demonstration, we
     simply compute a polynominal.
 
     Arguments
@@ -23,8 +23,8 @@ def f(
     x1 : Annotated[float]
         **Explanation**
     x2 : Annotated[Optional[float]] = 1.5
-        x2 is annotated as Optional. This indicates that this parameter 
-        is optional (users can call this function with setting x2 to 
+        x2 is annotated as Optional. This indicates that this parameter
+        is optional (users can call this function with setting x2 to
         None) The function specification also provides a lower and upper
         bound for each float input parameter.
 

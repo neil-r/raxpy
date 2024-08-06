@@ -1,5 +1,5 @@
 """
-    This module provide logic to create 
+    This module provide logic to create
     LatinHypercube designs for InputSpaces.
 """
 
@@ -293,7 +293,8 @@ def generate_seperate_designs_by_full_subspace(
         ]
 
         # since the subspace dictakes the values of composite and variant
-        # dimensions, exclude them and manually set the values of these dimensions
+        # dimensions, exclude them and manually set the values of these
+        # dimensions
         fixed_dims = []
         active_dims = []
 
