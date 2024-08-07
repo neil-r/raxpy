@@ -50,7 +50,8 @@ def _default_designer(
     input_space : InputSpace
         **Explanation**
     target_number_of_runs : int
-        **Explanation**
+        The requested quantity of iterations 
+        of the experiment being designed
 
     Returns
     -------
