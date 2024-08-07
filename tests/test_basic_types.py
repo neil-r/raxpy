@@ -15,9 +15,8 @@ def f_float(
     """ Control (float) function"""
 
     y = 0.4 * x1
-    if np.isnan(x2):
-        return y
-    y += (x2 * 3.0) + (0.7 * x2*x1)
+    if x2 is not None:
+        y += (x2 * 3.0) + (0.7 * x2*x1)
     return y
 
 
