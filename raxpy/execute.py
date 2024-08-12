@@ -1,6 +1,10 @@
 """ TODO """
+import sys
 
-from typing import Callable, TypeVar, List, ParamSpec, Tuple
+if sys.version < (3, 10):
+    from typing_extensions import Callable, TypeVar, List, ParamSpec, Tuple
+else:
+    from typing import Callable, TypeVar, List, ParamSpec, Tuple
 
 from raxpy.spaces.dimensions import convert_values_from_dict
 from raxpy.spaces.complexity import assign_null_portions

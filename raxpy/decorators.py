@@ -1,6 +1,11 @@
 """ TODO Explain Module"""
 
-from typing import Callable, TypeVar, Any, ParamSpec
+import sys
+
+if sys.version < (3, 10):
+    from typing_extensions import Callable, TypeVar, Any, ParamSpec
+else:
+    from typing import Callable, TypeVar, Any, ParamSpec
 
 from functools import wraps
 
