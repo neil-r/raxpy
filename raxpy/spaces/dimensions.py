@@ -504,7 +504,7 @@ class Text(Dimension[str]):
     """
 
     length_limit: Optional[int] = None
-    value_set: Optional[List[CategoryValue | str]] = None
+    value_set: Optional[List[Union[CategoryValue, str]]] = None
 
     def convert_to_argument(self, input_value) -> T:
         """
