@@ -1,10 +1,10 @@
 """ TODO """
-import sys
 
-if sys.version < ('3.10'):
-    from typing_extensions import Callable, TypeVar, List, ParamSpec, Tuple
-else:
+try:
     from typing import Callable, TypeVar, List, ParamSpec, Tuple
+except ModuleNotFoundError:
+    from typing_extensions import Callable, TypeVar, List, ParamSpec, Tuple
+
 
 from raxpy.spaces.dimensions import convert_values_from_dict
 from raxpy.spaces.complexity import assign_null_portions
