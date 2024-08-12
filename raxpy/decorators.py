@@ -1,8 +1,10 @@
 """ TODO Explain Module"""
 
-try:
+import sys
+
+if sys.version_info >= (3, 10):
     from typing import Callable, TypeVar, Any, ParamSpec
-except ModuleNotFoundError:
+else:
     from typing_extensions import Callable, TypeVar, Any, ParamSpec
 
 from functools import wraps
