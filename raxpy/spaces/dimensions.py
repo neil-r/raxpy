@@ -2,14 +2,14 @@
 
 from dataclasses import dataclass
 from typing import (Any, Dict, Generic, List, Optional, Set, Tuple, Type,
-                    TypeVar)
+                    TypeVar, Union)
 
 import numpy as np
 
 T = TypeVar("T")
 
 
-def _map_values(x, value_set, portion_null) -> List[int | float]:
+def _map_values(x, value_set, portion_null) -> List[Union(int, float)]:
     """
     TODO Explain the Function
 
