@@ -2,14 +2,14 @@
 
 from dataclasses import dataclass
 from typing import (Any, Dict, Generic, List, Optional, Set, Tuple, Type,
-                    TypeVar)
+                    TypeVar, Union)
 
 import numpy as np
 
 T = TypeVar("T")
 
 
-def _map_values(x, value_set, portion_null) -> List[int | float]:
+def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
     """
     TODO Explain the Function
 
@@ -24,7 +24,7 @@ def _map_values(x, value_set, portion_null) -> List[int | float]:
 
     Returns
     -------
-    value_set : List[int | float]
+    value_set : List[Union[int, float]]
         **Explanation**
 
     """
@@ -267,7 +267,7 @@ class Int(Dimension[int]):
 
     def collapse_uniform(
         self, x, utilize_null_portions=True
-    ) -> List[int | float]:
+    ) -> List[Union[int, float]]:
         """
         TODO Explain the Function
 
@@ -282,7 +282,7 @@ class Int(Dimension[int]):
 
         Returns
         -------
-        _map_values : List[int | float]
+        _map_values : List[Union[int, float]]
             **Explanation**
 
         Raises
@@ -397,7 +397,7 @@ class Float(Dimension[float]):
 
         Returns
         -------
-        _map_values : List[int | float]
+        _map_values : List[Union[int, float]]
             **Explanation**
         TODO **Explain one-line if/for return statement**
 
@@ -504,7 +504,7 @@ class Text(Dimension[str]):
     """
 
     length_limit: Optional[int] = None
-    value_set: Optional[List[CategoryValue | str]] = None
+    value_set: Optional[List[Union[CategoryValue, str]]] = None
 
     def convert_to_argument(self, input_value) -> T:
         """
@@ -537,7 +537,7 @@ class Text(Dimension[str]):
 
         Returns
         -------
-        _map_values : List[int | float]
+        _map_values : List[Union[int, float]]
             **Explanation**
 
         Raises
@@ -645,7 +645,7 @@ class Variant(Dimension):
 
         Returns
         -------
-        _map_values : List[int | float]
+        _map_values : List[Union[int, float]]
             **Explanation**
 
         Raises
@@ -781,7 +781,7 @@ class Composite(Dimension):
 
         Returns
         -------
-        _map_values : List[int | float]
+        _map_values : List[Union[int, float]]
             **Explanation**
 
         """

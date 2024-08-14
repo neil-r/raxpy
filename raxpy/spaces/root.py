@@ -237,7 +237,10 @@ def _create_dict_from_flat_values(
         else:
             if dim.local_id in dim_to_index_mapping:
                 dim_index = dim_to_index_mapping[dim.local_id]
-                dict_values[dim.local_id] = inputs[dim_index]
+                if np.isnan(inputs[dim_index]):
+                    dict_values[dim.local_id] = None
+                else:
+                    dict_values[dim.local_id] = inputs[dim_index]
 
     return dict_values
 

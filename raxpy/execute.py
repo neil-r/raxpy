@@ -1,6 +1,10 @@
 """ TODO """
+import sys
 
-from typing import Callable, TypeVar, List, ParamSpec, Tuple
+if sys.version_info >= (3, 10):
+    from typing import Callable, TypeVar, List, ParamSpec, Tuple
+else:
+    from typing_extensions import Callable, TypeVar, List, ParamSpec, Tuple
 
 from raxpy.spaces.dimensions import convert_values_from_dict
 from raxpy.spaces.complexity import assign_null_portions
@@ -50,7 +54,8 @@ def _default_designer(
     input_space : InputSpace
         **Explanation**
     target_number_of_runs : int
-        **Explanation**
+        The requested quantity of iterations 
+        of the experiment being designed
 
     Returns
     -------
