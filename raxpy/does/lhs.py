@@ -20,7 +20,7 @@ from ..spaces.complexity import estimate_complexity
 
 
 def create_base_lhs_creator(
-    scamble=True, strength=1, optimation: str = "random-cd"
+    scamble=False, strength=1, optimation: str = "random-cd"
 ):
     """
     TODO Explain the Function
