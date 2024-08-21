@@ -4,7 +4,7 @@
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Set, Tuple
+from typing import List, Dict, Set, Tuple, Optional
 import math
 import itertools
 
@@ -29,7 +29,7 @@ class SubSpaceMetricComputeContext:
     sub_space_doe: DesignOfExperiment
 
 
-# DOE Metrics
+# Whole DOE Metrics
 METRIC_PORTION_SUBSPACES_INCLUDED = "portion_of_subspaces_included"
 
 METRIC_TARGET_PORTION_OFFSET = "target_portion_offset"
@@ -42,7 +42,9 @@ METRIC_WEIGHTED_MIPD = "weighted_mipd"
 
 METRIC_WEIGHTED_MST_STATS = "weighted_mst_stats"
 
-# Complete SubDesign Metrics
+METRIC_WHOLE_MIN_POINT_DISTANCE = "max_whole_min_point_distance"
+
+# FullSubDesign Metrics
 METRIC_AVG_PORTION_LEVELS_INCLUDED = "avg_portion_of_levels_included"
 
 METRIC_PORTION_OF_TOTAL = "portion_of_total"
@@ -72,6 +74,8 @@ def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     points = context.sub_space_doe.input_sets
     # compute the distances for each point combination
     dm = distance_matrix(points, points)
+    # the diagonals will be zero since a point's distance to itself is 0,
+    # we don't care about these distances
     np.fill_diagonal(dm, np.inf)
 
     # find the min distances to the each other point
@@ -239,7 +243,7 @@ subspace_metric_computation_map = {
 
 
 @dataclass
-class CompleteSubDesignAssessment:
+class FullSubDesignAssessment:
     """
     TODO Explain Class
     """
@@ -249,6 +253,11 @@ class CompleteSubDesignAssessment:
     measurements: Dict[str, float]
     space_attributes: Set[str]
 
+    def compare_dimensions(self, dim_list) -> bool:
+        return len(dim_list) == len(self.active_dimensions) and all(
+            d in self.active_dimensions for d in dim_list
+        )
+
 
 @dataclass
 class DoeAssessment:
@@ -257,13 +266,21 @@ class DoeAssessment:
     """
 
     total_point_count: int
-    full_sub_set_assessments: List[CompleteSubDesignAssessment]
+    full_sub_set_assessments: List[FullSubDesignAssessment]
     measurements: Dict[str, float]
+
+    def get_full_sub_design_assessment(
+        self, active_dimensions: List[str]
+    ) -> Optional[FullSubDesignAssessment]:
+        for assessment in self.full_sub_set_assessments:
+            if assessment.compare_dimensions(active_dimensions):
+                return assessment
+        return None
 
 
 def compute_weighted_discrepancy(
     doe: DesignOfExperiment,
-    full_design_assessments: List[CompleteSubDesignAssessment],
+    full_design_assessments: List[FullSubDesignAssessment],
     weighting_metric=METRIC_PORTION_OF_TOTAL,
 ) -> float:
     """
@@ -297,7 +314,7 @@ def compute_weighted_discrepancy(
 
 def compute_weighted_mipd(
     doe: DesignOfExperiment,
-    full_design_assessments: List[CompleteSubDesignAssessment],
+    full_design_assessments: List[FullSubDesignAssessment],
     weighting_metric=METRIC_PORTION_OF_TOTAL,
 ) -> float:
     """
@@ -322,7 +339,8 @@ def compute_weighted_mipd(
     for full_design in full_design_assessments:
         if METRIC_MIN_POINT_DISTANCE in full_design.measurements:
             discrepancies.append(
-                full_design.measurements[METRIC_MIN_POINT_DISTANCE])
+                full_design.measurements[METRIC_MIN_POINT_DISTANCE]
+            )
             weights.append(full_design.measurements[weighting_metric])
 
     weight_sum = sum(weights)
@@ -330,11 +348,111 @@ def compute_weighted_mipd(
     return sum(d * w / weight_sum for d, w in zip(discrepancies, weights))
 
 
+def _compute_nan_distance(row1, row2, p=2):
+    """
+    Computes the p-norm distance between two rows,
+    For comparisons where one point has a nan value for a
+    dimension comparison, the distance is projected to 1 for that dimension.
+    For comparisons where both points have a nan value for a dimension
+    comparison, the distance is projected to 0 for that dimension.
+
+    Arguments
+    ---------
+    row1 : np.array
+        a row to consider for the distance computation
+    row2 : np.array
+        another row to consider for the distance computation
+    p:int=2
+        Which Minkowski p-norm to use in the distance computation
+
+    Returns
+    -------
+        The distance between the two rows
+    """
+    # Identify which elements are not NaN in both rows
+    mask = ~np.isnan(row1) | ~np.isnan(row2)
+
+    # If no valid comparisons, return a distance of 0
+    if not np.any(mask):
+        return 0.0
+
+    # Compute Euclidean distance only for non-NaN elements for both elements
+    parts = (np.abs(row1[mask] - row2[mask])) ** p
+
+    # Replace nan's differences to 1 to represent the maximin difference
+    parts = np.nan_to_num(parts, nan=1)
+
+    distance = np.sqrt(np.sum(parts))
+
+    return distance
+
+
+def _compute_nan_distance_matrix(matrix: np.array, p=2):
+    """
+    Computes the pairwise distances between all rows in a matrix.
+    For comparisons where one point has a nan value for a
+    dimension comparison, the distance is projected to 1 for that dimension.
+    For comparisons where both points have a nan value for a dimension
+    comparison, the distance is projected to 0 for that dimension.
+
+    Arguments
+    ---------
+    matrix : np.array
+        The design to assess
+    p:int=2
+        Which Minkowski p-norm to use in the distance computation
+
+    Returns
+    -------
+        The distance matrix for the rows in the matrix
+    """
+    num_rows = matrix.shape[0]
+    dm = np.zeros((num_rows, num_rows))
+
+    for i in range(num_rows):
+        for j in range(i + 1, num_rows):
+            dist = _compute_nan_distance(matrix[i], matrix[j], p=2)
+            dm[i, j] = dist
+            dm[j, i] = dist
+
+    return dm
+
+
+def compute_whole_min_point_distance(
+    doe: DesignOfExperiment, _: List[FullSubDesignAssessment], p: int = 2
+) -> float:
+    """
+    Computes the minimum distance between two points in the DOE with nan
+    projections. For comparisons where one point has a nan value for a
+    dimension comparison, the distance is projected to 1 for that dimension.
+    For comparisons where both points have a nan value for a dimension
+    comparison, the distance is projected to 0 for that dimension.
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        The design to assess
+    _ : List[CompleteSubDesignAssessment]
+        The sub-design assessments (not-used, specified to support common
+        metric computation interface)
+    p:int=2
+        Which Minkowski p-norm to use in the distance computation
+
+    Returns
+    -------
+        A float value representing the minimum distance
+    """
+    dm = _compute_nan_distance_matrix(doe.input_sets, p=p)
+    np.fill_diagonal(dm, np.inf)
+    return np.min(dm)
+
+
 # the following map is used in the assess function
 # to discover the metrics to compute
 doe_metric_computation_map = {
     METRIC_WEIGHTED_DISCREPANCY: compute_weighted_discrepancy,
     METRIC_WEIGHTED_MIPD: compute_weighted_mipd,
+    METRIC_WHOLE_MIN_POINT_DISTANCE: compute_whole_min_point_distance,
 }
 
 
@@ -380,7 +498,7 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
     # prepare data structures for returned assessment structure
     total_point_count = len(mapped_values)
 
-    full_sub_set_assessments: List[CompleteSubDesignAssessment] = []
+    full_sub_set_assessments: List[FullSubDesignAssessment] = []
 
     ################################
     # full-sub-design metrics
@@ -411,7 +529,7 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
                 )
 
         full_sub_set_assessments.append(
-            CompleteSubDesignAssessment(
+            FullSubDesignAssessment(
                 point_count=sub_space_doe.point_count,
                 active_dimensions=sub_space,
                 measurements=measurements,

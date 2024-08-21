@@ -32,6 +32,10 @@ MANIFEST
 *.manifest
 *.spec
 
+# Draw.IO temp files
+*.dtmp
+*.bkp
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt

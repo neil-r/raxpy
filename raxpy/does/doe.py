@@ -61,22 +61,21 @@ class DesignOfExperiment:
         self, point_row_mask, dim_set: List[str]
     ) -> "DesignOfExperiment":
         """
-        TODO Explain the Function
+        Extracts a sub-design given a row mask and a subset of dimensions
 
         Arguments
         ---------
         self
-            **Explanation**
+            the parent design
         point_row_mask
-            **Explanation**
+            the row mask, true if the row should be included in extracted design
         dim_set : List[str]
-            **Explanation**
+            the id of the columns that should be included in the extracted design
 
         Returns
         -------
         DesignOfExperiment
-            **Explanation**
-
+            a sub design given the row mask and the column list
         """
 
         column_indexes = [self.input_set_map[dim_id] for dim_id in dim_set]

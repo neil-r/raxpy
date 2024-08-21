@@ -6,12 +6,13 @@ import raxpy.spaces.root as s
 
 def test_deriving_subspaces():
     """
-    TODO Explain the Function
+    Tests the analysis of a Space with optional dimensions to discover all
+    the possible full-sub-spaces.
 
     Asserts
     -------
-    **Explanation**
-
+        The full-sub-spaces are derived to the proper number and
+        delinated with the proper dimension specifications
     """
     space = s.Space(
         dimensions=[
