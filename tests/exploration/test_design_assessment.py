@@ -165,3 +165,34 @@ def test_whole_min_distance_computation():
 
     # the minimum distance between the distance is between points 1 and 2 (1-based indexing)
     assert min_d == ((4.0 - 1.0) ** 2 + (1)) ** 0.5
+
+
+def test_compute_min_projected_distance():
+    """
+    Tests the min projected distance computation for a DOE with nan values.
+
+    Asserts
+    -------
+        the computed min distance is equal to the known min distance
+    """
+    space = s.InputSpace(
+        dimensions=[
+            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+        ]
+    )
+
+    whole_doe = doe.DesignOfExperiment(
+        input_space=space,
+        input_set_map={"x1": 0, "x2": 1, "x3": 2},
+        input_sets=np.array(
+            [[1.0, 2.0, np.nan], [4.0, np.nan, np.nan], [7.0, 8.0, 9.0]]
+        ),
+        encoded_flag=False,
+    )
+
+    min_d = a.compute_min_projected_distance(whole_doe, [])
+
+    # the minimum distance between the distance is between points 1 and 2 (1-based indexing)
+    assert min_d == 4.0 - 1.0

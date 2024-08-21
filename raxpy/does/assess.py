@@ -44,6 +44,8 @@ METRIC_WEIGHTED_MST_STATS = "weighted_mst_stats"
 
 METRIC_WHOLE_MIN_POINT_DISTANCE = "max_whole_min_point_distance"
 
+METRIC_WHOLE_MIN_PROJECTED_DISTANCE = "max_whole_min_projected_distance"
+
 # FullSubDesign Metrics
 METRIC_AVG_PORTION_LEVELS_INCLUDED = "avg_portion_of_levels_included"
 
@@ -447,12 +449,43 @@ def compute_whole_min_point_distance(
     return np.min(dm)
 
 
+def compute_min_projected_distance(
+    doe: DesignOfExperiment, _: List[FullSubDesignAssessment]
+) -> float:
+    """
+    Computes the minimum projected distance between any two values within the
+    same a dimension, ignoring distances of values with that are nan
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        The design to assess
+    _ : List[CompleteSubDesignAssessment]
+        The sub-design assessments (not-used, specified to support common
+        metric computation interface)
+    Returns
+    -------
+        A float value representing the minimum projected distance
+    """
+    min_so_far = np.inf
+    for column_i in range(doe.dim_specification_count):
+        for row_1i in range(doe.point_count):
+            lhs = doe.input_sets[row_1i][column_i]
+            for row_2i in range(row_1i + 1, doe.point_count):
+                d = np.abs(lhs - doe.input_sets[row_2i][column_i])
+                if d != np.nan and d < min_so_far:
+                    min_so_far = d
+
+    return min_so_far
+
+
 # the following map is used in the assess function
 # to discover the metrics to compute
 doe_metric_computation_map = {
     METRIC_WEIGHTED_DISCREPANCY: compute_weighted_discrepancy,
     METRIC_WEIGHTED_MIPD: compute_weighted_mipd,
     METRIC_WHOLE_MIN_POINT_DISTANCE: compute_whole_min_point_distance,
+    METRIC_WHOLE_MIN_PROJECTED_DISTANCE: compute_min_projected_distance,
 }
 
 
