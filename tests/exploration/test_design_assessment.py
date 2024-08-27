@@ -42,7 +42,7 @@ def test_doe_assessments():
                 [np.nan, np.nan, np.nan],
             ]
         ),
-        encoded_flag=False,
+        encoding=False,
     )
 
     assessment = a.assess_with_all_metrics(design)
@@ -88,7 +88,7 @@ def test_metric_computations():
                 [np.nan, np.nan, np.nan],
             ]
         ),
-        encoded_flag=False,
+        encoding=False,
     )
 
     assert (
@@ -158,7 +158,7 @@ def test_whole_min_distance_computation():
         input_sets=np.array(
             [[1.0, 2.0, np.nan], [4.0, np.nan, np.nan], [7.0, 8.0, 9.0]]
         ),
-        encoded_flag=False,
+        encoding=False,
     )
 
     min_d = a.compute_whole_min_point_distance(whole_doe, [])
@@ -189,7 +189,7 @@ def test_compute_min_projected_distance():
         input_sets=np.array(
             [[1.0, 2.0, np.nan], [4.0, np.nan, np.nan], [7.0, 8.0, 9.0]]
         ),
-        encoded_flag=False,
+        encoding=False,
     )
 
     min_d = a.compute_min_projected_distance(whole_doe, [])

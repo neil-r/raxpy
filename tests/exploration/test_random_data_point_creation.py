@@ -4,6 +4,24 @@ import numpy as np
 
 import raxpy.spaces.dimensions as d
 import raxpy.spaces.root as s
+import raxpy.does.random as r
+from . import test_creation_of_space_filling_doe as sf_doe
+
+
+def test_creation_of_random_doe():
+    """
+    Tests the creation of a experiment design using random number generation.
+
+    Asserts
+    -------
+    design created and every point belongs to a sub-space
+
+    """
+    design = r.generate_design(sf_doe.SPACE, n_points=10)
+
+    assert design is not None
+    assert design.point_count == 10
+    sf_doe.assert_every_point_in_a_full_sub_space(sf_doe.SUB_SPACES, design)
 
 
 def test_collapse_of_random_numbers():

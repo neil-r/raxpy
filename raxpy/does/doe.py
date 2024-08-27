@@ -3,12 +3,26 @@
     used to represent designs of experiments.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Literal, Optional
 from dataclasses import dataclass
+from enum import Enum
 
 import numpy as np
 
 from ..spaces.root import InputSpace
+
+
+class EncodingEnum(str, Enum):
+    ZERO_ONE_RAW_ENCODING = "0-1-raw"
+    ZERO_ONE_NULL_ENCODING = "0-1-null"
+    NONE = "decoded"
+
+
+Encoding = Literal[
+    EncodingEnum.ZERO_ONE_RAW_ENCODING,
+    EncodingEnum.ZERO_ONE_NULL_ENCODING,
+    EncodingEnum.NONE,
+]
 
 
 @dataclass
@@ -20,7 +34,9 @@ class DesignOfExperiment:
     input_space: InputSpace
     input_sets: np.array
     input_set_map: Dict[str, int]
-    encoded_flag: bool = False
+    encoding: Encoding
+
+    _decoded_cache: Optional[np.array] = None
 
     def __post_init__(self):
         """
@@ -57,6 +73,28 @@ class DesignOfExperiment:
                         f"out-of-bounds: {dim_id}:{dim_index}"
                     )
 
+    @property
+    def decoded_input_sets(self):
+        if self._decoded_cache is None:
+            if self.encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
+                self._decoded_cache = self.input_space.decode_zero_one_matrix(
+                    self.input_sets,
+                    self.input_set_map,
+                    map_null_to_children_dim=False,
+                    utilize_null_portitions=False,
+                )
+            elif self.encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+                self._decoded_cache = self.input_space.decode_zero_one_matrix(
+                    self.input_sets,
+                    self.input_set_map,
+                    map_null_to_children_dim=True,
+                    utilize_null_portitions=True,
+                )
+            else:
+                self._decoded_cache = self.input_sets
+
+        return self._decoded_cache
+
     def extract_points_and_dimensions(
         self, point_row_mask, dim_set: List[str]
     ) -> "DesignOfExperiment":
@@ -84,7 +122,7 @@ class DesignOfExperiment:
             input_space=self.input_space,
             input_sets=self.input_sets[point_row_mask][:, column_indexes],
             input_set_map={dim_id: i for i, dim_id in enumerate(dim_set)},
-            encoded_flag=self.encoded_flag,
+            encoding=self.encoding,
         )
 
     @property

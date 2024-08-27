@@ -26,6 +26,7 @@ def test_doe_counts():
             ]
         ),
         input_set_map={"x1": 0, "x2": 1, "x3": 2},
+        encoding=doe.EncodingEnum.NONE,
     )
 
     assert design.point_count == 2
@@ -51,6 +52,7 @@ def test_error_init_doe():
                 "x1": 0,
                 "x2": 1,
             },
+            encoding=doe.EncodingEnum.NONE,
         )
 
     with pytest.raises(ValueError):
@@ -68,6 +70,7 @@ def test_error_init_doe():
                 "x2": 1,
                 "x3": 10000,
             },
+            encoding=doe.EncodingEnum.NONE,
         )
 
     with pytest.raises(ValueError):
@@ -85,4 +88,5 @@ def test_error_init_doe():
                 "x2": 1,
                 "x3": 1,
             },
+            encoding=doe.EncodingEnum.NONE,
         )

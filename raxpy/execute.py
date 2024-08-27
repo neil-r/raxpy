@@ -1,4 +1,5 @@
 """ TODO """
+
 import sys
 
 if sys.version_info >= (3, 10):
@@ -54,7 +55,7 @@ def _default_designer(
     input_space : InputSpace
         **Explanation**
     target_number_of_runs : int
-        The requested quantity of iterations 
+        The requested quantity of iterations
         of the experiment being designed
 
     Returns
@@ -69,7 +70,7 @@ def _default_designer(
     design = lhs.generate_design(input_space, target_number_of_runs)
 
     value_dicts = input_space.convert_flat_values_to_dict(
-        design.input_sets, design.input_set_map
+        design.decoded_input_sets, design.input_set_map
     )
 
     arg_set = list(

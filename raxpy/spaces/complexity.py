@@ -58,11 +58,13 @@ def estimate_complexity(dim: d.Dimension) -> float:
         if expected_significant_interactions:
             complexity_estimate = 1.0
         # summerize complexity of children
-        for child in dim.children:
+        for i, child in enumerate(dim.children):
             if expected_significant_interactions:
-                complexity_estimate *= estimate_complexity(child)
-            else:
                 complexity_estimate += estimate_complexity(child)
+            else:
+                complexity_estimate = max(
+                    estimate_complexity(child), complexity_estimate
+                )
 
     if dim.nullable:
         complexity_estimate += 1.0
@@ -87,13 +89,30 @@ def assign_null_portions(
 
     children_sets: List[Iterable[d.Dimension]] = []
 
+    # count nullable dimensions
+    nullable_children = 0
+    not_nullable_children = 0
+    for dim in dimensions:
+
+        if dim.nullable:
+            nullable_children += 1
+        else:
+            not_nullable_children += 1
+
     # compute portion for active dimensions
     for dim in dimensions:
 
         if dim.nullable:
             complexity_estimate = complexity_estimator(dim)
 
-            dim.portion_null = 1.0 / complexity_estimate
+            dim.portion_null = (
+                (1.0 / complexity_estimate)
+                + (1.0 / complexity_estimate)
+                + (
+                    nullable_children
+                    / (nullable_children + not_nullable_children)
+                )
+            ) / 3.0
         else:
             dim.portion_null = 0.0
 
@@ -151,9 +170,7 @@ def compute_subspace_portions(
                     if dim.has_child_dimensions():
                         if isinstance(dim, d.Variant):
 
-                            portion_components.append(
-                                1.0 / len(dim.children)
-                            )
+                            portion_components.append(1.0 / len(dim.children))
                             # only add active child to be processed
                             for child_dim in dim.children:
                                 if child_dim.id in full_subspace:
