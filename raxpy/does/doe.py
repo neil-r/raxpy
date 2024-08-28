@@ -37,6 +37,7 @@ class DesignOfExperiment:
     encoding: Encoding
 
     _decoded_cache: Optional[np.array] = None
+    _zero_one_null_encoding_cache: Optional[np.array] = None
 
     def __post_init__(self):
         """
@@ -95,8 +96,27 @@ class DesignOfExperiment:
 
         return self._decoded_cache
 
+    @property
+    def zero_one_null_input_sets(self):
+        if self._zero_one_null_encoding_cache is None:
+            if self.encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
+                self._zero_one_null_encoding_cache = self.input_sets
+            elif self.encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+                self._zero_one_null_encoding_cache = (
+                    self.input_space.encode_to_zero_one_null_matrix(
+                        self.input_sets,
+                        self.input_set_map,
+                    )
+                )
+            else:
+                raise NotImplementedError(
+                    "Going from decoded-design to encoded-design not implemented"
+                )
+
+        return self._zero_one_null_encoding_cache
+
     def extract_points_and_dimensions(
-        self, point_row_mask, dim_set: List[str]
+        self, point_row_mask, dim_set: List[str], encoding: Encoding
     ) -> "DesignOfExperiment":
         """
         Extracts a sub-design given a row mask and a subset of dimensions
@@ -109,6 +129,7 @@ class DesignOfExperiment:
             the row mask, true if the row should be included in extracted design
         dim_set : List[str]
             the id of the columns that should be included in the extracted design
+        encoding: Encoding
 
         Returns
         -------
@@ -118,12 +139,36 @@ class DesignOfExperiment:
 
         column_indexes = [self.input_set_map[dim_id] for dim_id in dim_set]
 
+        if encoding == EncodingEnum.NONE:
+            base_design_points = self.decoded_input_sets
+        elif encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
+            base_design_points = self.zero_one_null_input_sets
+        else:
+            if EncodingEnum.ZERO_ONE_RAW_ENCODING == self.encoding:
+                base_design_points = self.input_sets
+            else:
+                raise ValueError(
+                    "Unable to derive a zero-one-raw encoding due to information loss"
+                )
+
         return DesignOfExperiment(
             input_space=self.input_space,
-            input_sets=self.input_sets[point_row_mask][:, column_indexes],
+            input_sets=base_design_points[point_row_mask][:, column_indexes],
             input_set_map={dim_id: i for i, dim_id in enumerate(dim_set)},
-            encoding=self.encoding,
+            encoding=encoding,
         )
+
+    def get_data_points(self, encoding: Encoding):
+        if encoding == EncodingEnum.NONE:
+            return self.decoded_input_sets
+        elif encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
+            return self.zero_one_null_input_sets
+        elif encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+            if self.encoding != EncodingEnum.ZERO_ONE_RAW_ENCODING:
+                raise ValueError(
+                    "Unable to derive raw zero-one encoding due to information loss"
+                )
+            return self.input_sets
 
     @property
     def point_count(self) -> int:

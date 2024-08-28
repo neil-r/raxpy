@@ -14,7 +14,7 @@ from scipy.spatial import distance_matrix
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import minimum_spanning_tree
 
-from .doe import DesignOfExperiment
+from .doe import DesignOfExperiment, Encoding, EncodingEnum
 from ..spaces import root as s
 
 
@@ -281,8 +281,9 @@ class DoeAssessment:
 
 
 def compute_weighted_discrepancy(
-    doe: DesignOfExperiment,
+    _doe: DesignOfExperiment,
     full_design_assessments: List[FullSubDesignAssessment],
+    _encoding: Encoding,
     weighting_metric=METRIC_PORTION_OF_TOTAL,
 ) -> float:
     """
@@ -294,6 +295,7 @@ def compute_weighted_discrepancy(
         **Explanation**
     full_design_assessments : List[CompleteSubDesignAssessment]
         **Explanation**
+    _encoding: Encoding
     weighting_metric=METRIC_PORTION_OF_TOTAL
         **Explanation**
 
@@ -315,8 +317,9 @@ def compute_weighted_discrepancy(
 
 
 def compute_weighted_mipd(
-    doe: DesignOfExperiment,
+    _doe: DesignOfExperiment,
     full_design_assessments: List[FullSubDesignAssessment],
+    _encoding: Encoding,
     weighting_metric=METRIC_PORTION_OF_TOTAL,
 ) -> float:
     """
@@ -328,6 +331,7 @@ def compute_weighted_mipd(
         **Explanation**
     full_design_assessments : List[CompleteSubDesignAssessment]
         **Explanation**
+    _: Encoding
     weighting_metric=METRIC_PORTION_OF_TOTAL
         **Explanation**
 
@@ -413,7 +417,7 @@ def _compute_nan_distance_matrix(matrix: np.array, p=2):
 
     for i in range(num_rows):
         for j in range(i + 1, num_rows):
-            dist = _compute_nan_distance(matrix[i], matrix[j], p=2)
+            dist = _compute_nan_distance(matrix[i], matrix[j], p=p)
             dm[i, j] = dist
             dm[j, i] = dist
 
@@ -421,7 +425,10 @@ def _compute_nan_distance_matrix(matrix: np.array, p=2):
 
 
 def compute_whole_min_point_distance(
-    doe: DesignOfExperiment, _: List[FullSubDesignAssessment], p: int = 2
+    doe: DesignOfExperiment,
+    _: List[FullSubDesignAssessment],
+    encoding: Encoding,
+    p: int = 2,
 ) -> float:
     """
     Computes the minimum distance between two points in the DOE with nan
@@ -437,6 +444,8 @@ def compute_whole_min_point_distance(
     _ : List[CompleteSubDesignAssessment]
         The sub-design assessments (not-used, specified to support common
         metric computation interface)
+    encoding: Encoding
+
     p:int=2
         Which Minkowski p-norm to use in the distance computation
 
@@ -444,13 +453,15 @@ def compute_whole_min_point_distance(
     -------
         A float value representing the minimum distance
     """
-    dm = _compute_nan_distance_matrix(doe.input_sets, p=p)
+    dm = _compute_nan_distance_matrix(doe.get_data_points(encoding), p=p)
     np.fill_diagonal(dm, np.inf)
     return np.min(dm)
 
 
 def compute_min_projected_distance(
-    doe: DesignOfExperiment, _: List[FullSubDesignAssessment]
+    doe: DesignOfExperiment,
+    _: List[FullSubDesignAssessment],
+    encoding: Encoding,
 ) -> float:
     """
     Computes the minimum projected distance between any two values within the
@@ -463,16 +474,25 @@ def compute_min_projected_distance(
     _ : List[CompleteSubDesignAssessment]
         The sub-design assessments (not-used, specified to support common
         metric computation interface)
+    encoding: Encoding
     Returns
     -------
         A float value representing the minimum projected distance
     """
+    data_points = doe.get_data_points(encoding)
+    dim_map = doe.input_space.create_dim_map()
     min_so_far = np.inf
-    for column_i in range(doe.dim_specification_count):
+    for dim_id, column_i in doe.input_set_map.items():
+        dim = dim_map[dim_id]
+        # ignore dimensions that have children dimensions since the projected
+        # should not apply to these dimensions
+        if dim.has_child_dimensions():
+            continue
+
         for row_1i in range(doe.point_count):
-            lhs = doe.input_sets[row_1i][column_i]
+            lhs = data_points[row_1i][column_i]
             for row_2i in range(row_1i + 1, doe.point_count):
-                d = np.abs(lhs - doe.input_sets[row_2i][column_i])
+                d = np.abs(lhs - data_points[row_2i][column_i])
                 if d != np.nan and d < min_so_far:
                     min_so_far = d
 
@@ -489,7 +509,10 @@ doe_metric_computation_map = {
 }
 
 
-def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
+def assess_with_all_metrics(
+    doe: DesignOfExperiment,
+    encoding: Encoding = EncodingEnum.ZERO_ONE_NULL_ENCODING,
+) -> DoeAssessment:
     """
     Assesses the experiment design for the given input space.
 
@@ -497,6 +520,7 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
     ---------
     doe : DesignOfExperiment
         **Explanation**
+    encoding: Encoding
 
     Returns
     -------
@@ -526,7 +550,7 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
         return sub_space_index_map[tuple(active_dim_ids)]
 
     # compute the subspace each point belongs to
-    mapped_values = [map_point(point) for point in doe.input_sets]
+    mapped_values = [map_point(point) for point in doe.decoded_input_sets]
 
     # prepare data structures for returned assessment structure
     total_point_count = len(mapped_values)
@@ -540,7 +564,7 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
     for i, sub_space in enumerate(sub_spaces):
         point_row_mask = [v == i for v in mapped_values]
         sub_space_doe = doe.extract_points_and_dimensions(
-            point_row_mask, sub_space
+            point_row_mask, sub_space, encoding
         )
         measurements = {}
         space_attributes = set()
@@ -577,7 +601,7 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
 
     for m_id, compute in doe_metric_computation_map.items():
 
-        value = compute(doe, full_sub_set_assessments)
+        value = compute(doe, full_sub_set_assessments, encoding)
         if isinstance(value, Tuple):
             for i, v in enumerate(value):
                 total_measurements[f"{m_id}-{i}"] = v

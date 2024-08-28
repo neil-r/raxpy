@@ -418,9 +418,88 @@ class Space:
 
         return value_dicts
 
+    def encode_to_zero_one_null_matrix(
+        self,
+        zero_one_encoded_values: np.array,
+        dim_column_map: Dict[str, int],
+    ):
+        """
+        TODO Explain the Function
+
+        Arguments
+        ---------
+        self : Space
+            **Explanation**
+        zero_one_encoded_values : np.array
+            **Explanation**
+        dim_column_map : Dict[str, int]
+            **Explanation**
+
+        Returns
+        -------
+        adjusted_encoded_values : ndarray
+            **Explanation**
+
+        """
+
+        adjusted_encoded_values = np.array(zero_one_encoded_values)
+        flatted_dimensions = create_all_iterable(self.children)
+        for dim in flatted_dimensions:
+
+            if dim.portion_null is not None and dim.portion_null > 0.0:
+                if dim.id in dim_column_map:
+                    column_index = dim_column_map[dim.id]
+                    encoded_column = zero_one_encoded_values[:, column_index]
+                    adjusted_encoded_column = [
+                        (
+                            (xp - dim.portion_null) / (1.0 - dim.portion_null)
+                            if xp is not None and xp > dim.portion_null
+                            else None
+                        )
+                        for xp in encoded_column
+                    ]
+                    decoded_column = dim.collapse_uniform(encoded_column, True)
+                    # address broadcast any nan to children
+                    if dim.has_child_dimensions():
+                        nan_mask = np.isnan(decoded_column)
+                        if nan_mask.sum() > 0:
+                            children = create_all_iterable(dim.children)
+                            non_nan_mask = ~nan_mask
+                            for c_dim in children:
+                                if c_dim.id in dim_column_map:
+                                    c_column_index = dim_column_map[c_dim.id]
+                                    zero_one_encoded_values[:, c_column_index][
+                                        non_nan_mask
+                                    ] = zero_one_encoded_values[
+                                        :, c_column_index
+                                    ][
+                                        non_nan_mask
+                                    ]
+                                    zero_one_encoded_values[:, c_column_index][
+                                        nan_mask
+                                    ] = np.nan
+                        if isinstance(dim, Variant):
+                            # determine active child, null out others
+                            for i, c_dim in enumerate(dim.children):
+                                nan_mask = [x != i for x in decoded_column]
+
+                                for c_c_dim in create_all_iterable([c_dim]):
+                                    if c_c_dim.id in dim_column_map:
+                                        c_column_index = dim_column_map[
+                                            c_c_dim.id
+                                        ]
+                                        zero_one_encoded_values[
+                                            :, c_column_index
+                                        ][nan_mask] = np.nan
+
+                    adjusted_encoded_values[:, column_index] = (
+                        adjusted_encoded_column
+                    )
+        return adjusted_encoded_values
+
     def decode_zero_one_matrix(
         self,
-        x: np.array,
+        zero_one_encoded_values: np.array,
         dim_column_map: Dict[str, int],
         map_null_to_children_dim=False,
         utilize_null_portitions=True,
@@ -448,13 +527,13 @@ class Space:
 
         """
 
-        decoded_values = np.array(x)
+        decoded_values = np.array(zero_one_encoded_values)
         flatted_dimensions = create_all_iterable(self.children)
         for dim in flatted_dimensions:
 
             if dim.id in dim_column_map:
                 column_index = dim_column_map[dim.id]
-                encoded_column = x[:, column_index]
+                encoded_column = zero_one_encoded_values[:, column_index]
                 decoded_column = dim.collapse_uniform(
                     encoded_column, utilize_null_portitions
                 )
@@ -466,10 +545,14 @@ class Space:
                         for c_dim in children:
                             if c_dim.id in dim_column_map:
                                 c_column_index = dim_column_map[c_dim.id]
-                                x[:, c_column_index][non_nan_mask] = x[
-                                    :, c_column_index
-                                ][non_nan_mask]
-                                x[:, c_column_index][nan_mask] = np.nan
+                                zero_one_encoded_values[:, c_column_index][
+                                    non_nan_mask
+                                ] = zero_one_encoded_values[:, c_column_index][
+                                    non_nan_mask
+                                ]
+                                zero_one_encoded_values[:, c_column_index][
+                                    nan_mask
+                                ] = np.nan
                     if isinstance(dim, Variant):
                         # determine active child, null out others
                         for i, c_dim in enumerate(dim.children):
@@ -478,7 +561,9 @@ class Space:
                             for c_c_dim in create_all_iterable([c_dim]):
                                 if c_c_dim.id in dim_column_map:
                                     c_column_index = dim_column_map[c_c_dim.id]
-                                    x[:, c_column_index][nan_mask] = np.nan
+                                    zero_one_encoded_values[:, c_column_index][
+                                        nan_mask
+                                    ] = np.nan
 
                 decoded_values[:, column_index] = decoded_column
         return decoded_values

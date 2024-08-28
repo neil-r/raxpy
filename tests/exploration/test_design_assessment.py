@@ -42,10 +42,12 @@ def test_doe_assessments():
                 [np.nan, np.nan, np.nan],
             ]
         ),
-        encoding=False,
+        encoding=doe.EncodingEnum.NONE,
     )
 
-    assessment = a.assess_with_all_metrics(design)
+    assessment = a.assess_with_all_metrics(
+        design, encoding=doe.EncodingEnum.NONE
+    )
 
     assert assessment is not None
 
@@ -88,7 +90,7 @@ def test_metric_computations():
                 [np.nan, np.nan, np.nan],
             ]
         ),
-        encoding=False,
+        encoding=doe.EncodingEnum.NONE,
     )
 
     assert (
@@ -96,7 +98,9 @@ def test_metric_computations():
             a.SubSpaceMetricComputeContext(
                 whole_doe=whole_doe,
                 sub_space_doe=whole_doe.extract_points_and_dimensions(
-                    [i == 2 for i in range(8)], dim_set=["x3"]
+                    [i == 2 for i in range(8)],
+                    dim_set=["x3"],
+                    encoding=doe.EncodingEnum.NONE,
                 ),
             )
         )
@@ -107,7 +111,9 @@ def test_metric_computations():
     sub_space_doe = a.SubSpaceMetricComputeContext(
         whole_doe=whole_doe,
         sub_space_doe=whole_doe.extract_points_and_dimensions(
-            [i in [3, 4, 5, 6] for i in range(8)], dim_set=["x1", "x2", "x3"]
+            [i in [3, 4, 5, 6] for i in range(8)],
+            dim_set=["x1", "x2", "x3"],
+            encoding=doe.EncodingEnum.NONE,
         ),
     )
 
@@ -158,10 +164,12 @@ def test_whole_min_distance_computation():
         input_sets=np.array(
             [[1.0, 2.0, np.nan], [4.0, np.nan, np.nan], [7.0, 8.0, 9.0]]
         ),
-        encoding=False,
+        encoding=doe.EncodingEnum.NONE,
     )
 
-    min_d = a.compute_whole_min_point_distance(whole_doe, [])
+    min_d = a.compute_whole_min_point_distance(
+        whole_doe, [], doe.EncodingEnum.NONE
+    )
 
     # the minimum distance between the distance is between points 1 and 2 (1-based indexing)
     assert min_d == ((4.0 - 1.0) ** 2 + (1)) ** 0.5
@@ -189,10 +197,70 @@ def test_compute_min_projected_distance():
         input_sets=np.array(
             [[1.0, 2.0, np.nan], [4.0, np.nan, np.nan], [7.0, 8.0, 9.0]]
         ),
-        encoding=False,
+        encoding=doe.EncodingEnum.NONE,
     )
 
-    min_d = a.compute_min_projected_distance(whole_doe, [])
+    min_d = a.compute_min_projected_distance(
+        whole_doe, [], doe.EncodingEnum.NONE
+    )
 
     # the minimum distance between the distance is between points 1 and 2 (1-based indexing)
     assert min_d == 4.0 - 1.0
+
+
+def test_compute_min_projected_distance_with_composites():
+    """
+    Tests the min projected distance computation for a DOE with nan values.
+
+    Asserts
+    -------
+        the computed min distance is equal to the known min distance
+    """
+    space = s.InputSpace(
+        dimensions=[
+            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Composite(
+                id="c1",
+                children=[
+                    d.Float(
+                        id="x4",
+                        lb=0.0,
+                        ub=10.0,
+                        nullable=True,
+                        portion_null=0.1,
+                    ),
+                    d.Float(
+                        id="x5",
+                        lb=0.0,
+                        ub=10.0,
+                        nullable=True,
+                        portion_null=0.1,
+                    ),
+                ],
+                nullable=True,
+                portion_null=0.1,
+            ),
+        ]
+    )
+
+    whole_doe = doe.DesignOfExperiment(
+        input_space=space,
+        input_set_map={"x1": 0, "x2": 1, "x3": 2, "c1": 3, "x4": 4, "x5": 5},
+        input_sets=np.array(
+            [
+                [1.0, 2.0, np.nan, 1.0, 3.0, 2.0],
+                [4.0, np.nan, np.nan, 1.0, np.nan, 1.0],
+                [7.0, 8.0, 9.0, np.nan, np.nan, np.nan],
+            ]
+        ),
+        encoding=doe.EncodingEnum.NONE,
+    )
+
+    min_d = a.compute_min_projected_distance(
+        whole_doe, [], doe.EncodingEnum.NONE
+    )
+
+    # the minimum distance between the distance is between points 1 and 2 (1-based indexing)
+    assert min_d == 2.0 - 1.0

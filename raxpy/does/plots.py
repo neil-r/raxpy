@@ -53,9 +53,27 @@ def scatterplot_matrix(data, names: str, **kwargs):
     # Plot the data.
     for i, j in zip(*np.triu_indices_from(axes, k=1)):
         for x, y in [(i, j), (j, i)]:
-            x_d = [(xp if xp is not None else -0.1) for xp in data[:, x]]
-            y_d = [(xp if xp is not None else -0.1) for xp in data[:, y]]
+            x_d = [
+                (xp if xp is not None and not np.isnan(xp) else -0.25)
+                for xp in data[:, x]
+            ]
+            y_d = [
+                (xp if xp is not None and not np.isnan(xp) else -0.25)
+                for xp in data[:, y]
+            ]
             axes[x, y].scatter(y_d, x_d, **kwargs)
+            axes[x, y].spines["top"].set_visible(True)
+            axes[x, y].spines["bottom"].set_visible(True)
+            axes[x, y].spines["left"].set_visible(True)
+            axes[x, y].spines["right"].set_visible(True)
+
+    # Turn on the proper x or y axes ticks.
+    for i in range(n_columns):
+        axes[n_columns - 1, i].xaxis.set_visible(True)
+        axes[i, 0].yaxis.set_visible(True)
+    # for i, j in zip(range(n_columns), itertools.cycle((-1, 0))):
+    #    axes[j, i].xaxis.set_visible(True)
+    #    axes[i, j].yaxis.set_visible(True)
 
     # Label the diagonal subplots...
     for i, label in enumerate(names):
@@ -66,10 +84,9 @@ def scatterplot_matrix(data, names: str, **kwargs):
             ha="center",
             va="center",
         )
-
-    # Turn on the proper x or y axes ticks.
-    for i, j in zip(range(n_columns), itertools.cycle((-1, 0))):
-        axes[j, i].xaxis.set_visible(True)
-        axes[i, j].yaxis.set_visible(True)
+        axes[i, i].spines["top"].set_visible(False)
+        axes[i, i].spines["bottom"].set_visible(False)
+        axes[i, i].spines["left"].set_visible(False)
+        axes[i, i].spines["right"].set_visible(False)
 
     return fig
