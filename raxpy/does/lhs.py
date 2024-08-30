@@ -3,7 +3,6 @@
     LatinHypercube designs for InputSpaces.
 """
 
-from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -16,9 +15,11 @@ from ..spaces.root import (
     create_level_iterable,
     create_all_iterable,
 )
-from ..spaces.complexity import compute_subspace_portions
 from .doe import DesignOfExperiment, EncodingEnum
-from ..spaces.complexity import estimate_complexity
+from .full_sub_spaces import (
+    SubSpaceTargetAllocations,
+    allocate_points_to_full_sub_spaces,
+)
 
 
 def create_base_lhs_creator(
@@ -448,17 +449,6 @@ def generate_design_by_level_opt_merge(
     )
 
 
-@dataclass
-class SubSpaceTargetAllocations:
-    active_dim_ids: List[str]
-    target_portion: float
-    allocated_point_count: Optional[int] = None
-
-    def compute_offset_from_target(self, target_points):
-        actual_portion = self.allocated_point_count / target_points
-        return self.target_portion - actual_portion
-
-
 def generate_seperate_designs_by_full_subspace(
     space: InputSpace,
     n_points: int,
@@ -496,104 +486,17 @@ def generate_seperate_designs_by_full_subspace(
     column_map: Dict[str, Dimension] = {}
     input_set_map = {}
 
-    # if target allocations are not supplied, then generate the defaults
-    if sub_space_target_allocations is None:
-        sub_space_target_allocations = []
-        full_subspace_sets = space.derive_full_subspaces()
-
-        # compute portion of the n_points that each sub-design for each sub-space
-        # should address
-        portitions = compute_subspace_portions(space, full_subspace_sets)
-
-        for target_portion, dim_ids in zip(portitions, full_subspace_sets):
-            sub_space_target_allocations.append(
-                SubSpaceTargetAllocations(
-                    active_dim_ids=dim_ids,
-                    target_portion=target_portion,
-                )
-            )
+    # ensure points are allocated
+    sub_space_target_allocations = allocate_points_to_full_sub_spaces(
+        space, n_points, ensure_at_least_one, sub_space_target_allocations
+    )
 
     dim_map = space.create_dim_map()
-
-    # check if points are allocated
-    points_allocated = 0
-
-    for sub_space_target in sub_space_target_allocations:
-        if sub_space_target.allocated_point_count is not None:
-            points_allocated += sub_space_target_allocations
-
-    if points_allocated > 0 and points_allocated != n_points:
-        raise ValueError(
-            "If you manually allocate points to a sub-space,"
-            " then you must allocate the same number of "
-            "points as n_points"
-        )
-    if points_allocated != n_points:
-
-        # check if any of the subspaces would create duplicates
-        # if any duplicates, we need to distribute these given the portitions
-
-        for sub_space_allocation in sub_space_target_allocations:
-
-            sub_space_allocation.allocated_point_count = round(
-                sub_space_allocation.target_portion * n_points
-            )
-
-            if (
-                sub_space_allocation.allocated_point_count == 0
-                and ensure_at_least_one
-            ):
-                sub_space_allocation.allocated_point_count = 1
-
-            points_allocated += sub_space_allocation.allocated_point_count
-
-        if points_allocated > n_points:
-            skip_ones = ensure_at_least_one
-            if len(sub_space_target_allocations) > n_points:
-                skip_ones = False
-            # adjust for overly-allocated points
-            while points_allocated > n_points:
-                max_target_allocation = -1.0
-                min_ssa = None
-                for sub_space_allocation in sub_space_target_allocations:
-                    if (
-                        skip_ones
-                        and sub_space_allocation.allocated_point_count == 1
-                    ) or sub_space_allocation.allocated_point_count < 1:
-                        continue
-                    offset = sub_space_allocation.compute_offset_from_target(
-                        n_points,
-                    )
-
-                    if offset > max_target_allocation:
-                        max_target_allocation = offset
-                        min_ssa = sub_space_allocation
-
-                min_ssa.allocated_point_count -= 1
-                points_allocated -= 1
-        else:
-            # adjust for under-allocated points
-            while points_allocated < n_points:
-                min_target_allocation = 1.0
-                min_ssa = None
-                for sub_space_allocation in sub_space_target_allocations:
-                    offset = sub_space_allocation.compute_offset_from_target(
-                        n_points,
-                    )
-
-                    if offset < min_target_allocation:
-                        min_target_allocation = offset
-                        min_ssa = sub_space_allocation
-
-                min_ssa.allocated_point_count += 1
-                points_allocated += 1
 
     lb_index = 0
 
     # create designs for sub-spaces given the allocated points counts
-    for i, sub_space_allocation in zip(
-        range(len(full_subspace_sets)), sub_space_target_allocations
-    ):
+    for i, sub_space_allocation in enumerate(sub_space_target_allocations):
         points_to_create = sub_space_allocation.allocated_point_count
 
         if points_to_create < 1:
@@ -759,120 +662,33 @@ def generate_seperate_designs_by_full_subspace_and_pool(
 
     """
     total_dim_count = space.count_dimensions()
-
     final_data_points = np.full((n_points, total_dim_count), np.nan)
     active_index = 0
     column_map: Dict[str, Dimension] = {}
     input_set_map = {}
 
-    # if target allocations are not supplied, then generate the defaults
-    if sub_space_target_allocations is None:
-        sub_space_target_allocations = []
-        full_subspace_sets = space.derive_full_subspaces()
-
-        # compute portion of the n_points that each sub-design for each sub-space
-        # should address
-        portitions = compute_subspace_portions(space, full_subspace_sets)
-
-        for target_portion, dim_ids in zip(portitions, full_subspace_sets):
-            sub_space_target_allocations.append(
-                SubSpaceTargetAllocations(
-                    active_dim_ids=dim_ids,
-                    target_portion=target_portion,
-                )
-            )
+    # ensure points are allocated
+    sub_space_target_allocations = allocate_points_to_full_sub_spaces(
+        space, n_points, ensure_at_least_one, sub_space_target_allocations
+    )
 
     dim_map = space.create_dim_map()
-
-    # check if points are allocated
-    points_allocated = 0
-
-    for sub_space_target in sub_space_target_allocations:
-        if sub_space_target.allocated_point_count is not None:
-            points_allocated += sub_space_target_allocations
-
-    if points_allocated > 0 and points_allocated != n_points:
-        raise ValueError(
-            "If you manually allocate points to a sub-space,"
-            " then you must allocate the same number of "
-            "points as n_points"
-        )
-    if points_allocated != n_points:
-
-        # check if any of the subspaces would create duplicates
-        # if any duplicates, we need to distribute these given the portitions
-
-        for sub_space_allocation in sub_space_target_allocations:
-
-            sub_space_allocation.allocated_point_count = round(
-                sub_space_allocation.target_portion * n_points
-            )
-
-            if (
-                sub_space_allocation.allocated_point_count == 0
-                and ensure_at_least_one
-            ):
-                sub_space_allocation.allocated_point_count = 1
-
-            points_allocated += sub_space_allocation.allocated_point_count
-
-        if points_allocated > n_points:
-            skip_ones = ensure_at_least_one
-            if len(sub_space_target_allocations) > n_points:
-                skip_ones = False
-            # adjust for overly-allocated points
-            while points_allocated > n_points:
-                max_target_allocation = -1.0
-                min_ssa = None
-                for sub_space_allocation in sub_space_target_allocations:
-                    if (
-                        skip_ones
-                        and sub_space_allocation.allocated_point_count == 1
-                    ) or sub_space_allocation.allocated_point_count < 1:
-                        continue
-                    offset = sub_space_allocation.compute_offset_from_target(
-                        n_points,
-                    )
-
-                    if offset > max_target_allocation:
-                        max_target_allocation = offset
-                        min_ssa = sub_space_allocation
-
-                min_ssa.allocated_point_count -= 1
-                points_allocated -= 1
-        else:
-            # adjust for under-allocated points
-            while points_allocated < n_points:
-                min_target_allocation = 1.0
-                min_ssa = None
-                for sub_space_allocation in sub_space_target_allocations:
-                    offset = sub_space_allocation.compute_offset_from_target(
-                        n_points,
-                    )
-
-                    if offset < min_target_allocation:
-                        min_target_allocation = offset
-                        min_ssa = sub_space_allocation
-
-                min_ssa.allocated_point_count += 1
-                points_allocated += 1
 
     # compute the number of values needed for each dimension
     dim_counts = {}
 
     for ssta in sub_space_target_allocations:
-        for dim_ids in ssta.active_dim_ids:
-            for dim_id in dim_ids:
-                if dim_id not in dim_counts:
-                    dim_counts[dim_id] = 0
-                dim_counts[dim_id] += ssta.allocated_point_count
+        for dim_id in ssta.active_dim_ids:
+            if dim_id not in dim_counts:
+                dim_counts[dim_id] = 0
+            dim_counts[dim_id] += ssta.allocated_point_count
 
     value_pool = {
         dim_id: ValuePool(dim_count)
         for dim_id, dim_count in dim_counts.items()
     }
 
-    sorted_allocations = sorted(
+    sorted_allocations: List[SubSpaceTargetAllocations] = sorted(
         sub_space_target_allocations,
         key=lambda ssta: ssta.allocated_point_count,
         reverse=True,
@@ -881,9 +697,7 @@ def generate_seperate_designs_by_full_subspace_and_pool(
     lb_index = 0
 
     # create designs for sub-spaces given the allocated points counts
-    for i, sub_space_allocation in zip(
-        range(len(full_subspace_sets)), sorted_allocations
-    ):
+    for i, sub_space_allocation in enumerate(sorted_allocations):
         points_to_create = sub_space_allocation.allocated_point_count
 
         if points_to_create < 1:
@@ -916,7 +730,7 @@ def generate_seperate_designs_by_full_subspace_and_pool(
 
             data_points = np.array(
                 [
-                    value_pool[dim_id].pull(points_to_create)
+                    value_pool[dim_id.id].pull(points_to_create)
                     for dim_id in active_dims
                 ]
             )
@@ -928,7 +742,7 @@ def generate_seperate_designs_by_full_subspace_and_pool(
 
             from .scipy_optimizations import random_cd
 
-            data_points = random_cd(random_cd, 10000, 100)
+            data_points = random_cd(data_points, 100000, 1000)
 
             part_input_set_map = {}
             for i, dim in enumerate(active_dims):

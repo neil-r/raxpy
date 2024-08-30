@@ -233,7 +233,7 @@ def random_cd(
     for `n_nochange` consecutive iterations.
     """
 
-    rng = np.random.Generator(100)
+    rng = np.random.default_rng()
 
     n, d = best_sample.shape
 

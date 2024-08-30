@@ -5,10 +5,11 @@ import numpy as np
 
 from ..spaces import root as s
 from .doe import DesignOfExperiment
+from .full_sub_spaces import SubSpaceTargetAllocations
 from . import lhs
 
 
-def create_points(n_dim_count: int, n_points: int):
+def create_random_points(n_dim_count: int, n_points: int):
     """
     TODO Explain the Function
 
@@ -48,7 +49,7 @@ def generate_design(space: s.InputSpace, n_points: int) -> DesignOfExperiment:
 
     """
     return lhs.generate_design_with_projection(
-        space, n_points, base_creator=create_points
+        space, n_points, base_creator=create_random_points
     )
 
 
@@ -57,7 +58,7 @@ def generate_seperate_designs_by_full_subspace(
     n_points: int,
     ensure_at_least_one=False,
     sub_space_target_allocations: Optional[
-        List[lhs.SubSpaceTargetAllocations]
+        List[SubSpaceTargetAllocations]
     ] = None,
 ) -> DesignOfExperiment:
     """
@@ -79,7 +80,7 @@ def generate_seperate_designs_by_full_subspace(
     return lhs.generate_seperate_designs_by_full_subspace(
         space,
         n_points,
-        base_creator=create_points,
+        base_creator=create_random_points,
         ensure_at_least_one=ensure_at_least_one,
         sub_space_target_allocations=sub_space_target_allocations,
     )
