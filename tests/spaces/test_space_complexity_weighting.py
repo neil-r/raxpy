@@ -59,20 +59,20 @@ def test_assign_null_portions():
 
     # an dimension that cannot be null should not portion
     # any nulls in data points
-    # TODO adjust when this heuristic gets fixed
-    # assert space.dimensions[0].portion_null == 0.0
-    assert space.dimensions[0].portion_null is not None
-    # the default heuristic for optional floats 1 out of 10
-    # assert space.dimensions[1].portion_null == 1.0 / 10.0
-    assert space.dimensions[1].portion_null is not None
+    assert space.dimensions[0].portion_null == 0.0
+    # assert space.dimensions[0].portion_null is not None
+    # the default heuristic for optional floats 1 out of 4
+    assert space.dimensions[1].portion_null == 1.0 / 4.0
     # the default heuristic for optional composites is to
-    # add the complexity of children and add one
-    # assert space.dimensions[2].portion_null == 1.0 / 7.0
-    assert space.dimensions[2].portion_null is not None
-    # the default heuristic for optional union is to add
-    # options' complexities and add one
-    # assert space.dimensions[3].portion_null == 1.0 / 7.0
-    assert space.dimensions[3].portion_null is not None
+    # add the largest, then the root of the next ,etc
+    assert space.dimensions[2].portion_null == 1.0 / (
+        (4 ** (1 / 1) + 2 ** (1 / 2)) + 1
+    )
+    # the default heuristic for optional Varient/union is to
+    # add the largest, then the root of the next ,etc
+    assert space.dimensions[3].portion_null == 1.0 / (
+        (3 ** (1 / 1) + 3 ** (1 / 2)) + 1
+    )
 
 
 def test_subspace_portitions_computations():
