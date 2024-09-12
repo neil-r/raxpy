@@ -56,6 +56,51 @@ METRIC_DISCREPANCY = "discrepancy"
 METRIC_MIN_POINT_DISTANCE = "max_min_point_distance"
 
 
+def compute_star_discrepancy(design: DesignOfExperiment) -> float:
+
+    x = design.get_data_points(EncodingEnum.ZERO_ONE_NULL_ENCODING)
+
+    # determine every full-combination of input dimensions
+    # that could be defined in this space
+    sub_spaces = design.input_space.derive_full_subspaces()
+
+    # assign a id/int to each sub space
+    sub_space_index_map = {}
+    for i, sub_space in enumerate(sub_spaces):
+        sub_space.sort()
+        standardized_tuple_key = tuple(sub_space)
+        sub_space_index_map[standardized_tuple_key] = i
+
+    # determine the sub-space each data-point belongs to
+    def map_point(point):
+        active_dim_ids = []
+
+        for dim_id, column_index in doe.input_set_map.items():
+            if ~np.isnan(point[column_index]):
+                active_dim_ids.append(dim_id)
+
+        active_dim_ids.sort()
+        return sub_space_index_map[tuple(active_dim_ids)]
+
+    # compute the subspace each point belongs to
+    mapped_values = [map_point(point) for point in x]
+
+    local_discrepancies = []
+    n = design.point_count
+    for subset_index, point in zip(mapped_values, x):
+
+        sub_space = sub_spaces[subset_index]
+        region_volumn_percent = 0.0
+        portion_of_points_in_region = 0.0
+
+        local_discrepancy = abs(
+            portion_of_points_in_region - region_volumn_percent
+        )
+        local_discrepancies.append(local_discrepancy)
+
+    return max(local_discrepancies)
+
+
 def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     """
     Computes and returns the minimum-interpoint-distance (MIPD)
