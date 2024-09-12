@@ -16,6 +16,7 @@ from scipy.sparse.csgraph import minimum_spanning_tree
 
 from .doe import DesignOfExperiment, Encoding, EncodingEnum
 from ..spaces import root as s
+from ..spaces import dimensions
 
 
 @dataclass
@@ -46,6 +47,8 @@ METRIC_WHOLE_MIN_POINT_DISTANCE = "max_whole_min_point_distance"
 
 METRIC_WHOLE_MIN_PROJECTED_DISTANCE = "max_whole_min_projected_distance"
 
+METRIC_WHOLE_STAR_DISCREPANCY = "star_discrepancy"
+
 # FullSubDesign Metrics
 METRIC_AVG_PORTION_LEVELS_INCLUDED = "avg_portion_of_levels_included"
 
@@ -56,49 +59,130 @@ METRIC_DISCREPANCY = "discrepancy"
 METRIC_MIN_POINT_DISTANCE = "max_min_point_distance"
 
 
-def compute_star_discrepancy(design: DesignOfExperiment) -> float:
+def determine_relevant_dimensions(
+    design: DesignOfExperiment, point
+) -> List[str]:
+    relevant_dims = []
 
-    x = design.get_data_points(EncodingEnum.ZERO_ONE_NULL_ENCODING)
+    children_sets = [design.input_space.children]
+    while len(children_sets) > 0:
+        children_set = children_sets.pop(0)
+        for dim in s.create_level_iterable(children_set):
+            if dim.id in design.input_set_map:
+                if isinstance(dim, dimensions.Variant):
+                    raise NotImplementedError(
+                        "Relevant dimensions given Variant not implemented"
+                    )
+                d_index = design.input_set_map[dim.id]
+                relevant_dims.append(dim.id)
 
-    # determine every full-combination of input dimensions
-    # that could be defined in this space
-    sub_spaces = design.input_space.derive_full_subspaces()
+                if (
+                    dim.has_child_dimensions()
+                    and not np.isnan(point[d_index])
+                    and point[d_index] > 0.0
+                ):
+                    children_sets.append(dim.children)
 
-    # assign a id/int to each sub space
-    sub_space_index_map = {}
-    for i, sub_space in enumerate(sub_spaces):
-        sub_space.sort()
-        standardized_tuple_key = tuple(sub_space)
-        sub_space_index_map[standardized_tuple_key] = i
+    return relevant_dims
 
-    # determine the sub-space each data-point belongs to
-    def map_point(point):
-        active_dim_ids = []
 
-        for dim_id, column_index in doe.input_set_map.items():
-            if ~np.isnan(point[column_index]):
-                active_dim_ids.append(dim_id)
+def compute_star_discrepancy(
+    design: DesignOfExperiment,
+    p=np.inf,
+    encoding=EncodingEnum.ZERO_ONE_NULL_ENCODING,
+) -> float:
 
-        active_dim_ids.sort()
-        return sub_space_index_map[tuple(active_dim_ids)]
+    x = design.get_data_points(encoding)
 
-    # compute the subspace each point belongs to
-    mapped_values = [map_point(point) for point in x]
+    # determine projections for each releval dimension set
+    relevant_dim_sets_proj_map = {}
+    point_relevant_dims = []
+
+    # determine which heirachiral dimensions are active for each point
+    # determine which vairant dimensions are active for each point
+    for point in x:
+        # determine relevant dimensions for point
+        relevant_dims_set = tuple(determine_relevant_dimensions(design, point))
+
+        if relevant_dims_set not in relevant_dim_sets_proj_map:
+            projection_sets = []
+            l = len(relevant_dims_set)
+            # determine projects to consider for this set of dimensions
+            for i in range(l):
+                rhs_dim_id = relevant_dims_set[i]
+                projection_sets.append((rhs_dim_id,))
+                for j in range(i + 1, l):
+                    lhs_dim_id = relevant_dims_set[j]
+                    projection_sets.append((rhs_dim_id, lhs_dim_id))
+
+            relevant_dim_sets_proj_map[relevant_dims_set] = projection_sets
+
+        point_relevant_dims.append(relevant_dims_set)
 
     local_discrepancies = []
     n = design.point_count
-    for subset_index, point in zip(mapped_values, x):
+    dim_map = design.input_space.create_dim_map()
+    # use each point for region discrepancy sample
+    for relevant_dims_set, point in zip(point_relevant_dims, x):
 
-        sub_space = sub_spaces[subset_index]
-        region_volumn_percent = 0.0
-        portion_of_points_in_region = 0.0
+        projection_sets = relevant_dim_sets_proj_map[relevant_dims_set]
 
-        local_discrepancy = abs(
-            portion_of_points_in_region - region_volumn_percent
-        )
-        local_discrepancies.append(local_discrepancy)
+        point_projection_discrepancies = []
+        for u in projection_sets:
+            col_indexes = list(design.input_set_map[dim_id] for dim_id in u)
+            point_count_in_projection_region = 0
+            for c_relevant_dims_set, c_point in zip(point_relevant_dims, x):
+                relevant_point = True
+                in_region = True
+                for col_index, dim_id in zip(col_indexes, u):
+                    if dim_id not in c_relevant_dims_set:
+                        relevant_point = False
+                        break
+                    else:
+                        if np.isnan(point[col_index]):
+                            if np.isnan(c_point[col_index]):
+                                pass
+                            else:
+                                in_region = False
+                                break
+                        else:
+                            if np.isnan(c_point[col_index]):
+                                pass
+                            elif c_point[col_index] > point[col_index]:
+                                in_region = False
+                                break
+                if relevant_point and in_region:
+                    point_count_in_projection_region += 1
 
-    return max(local_discrepancies)
+            region_volumn_percent = 1.0
+            for col_index, dim_id in zip(col_indexes, u):
+                dim = dim_map[dim_id]
+                # compute dimension's culmative distribution for point value
+                v = point[col_index]
+                if np.isnan(v):
+                    region_volumn_percent *= dim.portion_null
+                else:
+                    region_volumn_percent *= (
+                        dim.portion_null + (1 - dim.portion_null) * v
+                    )
+
+            portion_of_points_in_region = point_count_in_projection_region / n
+
+            ppd = abs(portion_of_points_in_region - region_volumn_percent)
+
+            point_projection_discrepancies.append(ppd)
+
+        if p == np.inf:
+            local_discrepancies.append(max(point_projection_discrepancies))
+        else:
+            local_discrepancies.append(
+                sum(ppd ** (p) for ppd in point_projection_discrepancies)
+            )
+
+    if p == np.inf:
+        return max(local_discrepancies)
+    else:
+        return sum(local_discrepancies) ** (1 / p)
 
 
 def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
@@ -323,6 +407,16 @@ class DoeAssessment:
             if assessment.compare_dimensions(active_dimensions):
                 return assessment
         return None
+
+
+def compute_whole_design_star_discrepancy(
+    design: DesignOfExperiment,
+    _: List[FullSubDesignAssessment],
+    encoding: Encoding,
+) -> float:
+    if encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+        encoding = EncodingEnum.ZERO_ONE_NULL_ENCODING
+    return compute_star_discrepancy(design, encoding=encoding)
 
 
 def compute_weighted_discrepancy(
@@ -551,6 +645,7 @@ doe_metric_computation_map = {
     METRIC_WEIGHTED_MIPD: compute_weighted_mipd,
     METRIC_WHOLE_MIN_POINT_DISTANCE: compute_whole_min_point_distance,
     METRIC_WHOLE_MIN_PROJECTED_DISTANCE: compute_min_projected_distance,
+    METRIC_WHOLE_STAR_DISCREPANCY: compute_whole_design_star_discrepancy,
 }
 
 

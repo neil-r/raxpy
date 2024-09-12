@@ -264,3 +264,51 @@ def test_compute_min_projected_distance_with_composites():
 
     # the minimum distance between the distance is between points 1 and 2 (1-based indexing)
     assert min_d == 2.0 - 1.0
+
+
+def test_compute_star_discrepancy():
+    space = s.InputSpace(
+        dimensions=[
+            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Composite(
+                id="c1",
+                children=[
+                    d.Float(
+                        id="x4",
+                        lb=0.0,
+                        ub=10.0,
+                        nullable=True,
+                        portion_null=0.1,
+                    ),
+                    d.Float(
+                        id="x5",
+                        lb=0.0,
+                        ub=10.0,
+                        nullable=True,
+                        portion_null=0.1,
+                    ),
+                ],
+                nullable=True,
+                portion_null=0.1,
+            ),
+        ]
+    )
+
+    whole_doe = doe.DesignOfExperiment(
+        input_space=space,
+        input_set_map={"x1": 0, "x2": 1, "x3": 2, "c1": 3, "x4": 4, "x5": 5},
+        input_sets=np.array(
+            [
+                [0.0, 0.2, np.nan, 1.0, 0.95, 0.2],
+                [0.3, np.nan, np.nan, 1.0, np.nan, 0.3],
+                [0.9, 1.0, 0.7, np.nan, np.nan, np.nan],
+            ]
+        ),
+        encoding=doe.EncodingEnum.ZERO_ONE_NULL_ENCODING,
+    )
+    star_discrep = a.compute_star_discrepancy(whole_doe)
+
+    assert star_discrep is not None
+    assert star_discrep > 0.0
