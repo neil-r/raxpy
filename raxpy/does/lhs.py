@@ -20,6 +20,7 @@ from .full_sub_spaces import (
     SubSpaceTargetAllocations,
     allocate_points_to_full_sub_spaces,
 )
+from .scipy_optimizations import random_cd
 
 
 def create_base_lhs_creator(
@@ -175,6 +176,53 @@ def _init_merge_with_shadown_design(working_design, base_creator):
     return init_strategy, merge_strategy
 
 
+def _init_merge_with_discrepancy_opt(
+    working_design: WorkingDesignOfExpertiment, base_creator
+):
+
+    def init_strategy(data_points):
+        return data_points
+
+    def merge_strategy(data_points, parent_mask):
+
+        if working_design.active_index == 0:
+            return data_points
+        # find the columns that do not have nan values that align with parent_mask
+        base_design = working_design.final_data_points[
+            parent_mask, 0 : working_design.active_index
+        ]
+
+        columns_with_nan = np.any(np.isnan(base_design), axis=0)
+
+        # Removing columns with NaN values
+        base_design = base_design[:, ~columns_with_nan]
+
+        if base_design.shape[1] == 0:
+            return data_points
+
+        design_to_opt = np.concatenate((base_design, data_points), axis=1)
+        start_index = base_design.shape[
+            1
+        ]  # Number of columns in the first array
+        end_index = (
+            design_to_opt.shape[1] - 1
+        )  # Total number of columns in the merged array
+        columns_to_optimize = [start_index, end_index]
+
+        opt_design_points = random_cd(
+            design_to_opt,
+            n_iters=20000,
+            n_nochange=200,
+            column_bounds=columns_to_optimize,
+        )
+
+        return opt_design_points[
+            :, columns_to_optimize[0] : columns_to_optimize[1] + 1
+        ]
+
+    return init_strategy, merge_strategy
+
+
 def _init_merge_simple(working_design, base_creator):
 
     def init_strategy(data_points):
@@ -188,11 +236,13 @@ def _init_merge_simple(working_design, base_creator):
 
 MERGE_SHADOW_DESIGN = "shadow"
 MERGE_SIMPLE = "simple"
+MERGE_DISCREPANCY_OPT = "discrepancy"
 
 
 _merge_method_map = {
     MERGE_SHADOW_DESIGN: _init_merge_with_shadown_design,
     MERGE_SIMPLE: _init_merge_simple,
+    MERGE_DISCREPANCY_OPT: _init_merge_with_discrepancy_opt,
 }
 
 
@@ -210,7 +260,7 @@ def generate_design(
     space: InputSpace,
     n_points: int,
     base_creator=_default_base_lhs_creator,
-    merge_method: str = MERGE_SHADOW_DESIGN,
+    merge_method: str = MERGE_DISCREPANCY_OPT,
 ) -> DesignOfExperiment:
     """
     Generates a space-filling design of experiment initially for the space's
@@ -404,8 +454,6 @@ def generate_design_by_level_opt_merge(
                 active_index += 1
 
             # now optimize discrepancy given historical level designs
-            from .scipy_optimizations import random_cd
-
             for h_row_mask, h_column_mask in historical_row_column_masks:
                 combination_row_mask = list(
                     m1 and m2 for m1, m2 in zip(h_row_mask, parent_mask)

@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 
+from typing import Optional, Tuple
 import numpy as np
 
 from scipy.stats.qmc import discrepancy
@@ -219,7 +220,10 @@ def rng_integers(
 
 
 def random_cd(
-    best_sample: np.ndarray, n_iters: int, n_nochange: int
+    best_sample: np.ndarray,
+    n_iters: int,
+    n_nochange: int,
+    column_bounds: Optional[Tuple[int, int]] = None,
 ) -> np.ndarray:
     """Optimal LHS on CD.
 
@@ -246,7 +250,10 @@ def random_cd(
 
     best_disc = discrepancy(best_sample)
 
-    bounds = ([0, d - 1], [0, n - 1], [0, n - 1])
+    if column_bounds is None:
+        column_bounds = (0, d - 1)
+
+    bounds = (column_bounds, (0, n - 1), (0, n - 1))
 
     n_nochange_ = 0
     n_iters_ = 0

@@ -139,6 +139,30 @@ def test_creation_of_space_filling_doe_shadow_merge():
     )
 
 
+def test_creation_of_space_filling_doe_discrepancy_opt_merge():
+    """
+    Tests the creation of a space-filling design with a level-by-level method.
+
+    The level-sub-design points are merged using a shadow merge technique that
+    aligns similar partial-points of the shadow design with close partial-
+    points of the level-sub-design.
+
+    Asserts
+    -------
+    Design is not None
+    every point in design is in a full-sub-space
+
+    """
+    design = doe.generate_design(
+        SPACE, 100, merge_method=doe.MERGE_DISCREPANCY_OPT
+    )
+    assert design is not None
+    assert design.point_count == 100
+    assert_every_point_in_a_full_sub_space(
+        sub_spaces_list=SUB_SPACES, design=design
+    )
+
+
 def test_creation_of_space_filling_by_subspaces():
     """
     TODO Explain the Function

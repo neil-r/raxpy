@@ -10,8 +10,6 @@ def generate_maxpro_design(n: int, d: int, p: int = 2):
     # Execute R code to create a table
     robjects.r(
         f"""
-        table_data <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 2, ncol = 3)
-
         library(MaxPro)
             
         #{n}-run design
