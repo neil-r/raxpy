@@ -742,7 +742,7 @@ def generate_seperate_designs_by_full_subspace_and_pool(
 
             from .scipy_optimizations import random_cd
 
-            data_points = random_cd(data_points, 100000, 1000)
+            data_points = random_cd(data_points, 20000, 200)
 
             part_input_set_map = {}
             for i, dim in enumerate(active_dims):

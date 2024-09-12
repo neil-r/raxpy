@@ -242,7 +242,7 @@ def compute_discrepancy(context: SubSpaceMetricComputeContext) -> float:
         **Explanation**
 
     """
-    return discrepancy(context.sub_space_doe.input_sets)
+    return discrepancy(context.sub_space_doe.input_sets, method="MD")
 
 
 def compute_portion_of_total(context: SubSpaceMetricComputeContext) -> float:
