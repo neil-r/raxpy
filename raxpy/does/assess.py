@@ -17,6 +17,7 @@ from scipy.sparse.csgraph import minimum_spanning_tree
 from .doe import DesignOfExperiment, Encoding, EncodingEnum
 from ..spaces import root as s
 from ..spaces import dimensions
+from .maxpro import _create_max_pro_dist_func
 
 
 @dataclass
@@ -48,6 +49,8 @@ METRIC_WHOLE_MIN_POINT_DISTANCE = "max_whole_min_point_distance"
 METRIC_WHOLE_MIN_PROJECTED_DISTANCE = "max_whole_min_projected_distance"
 
 METRIC_WHOLE_STAR_DISCREPANCY = "star_discrepancy"
+
+METRIC_MAX_PRO = "max_pro"
 
 # FullSubDesign Metrics
 METRIC_AVG_PORTION_LEVELS_INCLUDED = "avg_portion_of_levels_included"
@@ -84,6 +87,50 @@ def determine_relevant_dimensions(
                     children_sets.append(dim.children)
 
     return relevant_dims
+
+
+def compute_max_pro(
+    design: DesignOfExperiment,
+    encoding=EncodingEnum.ZERO_ONE_NULL_ENCODING,
+):
+    n = design.point_count
+    point_comps = np.zeros((n, n))
+    x = design.get_data_points(encoding)
+    d = design.dim_specification_count
+
+    index_dim_map = design.index_dim_id_map
+
+    dim_map = design.input_space.create_dim_map()
+
+    root_dim_ids = {
+        dim.id: True
+        for dim in s.create_level_iterable(design.input_space.children)
+    }
+
+    dist_funcs = []
+
+    for k in range(d):
+        dim_id = index_dim_map[k]
+        dim = dim_map[dim_id]
+
+        if (
+            dim.portion_null > 0
+            or dim_id not in root_dim_ids
+            or dim.has_finite_values()
+        ):
+            dist_funcs.append(_create_max_pro_dist_func(dim))
+        else:
+            dist_funcs.append(lambda x1_value, x2_value: x1_value - x2_value)
+
+    for i in range(n - 1):
+        for j in range(i + 1, n):
+            m = 1
+            for k in range(0, d):
+                m *= dist_funcs[k](x[i, k], x[j, k]) ** 2
+
+            point_comps[i, j] = 1.0 / m
+
+    return (np.sum(np.triu(point_comps, -1)) / (n * (n - 1))) ** (1.0 / d)
 
 
 def compute_star_discrepancy(
@@ -409,6 +456,16 @@ class DoeAssessment:
         return None
 
 
+def compute_whole_design_max_pro(
+    design: DesignOfExperiment,
+    _: List[FullSubDesignAssessment],
+    encoding: Encoding,
+) -> float:
+    if encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+        encoding = EncodingEnum.ZERO_ONE_NULL_ENCODING
+    return compute_max_pro(design, encoding=encoding)
+
+
 def compute_whole_design_star_discrepancy(
     design: DesignOfExperiment,
     _: List[FullSubDesignAssessment],
@@ -646,6 +703,7 @@ doe_metric_computation_map = {
     METRIC_WHOLE_MIN_POINT_DISTANCE: compute_whole_min_point_distance,
     METRIC_WHOLE_MIN_PROJECTED_DISTANCE: compute_min_projected_distance,
     METRIC_WHOLE_STAR_DISCREPANCY: compute_whole_design_star_discrepancy,
+    METRIC_MAX_PRO: compute_whole_design_max_pro,
 }
 
 

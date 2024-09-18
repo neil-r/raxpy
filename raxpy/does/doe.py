@@ -75,6 +75,13 @@ class DesignOfExperiment:
                     )
 
     @property
+    def index_dim_id_map(self):
+        i_map = {}
+        for dim_id, i in self.input_set_map.items():
+            i_map[i] = dim_id
+        return i_map
+
+    @property
     def decoded_input_sets(self):
         if self._decoded_cache is None:
             if self.encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
@@ -195,3 +202,12 @@ class DesignOfExperiment:
             The count of dimensions/columns the design provides values.
         """
         return np.size(self.input_sets, axis=1)
+
+    def copy(self) -> "DesignOfExperiment":
+        design_copy = DesignOfExperiment(
+            input_space=self.input_space,
+            input_set_map=self.input_set_map,
+            input_sets=np.copy(self.input_sets),
+            encoding=self.encoding,
+        )
+        return design_copy

@@ -1,8 +1,18 @@
 """ TODO Explain Module """
 
 from dataclasses import dataclass
-from typing import (Any, Dict, Generic, List, Optional, Set, Tuple, Type,
-                    TypeVar, Union)
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 
@@ -118,6 +128,9 @@ class Dimension(Generic[T]):
             self.local_id = self.id
         if self.id == "":
             raise ValueError("Invalid identifier for dimension")
+
+    def has_finite_values(self):
+        return True
 
     def has_child_dimensions(self) -> bool:
         """
@@ -478,6 +491,9 @@ class Float(Dimension[float]):
                     f"Invalid value, the value {input_value} is not in the "
                     f"value set {self.value_set}"
                 )
+
+    def has_finite_values(self):
+        return self.value_set is not None
 
     def acceptable_types(self):
         """

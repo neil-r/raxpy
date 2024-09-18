@@ -126,7 +126,8 @@ def test_metric_computations():
                 [0.5, 0.3, 0.9],
                 [0.6, 0.4, 0.6],
             ]
-        )
+        ),
+        method="MD",
     )
 
     # TODO: incorporate hand computed values
@@ -312,3 +313,51 @@ def test_compute_star_discrepancy():
 
     assert star_discrep is not None
     assert star_discrep > 0.0
+
+
+def test_compute_max_pro():
+    space = s.InputSpace(
+        dimensions=[
+            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            d.Composite(
+                id="c1",
+                children=[
+                    d.Float(
+                        id="x4",
+                        lb=0.0,
+                        ub=10.0,
+                        nullable=True,
+                        portion_null=0.1,
+                    ),
+                    d.Float(
+                        id="x5",
+                        lb=0.0,
+                        ub=10.0,
+                        nullable=True,
+                        portion_null=0.1,
+                    ),
+                ],
+                nullable=True,
+                portion_null=0.1,
+            ),
+        ]
+    )
+
+    whole_doe = doe.DesignOfExperiment(
+        input_space=space,
+        input_set_map={"x1": 0, "x2": 1, "x3": 2, "c1": 3, "x4": 4, "x5": 5},
+        input_sets=np.array(
+            [
+                [0.0, 0.2, np.nan, 1.0, 0.95, 0.2],
+                [0.3, np.nan, np.nan, 1.0, np.nan, 0.3],
+                [0.9, 1.0, 0.7, np.nan, np.nan, np.nan],
+            ]
+        ),
+        encoding=doe.EncodingEnum.ZERO_ONE_NULL_ENCODING,
+    )
+    max_pro_value = a.compute_max_pro(whole_doe)
+
+    assert max_pro_value is not None
+    assert max_pro_value > 0.0
