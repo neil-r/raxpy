@@ -44,7 +44,7 @@ def test_doe_assessments():
         encoding=doe.EncodingEnum.NONE,
     )
 
-    assessment = a.assess_with_all_metrics(
+    assessment = a.measure_with_all_metrics(
         design, encoding=doe.EncodingEnum.NONE
     )
 

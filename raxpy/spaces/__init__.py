@@ -10,4 +10,4 @@ from .root import (
     create_all_iterable,
     create_level_iterable,
 )
-from .dimensions import *
+from .s import *

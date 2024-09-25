@@ -10,7 +10,7 @@ from typing import Dict, Iterable, List, Optional
 
 import numpy as np
 
-from .dimensions import Dimension, Variant
+from .s import Dimension, Variant
 
 
 def _generate_combinations(base_list: list) -> list:

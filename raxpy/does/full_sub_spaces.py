@@ -1,12 +1,21 @@
+"""
+    This module provides support to compute 
+    point-allocation portions of a design to sub-spaces.
+"""
+
 from typing import List, Optional
 from dataclasses import dataclass
 
 from ..spaces.complexity import compute_subspace_portions
-from ..spaces.root import InputSpace
+from ..spaces import InputSpace
 
 
 @dataclass
 class SubSpaceTargetAllocations:
+    """
+    Representation of a design's sub-space allocation portion
+    """
+
     active_dim_ids: List[str]
     target_portion: float
     allocated_point_count: Optional[int] = None
@@ -19,11 +28,40 @@ class SubSpaceTargetAllocations:
 def allocate_points_to_full_sub_spaces(
     space: InputSpace,
     n_points: int,
-    ensure_at_least_one=False,
+    ensure_at_least_one: bool = False,
     sub_space_target_allocations: Optional[
         List[SubSpaceTargetAllocations]
     ] = None,
 ) -> List[SubSpaceTargetAllocations]:
+    """
+    Allocations n_points to sub-spaces given the computed sub-spaces
+    portions, if not provided with sub_space_target_allocations.
+    If not provided, target portions are computed from the null-portion
+    attributes of the dimensions in each sub-space. For example,
+    if x1, x2 are in a subspace and the null_portions are 0.5 for each,
+    then this sub-space is allocated 0.25 of the n_points.
+
+    Arguments
+    ---------
+    space:InputSpace
+        the whole design space
+
+    n_points: int
+        The number of points to allocate to sub-spaces
+
+    ensure_at_least_one:bool=False
+        Ensures each sub-space gets at least one point allocation if
+        enough points are available
+
+    sub_space_target_allocations:Optional[ List[SubSpaceTargetAllocations]]
+        If provided, mutates the elements of list with point allocations,
+        and returns this list
+
+    Returns
+    -------
+    List[SubSpaceTargetAllocations]
+
+    """
 
     if sub_space_target_allocations is None:
         sub_space_target_allocations = []

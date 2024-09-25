@@ -1,9 +1,12 @@
-""" TODO Explain Module"""
+""" 
+    This modules contains classes used to Annotate function
+    parameters.
+"""
 
 from typing import Optional, Set, Union, Tuple, List
 from dataclasses import dataclass
 
-from ..spaces import dimensions as d
+from ..spaces import s as d
 
 
 CategorySpec = Union[str, Tuple[str, str]]
@@ -12,7 +15,7 @@ CategorySpec = Union[str, Tuple[str, str]]
 @dataclass(frozen=True, eq=True)
 class Base:
     """
-    TODO Explain Class
+    Parameter annotation abstract class.
     """
 
     label: Optional[str] = None
@@ -20,14 +23,15 @@ class Base:
 
     def apply_to(self, d: d.Dimension) -> None:
         """
-        TODO Explain the Function
+        Applies the annotated attributes to the
+        dimension d.
 
         Arguments
         ---------
         self : Base
-            **Explanation**
+
         d : d.Dimension
-            **Explanation**
+            a dimension to apply annotation attributes onto
         """
         if self.label is not None:
             d.label = self.label
@@ -41,7 +45,7 @@ class Base:
 @dataclass(frozen=True, eq=True)
 class Categorical(Base):
     """
-    TODO Explain Class
+    Annotation for a str parameter representing a finite set of values.
     """
 
     value_set: Optional[List[CategorySpec]] = None
@@ -50,7 +54,7 @@ class Categorical(Base):
 @dataclass(frozen=True, eq=True)
 class Float(Base):
     """
-    TODO Explain Class
+    Annotation for a float parameter.
     """
 
     ub: Optional[float] = None
@@ -59,15 +63,15 @@ class Float(Base):
 
     def apply_to(self, d: d.Float):
         """
-        TODO Explain the Function
+        Applies the annotated attributes to the
+        dimension d.
 
         Arguments
         ---------
-        self : Float
-            **Explanation**
-        d : d.Float
-            **Explanation**
+        self : Base
 
+        d : d.Dimension
+            a dimension to apply annotation attributes onto
         """
         super().apply_to(d)
         d.lb = self.lb
@@ -78,7 +82,7 @@ class Float(Base):
 @dataclass(frozen=True, eq=True)
 class Integer(Base):
     """
-    TODO Explain Class
+    Annotation for a int parameter.
     """
 
     ub: Optional[int] = None
@@ -87,15 +91,15 @@ class Integer(Base):
 
     def apply_to(self, d: d.Int):
         """
-        TODO Explain the Function
+        Applies the annotated attributes to the
+        dimension d.
 
         Arguments
         ---------
-        self : Integer
-            **Explanation**
-        d : d.Int
-            **Explanation**
+        self : Base
 
+        d : d.Dimension
+            a dimension to apply annotation attributes onto
         """
         super().apply_to(d)
         d.lb = self.lb
@@ -106,10 +110,5 @@ class Integer(Base):
 @dataclass(frozen=True, eq=True)
 class Binary(Base):
     """
-    TODO Explain Class
-
-    **Not Implemented**
-
+    Annotation for a bool parameter.
     """
-
-    pass

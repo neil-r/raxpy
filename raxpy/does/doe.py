@@ -76,6 +76,15 @@ class DesignOfExperiment:
 
     @property
     def index_dim_id_map(self):
+        """
+        Creates a dict mapping the indexes to dimension
+        ids of the columns in input_sets matrix.
+
+        Returns
+        -------
+        dict[int,str]
+            key-value of indexes to dimension ids
+        """
         i_map = {}
         for dim_id, i in self.input_set_map.items():
             i_map[i] = dim_id
@@ -83,6 +92,16 @@ class DesignOfExperiment:
 
     @property
     def decoded_input_sets(self):
+        """
+        Creates, as needed, the decoded version of the experiment design.
+        The numpy array is cached if created.
+
+        Returns
+        -------
+        np.array
+            decoded matrix with rows as points and columns representing
+            the dimensions
+        """
         if self._decoded_cache is None:
             if self.encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
                 self._decoded_cache = self.input_space.decode_zero_one_matrix(
@@ -105,6 +124,17 @@ class DesignOfExperiment:
 
     @property
     def zero_one_null_input_sets(self):
+        """
+        Creates, as needed, the null-encoded version of the experiment design.
+        The numpy array is cached if created. Null values are represented as
+        np.nan values in the numpy array.
+
+        Returns
+        -------
+        np.array
+            encoded matrix with rows as points and columns representing
+            the dimensions.
+        """
         if self._zero_one_null_encoding_cache is None:
             if self.encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
                 self._zero_one_null_encoding_cache = self.input_sets
@@ -166,6 +196,20 @@ class DesignOfExperiment:
         )
 
     def get_data_points(self, encoding: Encoding):
+        """
+        Gets numpy array of design given the encoding
+        provided.
+
+        Arguments
+        ---------
+        encoding:Encoding
+            The encoding of the design requested
+
+        Returns
+        -------
+        np.array
+            The design is the encoding requested
+        """
         if encoding == EncodingEnum.NONE:
             return self.decoded_input_sets
         elif encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
@@ -185,7 +229,7 @@ class DesignOfExperiment:
 
         Returns
         -------
-        np.size : int
+        int
             The count of points/rows the design provides values.
         """
         return np.size(self.input_sets, axis=0)
@@ -198,12 +242,22 @@ class DesignOfExperiment:
 
         Returns
         -------
-        np.size : int
+        int
             The count of dimensions/columns the design provides values.
         """
         return np.size(self.input_sets, axis=1)
 
     def copy(self) -> "DesignOfExperiment":
+        """
+        Creates a copy of the design. A shallow copy is
+        performed on the input_space, the input_set_map.
+        A deep copy is performed on the input_sets.
+
+        Returns
+        -------
+        DesignOfExperiment
+            copy of the experiment
+        """
         design_copy = DesignOfExperiment(
             input_space=self.input_space,
             input_set_map=self.input_set_map,

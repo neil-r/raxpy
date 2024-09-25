@@ -7,7 +7,7 @@ from typing import Iterable, List
 
 import math
 
-from . import dimensions as d
+from . import s as d
 from . import dim_tags
 from . import root as s
 

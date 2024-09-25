@@ -4,7 +4,7 @@ import random
 import numpy as np
 from ..spaces.complexity import estimate_complexity
 
-from ..spaces.dimensions import Dimension, Variant, Composite
+from ..spaces.s import Dimension, Variant, Composite
 from ..spaces import root as s
 from .doe import DesignOfExperiment, EncodingEnum
 from .full_sub_spaces import (

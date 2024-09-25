@@ -4,7 +4,7 @@
 
 import math
 from typing import List, Tuple, Iterable
-import raxpy.spaces.dimensions as d
+import raxpy.spaces.s as d
 import raxpy.spaces.complexity as c
 import raxpy.spaces.root as s
 

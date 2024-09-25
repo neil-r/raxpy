@@ -3,7 +3,7 @@
 """
 
 import numpy as np
-import raxpy.spaces.dimensions as d
+import raxpy.spaces.s as d
 import raxpy.spaces.root as s
 
 

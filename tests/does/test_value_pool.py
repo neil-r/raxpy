@@ -1,8 +1,18 @@
+"""
+    Unit test for the ValuePool data structure.
+"""
+
 from raxpy.does.lhs import ValuePool
 
 
 def test_value_pool():
+    """
+    Tests `raxpy.does.lhs.ValuePool`
 
+    Asserts
+    -------
+        The pull method removes values from the pool
+    """
     p = ValuePool(10)
 
     values_1 = p.pull(3)
