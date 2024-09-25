@@ -1,26 +1,30 @@
-""" TODO Explain Module """
+""" 
+    Unit tests considering the introspection of a function's
+    parameters defining an input space.
+"""
 
 from typing import Annotated, Optional
 from dataclasses import dataclass
 
 import raxpy.annotations.function_spec as fs
-import raxpy.spaces.dimensions as d
+import raxpy.spaces as s
 import raxpy
 
 
 def test_no_param_func():
     """
-    TODO Explain the Function
+    Tests the introspection of a function that
+    has no parameters.
 
     Asserts
     -------
-    **Explanation**
+        InputSpace has no dimensions
 
     """
 
     def f():
         """
-        TODO Explain the Function **Not Implemented
+        function spec to support unit testing
         """
         pass
 
@@ -31,46 +35,47 @@ def test_no_param_func():
 
 
 def assert_parameters(
-    d,
-    t,
-    id,
+    d: s.Dimension,
+    t: type,
+    id: str,
     default_value,
     lb,
     ub,
     value_set,
-    nullable=False,
+    nullable: bool = False,
     tags=None,
     specified_default=False,
 ):
     """
-    TODO Explain the Function
+    Helper function to support the assert dimensions
+    have the proper attributes.
 
     Arguments
     ---------
-    d
-        **Explanation**
+    d : s.Dimension
+        the dimension to analyze
     t
-        **Explanation**
+        the type of dimension to check if d is an instance
     id
-        **Explanation**
+        the id of dimension to check if d has this id
     default_value
-        **Explanation**
+        to check if d has this default_value
     lb
-        **Explanation**
+        to check if d has this lower bound
     ub
-        **Explanation**
+        to check if d has this upper bound
     value_set
-        **Explanation**
+        to check if d has this value set specifed
     nullable=False
-        **Explanation**
+        to check if d has this nullable flag
     tags=None
-        **Explanation**
+        to check if d has these tags
     specified_default=False
-        **Explanation**
+        to check if d has specified a default value
 
     Asserts
     -------
-    **Explanation**
+        d has the attributes provided
 
     """
     assert isinstance(d, t)
@@ -86,27 +91,18 @@ def assert_parameters(
 
 def test_single_param_func():
     """
-    TODO Explain the Function
+    Tests the introspection of a function that
+    has a single integer parameter.
 
     Asserts
     -------
-    **Explanation**
-
+        the input space includes a single dimension
+        corrosponding to the single parameter
     """
 
     def f(x: Annotated[int, raxpy.Integer(lb=0, ub=5)] = 2):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        x: Annotated[int, raxpy.Integer(lb=0, ub=5)] = 2
-            **Explanation**
-        
-        Returns
-        -------
-        **Explanation**
-
+        Function supporting the unit test.
         """
         return x * 2
 
@@ -116,7 +112,7 @@ def test_single_param_func():
     assert len(input_space.dimensions) == 1
     assert_parameters(
         input_space.dimensions[0],
-        d.Int,
+        s.Int,
         "x",
         2,
         0,
@@ -128,45 +124,27 @@ def test_single_param_func():
 
 def test_mixed_spec_param_func():
     """
-    TODO Explain the Function
+    Tests the introspection of a function that
+    has a mutlple number-based parameters.
 
     Asserts
     -------
-    **Explanation**
-
+        the input space includes a appropriate dimensions
+        corrosponding to the parameters
     """
 
     def f(
         x1: Annotated[int, raxpy.Integer(lb=0, ub=5)],
-        x2: Annotated[float, raxpy.Float(lb=1.7, ub=3.3)],
-        x3: Annotated[int, raxpy.Integer(ub=5)],
-        x4: Annotated[
+        _x2: Annotated[float, raxpy.Float(lb=1.7, ub=3.3)],
+        _x3: Annotated[int, raxpy.Integer(ub=5)],
+        _x4: Annotated[
             Optional[int], raxpy.Integer(value_set={1, 2, 4})
         ] = None,
-        x5: int = 3,
-        x6: Optional[float] = None,
+        _x5: int = 3,
+        _x6: Optional[float] = None,
     ):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        x1 : Annotated[int]
-            **Explanation**
-        x2 : Annotated[float]
-            **Explanation**
-        x3 : Annotated[int]
-            **Explanation**
-        x4 : Annotated[Optional[int]] = None
-            **Explanation**
-        x5 : int = 3
-            **Explanation**
-        x6 : Optional[float] = None
-            **Explanation**
-
-        Returns
-        -------
-        **Explanation**
+        Function supporting unit testing.
         """
         return x1 * 2
 
@@ -174,17 +152,17 @@ def test_mixed_spec_param_func():
     assert input_space is not None
     assert input_space.dimensions is not None
     assert len(input_space.dimensions) == 6
-    assert_parameters(input_space.dimensions[0], d.Int, "x1", None, 0, 5, None)
+    assert_parameters(input_space.dimensions[0], s.Int, "x1", None, 0, 5, None)
     assert_parameters(
-        input_space.dimensions[1], d.Float, "x2", None, 1.7, 3.3, None
+        input_space.dimensions[1], s.Float, "_x2", None, 1.7, 3.3, None
     )
     assert_parameters(
-        input_space.dimensions[2], d.Int, "x3", None, None, 5, None
+        input_space.dimensions[2], s.Int, "_x3", None, None, 5, None
     )
     assert_parameters(
         input_space.dimensions[3],
-        d.Int,
-        "x4",
+        s.Int,
+        "_x4",
         None,
         None,
         None,
@@ -194,8 +172,8 @@ def test_mixed_spec_param_func():
     )
     assert_parameters(
         input_space.dimensions[4],
-        d.Int,
-        "x5",
+        s.Int,
+        "_x5",
         3,
         None,
         None,
@@ -205,8 +183,8 @@ def test_mixed_spec_param_func():
     )
     assert_parameters(
         input_space.dimensions[5],
-        d.Float,
-        "x6",
+        s.Float,
+        "_x6",
         None,
         None,
         None,
@@ -218,23 +196,26 @@ def test_mixed_spec_param_func():
 
 def test_blank_object_spec_param_func():
     """
-    TODO Explain the Function
+    Tests the introspection of a function that
+    has a parameter based on a dataclass with
+    no attributes.
 
     Asserts
     -------
-    **Explain Asserts**
-
+        the input space includes a appropriate dimensions
+        corrosponding to the dataclass parameter.
     """
 
     @dataclass
     class CustomObject:
         """
-        TODO Explain Class
+        Dataclass supporting the unit test
         """
-        pass
 
-    def f(obj1: CustomObject):
-        pass
+    def f(_obj1: CustomObject):
+        """
+        Function supporting the unit test
+        """
 
     input_space = fs.extract_input_space(f)
     assert input_space is not None
@@ -244,18 +225,19 @@ def test_blank_object_spec_param_func():
 
 def test_complex_object_spec_param():
     """
-    TODO Explain the Function
+    Tests the introspection of a function that
+    has a parameter based on a dataclass.
 
     Asserts
     -------
-    **Explain Asserts**
-
+        the input space includes a appropriate dimensions
+        corrosponding to the dataclass parameter.
     """
 
     @dataclass
     class ChildCustomObject:
         """
-        TODO Explain Class
+        Dataclass supporting unit test
         """
 
         caf1: float
@@ -268,23 +250,17 @@ def test_complex_object_spec_param():
     @dataclass
     class CustomObject:
         """
-        TODO Explain Class
+        Another dataclass supporting unit test
         """
 
         ao1: ChildCustomObject
         ao2: Optional[ChildCustomObject] = None
         ai2: Optional[int] = None
 
-    def f(obj1: CustomObject):
+    def f(_obj1: CustomObject):
         """
-        TODO Explain the Function **Not Implemented**
-
-        Arguments
-        ---------
-        obj1 : CustomObject
-            **Explanation**
+        Function supporting unit test introspection
         """
-        pass
 
     input_space = fs.extract_input_space(f)
     assert input_space is not None
@@ -292,7 +268,7 @@ def test_complex_object_spec_param():
     assert len(input_space.dimensions) == 1
 
     actual_composite_dim = input_space.dimensions[0]
-    assert isinstance(actual_composite_dim, d.Composite)
+    assert isinstance(actual_composite_dim, s.Composite)
     assert len(actual_composite_dim.children) == 3
 
     # test the conversion of a dictionary representation of the inputs

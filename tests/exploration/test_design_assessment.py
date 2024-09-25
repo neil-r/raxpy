@@ -4,8 +4,7 @@ import numpy as np
 from scipy.stats.qmc import discrepancy
 
 import raxpy.does.assess as a
-import raxpy.spaces.root as s
-import raxpy.spaces.dimensions as d
+import raxpy.spaces as s
 import raxpy.does.doe as doe
 
 
@@ -21,9 +20,9 @@ def test_doe_assessments():
     """
     space = s.InputSpace(
         dimensions=[
-            d.Float(id="x1", lb=0.0, ub=1.0, nullable=True),
-            d.Float(id="x2", lb=0.0, ub=1.0, nullable=True),
-            d.Float(id="x3", lb=0.0, ub=1.0, nullable=True),
+            s.Float(id="x1", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
+            s.Float(id="x2", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
+            s.Float(id="x3", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
         ]
     )
 
@@ -69,9 +68,9 @@ def test_metric_computations():
     """
     space = s.InputSpace(
         dimensions=[
-            d.Float(id="x1", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
-            d.Float(id="x2", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
-            d.Float(id="x3", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
+            s.Float(id="x1", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
+            s.Float(id="x2", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
+            s.Float(id="x3", lb=0.0, ub=1.0, nullable=True, portion_null=0.1),
         ]
     )
 
@@ -153,9 +152,9 @@ def test_whole_min_distance_computation():
     """
     space = s.InputSpace(
         dimensions=[
-            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
         ]
     )
 
@@ -186,9 +185,9 @@ def test_compute_min_projected_distance():
     """
     space = s.InputSpace(
         dimensions=[
-            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
         ]
     )
 
@@ -219,20 +218,20 @@ def test_compute_min_projected_distance_with_composites():
     """
     space = s.InputSpace(
         dimensions=[
-            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Composite(
+            s.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Composite(
                 id="c1",
                 children=[
-                    d.Float(
+                    s.Float(
                         id="x4",
                         lb=0.0,
                         ub=10.0,
                         nullable=True,
                         portion_null=0.1,
                     ),
-                    d.Float(
+                    s.Float(
                         id="x5",
                         lb=0.0,
                         ub=10.0,
@@ -270,20 +269,20 @@ def test_compute_min_projected_distance_with_composites():
 def test_compute_star_discrepancy():
     space = s.InputSpace(
         dimensions=[
-            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Composite(
+            s.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Composite(
                 id="c1",
                 children=[
-                    d.Float(
+                    s.Float(
                         id="x4",
                         lb=0.0,
                         ub=10.0,
                         nullable=True,
                         portion_null=0.1,
                     ),
-                    d.Float(
+                    s.Float(
                         id="x5",
                         lb=0.0,
                         ub=10.0,
@@ -318,20 +317,20 @@ def test_compute_star_discrepancy():
 def test_compute_max_pro():
     space = s.InputSpace(
         dimensions=[
-            d.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
-            d.Composite(
+            s.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Composite(
                 id="c1",
                 children=[
-                    d.Float(
+                    s.Float(
                         id="x4",
                         lb=0.0,
                         ub=10.0,
                         nullable=True,
                         portion_null=0.1,
                     ),
-                    d.Float(
+                    s.Float(
                         id="x5",
                         lb=0.0,
                         ub=10.0,

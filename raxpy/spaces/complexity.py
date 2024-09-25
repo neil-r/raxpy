@@ -1,4 +1,7 @@
-""" TODO Explain Module"""
+""" 
+    Analyzes dimensions to estimate their complexity corrosponding
+    to a discrete-categorical value unit of measurement.
+"""
 
 from typing import Iterable, List
 
@@ -11,18 +14,21 @@ from . import root as s
 
 def estimate_complexity(dim: d.Dimension) -> float:
     """
-    TODO Explain the Function
+    Estimates the complexity of dim corrosponding
+    to a discrete-categorical value unit of measurement.
+    For example, a categorical dimension with 3 possible categories
+    returns 3.  This same dimension marked as optional returns
+    4.
 
     Arguments
     ---------
     dim : d.Dimension
-        **Explanation**
+        the dimension to analzye the complexity of
 
     Returns
     -------
     complexity_estimate : float
-        **Explanation**
-
+        an estimation of the number of "levels" a dimension has
     """
     complexity_estimate = 1.0
 
@@ -75,28 +81,18 @@ def assign_null_portions(
     dimensions: Iterable[d.Dimension], complexity_estimator=estimate_complexity
 ) -> None:
     """
-    TODO Explain the Function
+    Assigns dimensions' unspecified null_poritions attributes,
+    if not specified, with given their complexity.
 
     Arguments
     ---------
     dimensions : Iterable[d.Dimension]
-        **Explanation**
+        the dimensions to assign their complexity
     complexity_estimator=estimate_complexity
-        **Explanation**
-
+        the hueristic function that estimates a dimension's complexity
     """
 
     children_sets: List[Iterable[d.Dimension]] = []
-
-    # count nullable dimensions
-    nullable_children = 0
-    not_nullable_children = 0
-    for dim in dimensions:
-
-        if dim.nullable:
-            nullable_children += 1
-        else:
-            not_nullable_children += 1
 
     # compute portion for active dimensions
     for dim in dimensions:
@@ -124,19 +120,22 @@ def compute_subspace_portions(
     space: s.Space, full_subspace_sets: List[List[str]]
 ) -> List[float]:
     """
-    TODO Explain the Function
+    Given a space and a list of full subspace dimension specified sets,
+    computes the sub-space portions of an experiment's design that
+    should be targeted given dimensions null_portion settings.
 
     Arguments
     ---------
     space : s.Space
-        **Explanation**
+        The whole input space
     full_subspace_sets : List[List[str]]
-        **Explanation**
+        The list of sub-spaces of the whole that should be considered
 
     Returns
     -------
     portions : List[float]
-        **Explanation**
+        A list of values that sum to 1 that indicates the portion allocations
+        of a whole design to the subspaces specified.
 
     """
     portions = []

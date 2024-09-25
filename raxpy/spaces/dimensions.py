@@ -1,4 +1,7 @@
-""" TODO Explain Module """
+""" 
+    This modules provides data structures to support the
+    specification of a space's dimensions (or factors).
+"""
 
 from dataclasses import dataclass
 from typing import (
@@ -7,7 +10,6 @@ from typing import (
     Generic,
     List,
     Optional,
-    Set,
     Tuple,
     Type,
     TypeVar,
@@ -16,27 +18,30 @@ from typing import (
 
 import numpy as np
 
+
 T = TypeVar("T")
 
 
 def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
     """
-    TODO Explain the Function
+    Helper function to map a 0-1 array of values to a
+    discrete set of values and a porition of the values
+    specified to be null. portion_null is used as a threshold
+    for all values under this threshold as being mapped to np.nan.
 
     Arguments
     ---------
     x
-        **Explanation**
+        an array of 0-1 values
     value_set
-        **Explanation**
+        a list of values
     portion_null
-        **Explanation**
+        threhold of the 0-1 range to map to np.nan
 
     Returns
     -------
-    value_set : List[Union[int, float]]
-        **Explanation**
-
+    List[Union[int, float]]
+        the transformed array with values from the value_set
     """
     value_count = len(value_set)
     boundary_size = 1.0 / value_count
@@ -64,20 +69,23 @@ def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
 
 def convert_values_from_dict(dimensions, input_value: Dict[str, Any]) -> Dict:
     """
-    TODO Explain the Function
+    Creates a dictionary with a key-value pair for
+    each dimension in dimensions.
+    If a dimension is not in the input_value list,
+    then the default value attribute of the dimension
+    is assigned as the value for the dimension.
 
     Arguments
     ---------
     dimensions
-        **Explanation**
+        The dimensions to consider
     input_value : Dict[str, Any]
-        **Explanation**
+        the dict values to consider
 
     Returns
     -------
     args : Dict
-        **Explanation**
-
+        a fully specified dict of key-values
     """
     args = {}
 
@@ -100,7 +108,8 @@ def convert_values_from_dict(dimensions, input_value: Dict[str, Any]) -> Dict:
 @dataclass
 class Dimension(Generic[T]):
     """
-    TODO Explain Class
+    Abstract class for a specification of a range of values
+    within a space.
     """
 
     id: str = ""
@@ -114,12 +123,12 @@ class Dimension(Generic[T]):
 
     def __post_init__(self):
         """
-        TODO Explain the Function
+        Ensure id's of dimension are specified
 
         Raises
         ------
         ValueError:
-            **If value is invalid**
+            if id is not specified
 
         """
         if self.id == "":
@@ -129,34 +138,57 @@ class Dimension(Generic[T]):
         if self.id == "":
             raise ValueError("Invalid identifier for dimension")
 
-    def has_finite_values(self):
+    def has_finite_values(self) -> bool:
+        """
+        Checks if a dimension represents a finte number of values
+
+        Returns
+        -------
+            bool: True if the dimension represents a finte number of values
+                False otherwise
+        """
         return True
 
     def has_child_dimensions(self) -> bool:
         """
-        TODO Explain the Function **Not Implemented?**
+        Checks if the dimension has child dimensions.
+        Child dimensions should be accessed with the children
+        attribute.
+
+        Returns
+        -------
+            bool: True if the dimension has child dimensions
+
         """
         return False
 
     def only_supports_spec_structure(self) -> bool:
         """
-        TODO Explain the Function **Not Implemented?**
+        Checks if the dimension is only for structure
+
+        Returns
+        -------
+            bool: True if the dimension, itself and not considering children dimensions,
+                does represents any variability
         """
         return False
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
-        TODO Explain the Function **Not Implemented?**
+        Converts a 0-1 array x to decoded values.
 
         Arguments
         ---------
         self
-            **Explanation**
+            dimension
         x
-            **Explanation**
+            0-1 array of values
         utilize_null_portions=True
-            **Explanation**
+            to consider the null_portion attribute to assign null values
 
+        Returns
+        -------
+            list of decoded values
         """
         raise NotImplementedError(
             "Abstract method, subclass should implement this method"
@@ -169,28 +201,33 @@ class Dimension(Generic[T]):
         Arguments
         ---------
         self
-            **Explanation**
+            the dimension
         tag : str
-            **Explanation**
+            the tag to check if assigned to self
 
         Returns
         -------
-        Returns True if there is a valid tag and
-        False if there is not a tag
+            bool: Returns True if there is a valid tag and
+               False if there is not a tag
 
         """
         return self.tags is not None and tag in self.tags
 
     def convert_to_argument(self, input_value) -> T:
         """
-        TODO Explain the Function **Not Implemented?**
+        Converts a decoded numpy based input_value to a
+        form suitable for a Python function.
 
         Arguments
         ---------
         self
             **Explanation**
         input_value
-            **Explanation**
+            the decoded numpy value
+
+        Returns
+        -------
+            T: a form of the numpy value suitable
 
         """
         raise NotImplementedError(
@@ -199,12 +236,16 @@ class Dimension(Generic[T]):
 
     def acceptable_types(self) -> Tuple[Type]:
         """
-        TODO Explain the Function**Not Implemented?**
+        Returns a tuple of types acceptable for self
 
         Arguments
         ---------
         self
-            **Explanation**
+            the dimension
+
+        Returns
+        -------
+            Tuple[Type]: a tuple of the acceptable types
 
         """
         raise NotImplementedError(
@@ -213,20 +254,21 @@ class Dimension(Generic[T]):
 
     def validate(self, input_value, specified_input: bool):
         """
-        TODO Explain the Function
+        Validates the input_value given self's
+        specification of acceptable range of values.
 
         Arguments
         ---------
         self
-            **Explanation**
+            the dimension to consider
         input_value
-            **Explanation**
+            the value to check
         specified_input : bool
-            **Explanation**
+            flag to indicate whether to ensure not null as well
 
         Returns
         -------
-        TODO **Explanation**
+            bool: True if valid
 
         """
         if input_value is None:
@@ -254,7 +296,7 @@ class Dimension(Generic[T]):
 @dataclass
 class Int(Dimension[int]):
     """
-    TODO Explain Class
+    A range of integer values.
     """
 
     lb: Optional[int] = None
@@ -263,18 +305,7 @@ class Int(Dimension[int]):
 
     def convert_to_argument(self, input_value) -> T:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self
-            **Explanation**
-        input_value
-            **Explanation**
-
-        Returns
-        -------
-        Returns input value as an integer
+        Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
         return int(input_value)
 
@@ -282,21 +313,7 @@ class Int(Dimension[int]):
         self, x, utilize_null_portions=True
     ) -> List[Union[int, float]]:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self
-            **Explanation**
-        x
-            **Explanation**
-        utilize_null_portions=True
-            **Explanation**
-
-        Returns
-        -------
-        _map_values : List[Union[int, float]]
-            **Explanation**
+        Implementation of abstract method. See `Dimension.collapse_uniform`.
 
         Raises
         ------
@@ -321,16 +338,7 @@ class Int(Dimension[int]):
 
     def validate(self, input_value, specified_input: bool) -> None:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self
-            **Explanation**
-        input_value
-            **Explanation**
-        specified_input : bool
-            **Explanation**
+        Implementation of abstract method. See `Dimension.validate`.
 
         Raises
         ------
@@ -362,7 +370,7 @@ class Int(Dimension[int]):
 
     def acceptable_types(self):
         """
-        TODO Explain the Function
+        Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (int,)
 
@@ -370,7 +378,7 @@ class Int(Dimension[int]):
 @dataclass
 class Float(Dimension[float]):
     """
-    TODO Explain the Function
+    A range of float values.
     """
 
     lb: Optional[float] = None
@@ -379,40 +387,14 @@ class Float(Dimension[float]):
 
     def convert_to_argument(self, input_value) -> T:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : float
-            **Explanation**
-        input_value
-            **Explanation**
-
-        Returns
-        -------
-        Returns input value as a float
+        Implementation of abstract method. See `Dimension.convert_to_argument`.
 
         """
         return float(input_value)
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : float
-            **Explanation**
-        x
-            **Explanation**
-        utilize_null_portions=True
-            **Explanation**
-
-        Returns
-        -------
-        _map_values : List[Union[int, float]]
-            **Explanation**
-        TODO **Explain one-line if/for return statement**
+        Implementation of abstract method. See `Dimension.collapse_uniform`.
 
         Raises
         ------
@@ -453,16 +435,7 @@ class Float(Dimension[float]):
 
     def validate(self, input_value, specified_input: bool) -> None:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : float
-            **Explanation**
-        input_value
-            **Explanation**
-        specified_input : bool
-            **Explanation**
+        Implementation of abstract method. See `Dimension.validate`.
 
         Raises
         ------
@@ -493,12 +466,14 @@ class Float(Dimension[float]):
                 )
 
     def has_finite_values(self):
+        """
+        Implementation of abstract method. See `Dimension.has_finite_values`.
+        """
         return self.value_set is not None
 
     def acceptable_types(self):
         """
-        TODO Explain the Function
-
+        Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (float,)
 
@@ -506,7 +481,8 @@ class Float(Dimension[float]):
 @dataclass
 class CategoryValue:
     """
-    TODO Explain Class
+    A string value and label for a discrete-category
+    within a category dimension.
     """
 
     value: str
@@ -516,7 +492,7 @@ class CategoryValue:
 @dataclass
 class Text(Dimension[str]):
     """
-    TODO Explain Class
+    A range of string values representing categories.
     """
 
     length_limit: Optional[int] = None
@@ -524,37 +500,13 @@ class Text(Dimension[str]):
 
     def convert_to_argument(self, input_value) -> T:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : str
-            **Explanation**
-        input_value
-            **Explanation**
-
-        Returns
-        -------
-        Returns input value as a string
-
+        Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
         return str(input_value)
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : str
-            **Explanation**
-        x
-            **Explanation**
-
-        Returns
-        -------
-        _map_values : List[Union[int, float]]
-            **Explanation**
+        Implementation of abstract method. See `Dimension.collapse_uniform`.
 
         Raises
         ------
@@ -572,16 +524,7 @@ class Text(Dimension[str]):
 
     def validate(self, input_value, specified_input: bool) -> None:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : str
-            **Explanation**
-        input_value
-            **Explanation**
-        specified_input : bool
-            **Explanation**
+        Implementation of abstract method. See `Dimension.validate`.
 
         Raises
         ------
@@ -602,7 +545,7 @@ class Text(Dimension[str]):
 
     def acceptable_types(self):
         """
-        TODO Explain the Function
+        Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (str,)
 
@@ -610,7 +553,7 @@ class Text(Dimension[str]):
 @dataclass
 class Variant(Dimension):
     """
-    TODO Explain Class
+    Represents a dimension that is specified as one of its options.
     """
 
     options: Optional[List[Dimension]] = None
@@ -618,51 +561,24 @@ class Variant(Dimension):
     @property
     def children(self):
         """
-        TODO Explain the Function
+        Lists the children dimensions of this dimension.
 
         Returns
         -------
-        **Explanation**
-
+            the optional children dimensions
         """
         return self.options
 
     def convert_to_argument(self, input_value):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : Variant
-            **Explanation**
-        input_value
-            **Explanation**
-
-        Returns
-        -------
-        TODO **Explanation**
-
+        Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
         option = self.options[input_value.option_index]
         return option.convert_to_argument(input_value.content)
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : Variant
-            **Explanation**
-        x
-            **Explanation**
-        utilize_null_portions=True
-            **Explanation**
-
-        Returns
-        -------
-        _map_values : List[Union[int, float]]
-            **Explanation**
+        Implementation of abstract method. See `Dimension.collapse_uniform`.
 
         Raises
         ------
@@ -678,19 +594,23 @@ class Variant(Dimension):
 
     def only_supports_spec_structure(self) -> bool:
         """
-        TODO Explain the Function
+        Implementation of abstract method. See `Dimension.only_supports_spec_structure`.
         """
         return False
 
     def has_child_dimensions(self) -> bool:
         """
-        TODO Explain the Function
+        Implementation of abstract method. See `Dimension.has_child_dimensions`.
         """
         return True
 
     def count_children_dimensions(self) -> int:
         """
-        TODO Explain the Function
+        Recursively counts the number of children dimensions
+
+        Returns
+        -------
+            int: the number of children dimensions
         """
         return sum(
             [
@@ -705,16 +625,7 @@ class Variant(Dimension):
 
     def validate(self, input_value, specified_input: bool) -> None:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : Variant
-            **Explanation**
-        input_value
-            **Explanation**
-        specified_input : bool
-            **Explanation**
+        Implementation of abstract method. See `Dimension.validate`.
         """
         super().validate(input_value, specified_input)
         if input_value is not None:
@@ -725,16 +636,7 @@ class Variant(Dimension):
 
     def acceptable_types(self):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : Variant
-            **Explanation**
-
-        Returns
-        -------
-        **Explanation**
+        Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         at = []
         for option in self.options:
@@ -745,18 +647,50 @@ class Variant(Dimension):
 @dataclass
 class Listing(Dimension[List]):
     """
-    TODO Explain Class
+    Represents a dimension that is specified as a range of lists.
     """
 
     element_type: Optional[Dimension] = None
     cardinality_lb: Optional[int] = None
     cardinality_ub: Optional[int] = None
 
+    def convert_to_argument(self, input_value):
+        """
+        Implementation of abstract method. See `Dimension.convert_to_argument`.
+        """
+        # TODO implement
+        raise NotImplementedError("Not implemented!")
+
+    def only_supports_spec_structure(self) -> bool:
+        """
+        Implementation of abstract method. See `Dimension.only_supports_spec_structure`.
+        """
+        return False
+
+    def has_child_dimensions(self) -> bool:
+        """
+        Implementation of abstract method. See `Dimension.has_child_dimensions`.
+        """
+        return True
+
+    def collapse_uniform(self, x, utilize_null_portions=True):
+        """
+        Implementation of abstract method. See `Dimension.collapse_uniform`.
+        """
+        # TODO implement
+        raise NotImplementedError("Not implemented!")
+
+    def acceptable_types(self):
+        """
+        Implementation of abstract method. See `Dimension.acceptable_types`.
+        """
+        return (List, Tuple)
+
 
 @dataclass
 class Composite(Dimension):
     """
-    TODO Explain Class
+    Represents a set of dimensions that are specified as a group.
     """
 
     class_name: Optional[str] = ""
@@ -765,41 +699,14 @@ class Composite(Dimension):
 
     def convert_to_argument(self, input_value):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : Composite
-            **Explanation**
-        input_value
-            **Explanation**
-
-        Returns
-        -------
-        Returns input value as a TODO**Explanation**
-
+        Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
         args = convert_values_from_dict(self.children, input_value)
         return self.type_class(**args)
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : Composite
-            **Explanation**
-        x
-            **Explanation**
-        utilize_null_portions=True
-            **Explanation**
-
-        Returns
-        -------
-        _map_values : List[Union[int, float]]
-            **Explanation**
-
+        Implementation of abstract method. See `Dimension.collapse_uniform`.
         """
         return _map_values(
             x,
@@ -811,19 +718,23 @@ class Composite(Dimension):
 
     def only_supports_spec_structure(self) -> bool:
         """
-        TODO Explain the Function
+        Implementation of abstract method. See `Dimension.only_supports_spec_structure`.
         """
         return not self.nullable
 
     def has_child_dimensions(self) -> bool:
         """
-        TODO Explain the Function
+        Implementation of abstract method. See `Dimension.has_child_dimensions`.
         """
         return True
 
     def count_children_dimensions(self) -> int:
         """
-        TODO Explain the Function
+        Recursively counts the number of children dimensions
+
+        Returns
+        -------
+            int: the number of children dimensions
         """
         return sum(
             [
@@ -838,17 +749,7 @@ class Composite(Dimension):
 
     def validate(self, input_value, specified_input: bool) -> None:
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        self : Composite
-            **Explanation**
-        input_value
-            **Explanation**
-        specified_input : bool
-            **Explanation**
-
+        Implementation of abstract method. See `Dimension.validate`.
         """
         super().validate(input_value, specified_input)
         if input_value is not None:
@@ -863,6 +764,6 @@ class Composite(Dimension):
 
     def acceptable_types(self):
         """
-        TODO Explain the Function
+        Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (self.type_class,)

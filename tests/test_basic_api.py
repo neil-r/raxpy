@@ -1,4 +1,6 @@
-""" TODO Explain Module """
+""" 
+    Tests the high-level perform experiment API and default settings.
+"""
 
 from typing import Annotated, Optional
 
@@ -13,25 +15,20 @@ def f(
     x2: Annotated[Optional[float], raxpy.Float(lb=0.0, ub=3.0)] = 1.5,
 ):
     """
-    The following code should execute the computations with these
-    values, such as running a simulation or training a machine
-    learning model to keep it simple for this demonstration, we
-    simply compute a polynominal.
+    A test function to support testing of runtime
+    validation.
 
     Arguments
     ---------
     x1 : Annotated[float]
-        **Explanation**
+        input 1
     x2 : Annotated[Optional[float]] = 1.5
-        x2 is annotated as Optional. This indicates that this parameter
-        is optional (users can call this function with setting x2 to
-        None) The function specification also provides a lower and upper
-        bound for each float input parameter.
+        input 2
 
     Returns
     -------
     y : float
-        **Explanation**
+        the test function's return vale
     """
 
     y = 0.4 * x1
@@ -42,15 +39,17 @@ def f(
 
 def test_perform_basic_batch_experiment():
     """
-    TODO Explain the Function
+    Tests the default perform experiment
+    settings
 
     Asserts
     -------
-    **Explanation**
+        Experiment on f is executed without error and
+        returns the proper number of inputs and outputs.
 
     """
 
-    inputs, outputs = raxpy.perform_batch_experiment(f, 10)
+    inputs, outputs = raxpy.perform_experiment(f, 10)
 
     assert inputs is not None
     assert len(inputs) == 10
@@ -61,7 +60,11 @@ def test_perform_basic_batch_experiment():
 
 def test_validation_decorator():
     """
-    TODO Explain the Function
+        Tests the runtime validation decorator
+
+    Asserts
+    -------
+        Invalid inputs raise a ValueError during runtime
     """
     # violoate lower bound of x1
     with pytest.raises(ValueError):

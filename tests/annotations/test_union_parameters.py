@@ -1,4 +1,6 @@
-""" TODO Explain Module """
+""" 
+    Unit tests for the code-intorspection of functions Union parameters
+"""
 
 from typing import Annotated, Optional, Union
 from dataclasses import dataclass
@@ -7,13 +9,13 @@ import pytest
 
 import raxpy
 import raxpy.annotations.function_spec as fs
-import raxpy.spaces.dimensions as d
+import raxpy.spaces as s
 
 
 @dataclass
 class _CustomCls1:
     """
-    TODO Explain Class
+    Dataclass used for unit testing
     """
 
     x1: Annotated[float, raxpy.Float(lb=0.0, ub=1.0)]
@@ -28,8 +30,7 @@ class _CustomCls1:
 @dataclass
 class _CustomCls2:
     """
-    TODO Explain Class
-
+    Dataclass used for unit testing
     """
 
     x1: Annotated[float, raxpy.Float(lb=0.0, ub=2.0)]
@@ -44,7 +45,7 @@ class _CustomCls2:
 @dataclass
 class _CustomCls3:
     """
-    TODO Explain Class
+    Dataclass used for unit testing
     """
 
     x1: Annotated[float, raxpy.Float(lb=0.0, ub=2.0)]
@@ -63,22 +64,18 @@ class _CustomCls3:
 )
 def test_union_choice_spec_param_func():
     """
-    TODO Explain the Function
+    Tests the union parameters are correctly converted to an
+    input space dimensions.
 
     Asserts
     -------
-    **Explanation**
-
+        The appropriate  dimension with children dimensions
+        are derived
     """
 
     def f(x1: _CustomCls1 | _CustomCls2 | _CustomCls3):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        x1 : CustomCls1 | CustomCls2 | CustomCls3
-            **Explanation**
+        Function used for unit testing
         """
         x1.execute()
 
@@ -87,18 +84,13 @@ def test_union_choice_spec_param_func():
     assert input_space.dimensions is not None
     assert len(input_space.dimensions) == 1
     dim = input_space.dimensions[0]
-    assert isinstance(dim, d.Variant)
+    assert isinstance(dim, s.Variant)
     assert len(dim.children) == 3
     assert dim.nullable is False
 
     def f2(x1: _CustomCls1 | _CustomCls2 | _CustomCls3 | None):
         """
-        TODO Explain the Function
-
-        Arguments
-        ---------
-        x1 : CustomCls1 | CustomCls2 | CustomCls3 | None
-            **Explanation**
+        Function used for unit testing
         """
         x1.execute()
 
@@ -107,19 +99,20 @@ def test_union_choice_spec_param_func():
     assert input_space2.dimensions is not None
     assert len(input_space2.dimensions) == 1
     dim2 = input_space2.dimensions[0]
-    assert isinstance(dim2, d.Variant)
+    assert isinstance(dim2, s.Variant)
     assert len(dim2.children) == 3
     assert dim2.nullable is True
 
 
 def test_union_choice_spec_param_func_long():
     """
-    TODO Explain the Function
+    Tests the union parameters, typing.Union, are correctly
+    converted to an input space dimensions.
 
     Asserts
     -------
-    **Explanation**
-
+        The appropriate dimension with children dimensions
+        are derived
     """
 
     def f(x1: Union[_CustomCls1, _CustomCls2, _CustomCls3]):
@@ -138,6 +131,6 @@ def test_union_choice_spec_param_func_long():
     assert input_space.dimensions is not None
     assert len(input_space.dimensions) == 1
     dim = input_space.dimensions[0]
-    assert isinstance(dim, d.Variant)
+    assert isinstance(dim, s.Variant)
     assert len(dim.children) == 3
     assert dim.nullable is False

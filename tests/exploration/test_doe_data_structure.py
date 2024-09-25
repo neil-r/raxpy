@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 import raxpy.does.doe as doe
-from raxpy.spaces.root import InputSpace
+from raxpy.spaces import InputSpace
 
 
 def test_doe_counts():

@@ -1,4 +1,6 @@
-""" TODO Explain Module """
+""" 
+    Units test for the dimension complexity computation hueristics
+"""
 
 import math
 from typing import List, Tuple, Iterable
@@ -9,12 +11,12 @@ import raxpy.spaces.root as s
 
 def test_assign_null_portions():
     """
-    TODO Explain the Function
+    Ensures the complexity hueristics are used to assign
+    the null portions when not specified.
 
     Asserts
     -------
-    **Explanation**
-
+        the null_portions attributes are set on dimensions
     """
     space = s.Space(
         dimensions=[
@@ -54,7 +56,7 @@ def test_assign_null_portions():
         ]
     )
 
-    # adjust the porition null values
+    # assign the unspecified porition null values
     c.assign_null_portions(s.create_level_iterable(space.children))
 
     # an dimension that cannot be null should not portion
@@ -77,11 +79,12 @@ def test_assign_null_portions():
 
 def test_subspace_portitions_computations():
     """
-    TODO Explain the Function
+    Ensures the subspace portions heuristics
+    are applied correctly.
 
     Asserts
     -------
-    **Explanation**
+        the subspace portions are correctly computed
     """
     space = s.Space(
         dimensions=[
