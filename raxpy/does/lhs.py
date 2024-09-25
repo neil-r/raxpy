@@ -9,7 +9,7 @@ import numpy as np
 from scipy.stats.qmc import LatinHypercube
 from scipy.optimize import linear_sum_assignment
 
-from ..spaces.s import Dimension, Variant, Composite
+from ..spaces.dimensions import Dimension, Variant, Composite
 from ..spaces.root import (
     InputSpace,
     create_level_iterable,

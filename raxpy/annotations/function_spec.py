@@ -7,7 +7,7 @@ from typing import List, Callable
 
 import inspect
 
-from raxpy.spaces import s as s
+from raxpy.spaces import dimensions as dimensions
 from raxpy.spaces.root import InputSpace, OutputSpace
 from .type_spec import map_type, UndefinedValue
 
@@ -15,7 +15,9 @@ from .type_spec import map_type, UndefinedValue
 ID_ROOT_RETURN = "y"
 
 
-def _convert_param(name: str, param: inspect.Parameter) -> s.Dimension:
+def _convert_param(
+    name: str, param: inspect.Parameter
+) -> dimensions.Dimension:
     """
     Helper function to convert a parameter to a dimension.
 
@@ -47,11 +49,11 @@ def _convert_param(name: str, param: inspect.Parameter) -> s.Dimension:
     else:
         if param.default is inspect.Parameter.empty:
             # no default value and no static type spec
-            d = s.Float(id=name, local_id=name, nullable=False)
+            d = dimensions.Float(id=name, local_id=name, nullable=False)
         else:
             # infer type given type of default value
             if param.default is None:
-                d = s.Float(
+                d = dimensions.Float(
                     id=name, local_id=name, nullable=True, default_value=None
                 )
             else:
@@ -77,7 +79,7 @@ def extract_input_space(func: Callable) -> InputSpace:
     input_space: Type InputSpace
         TODO**What is input Space?**
     """
-    input_dimensions: List[s.Dimension] = []
+    input_dimensions: List[dimensions.Dimension] = []
 
     params = inspect.signature(func).parameters
     for name, param in params.items():
@@ -106,7 +108,7 @@ def extract_output_space(func: Callable) -> OutputSpace:
     input_space: Type OutputSpace
         TODO **Explanation**
     """
-    output_dimensions: List[s.Dimension] = []
+    output_dimensions: List[dimensions.Dimension] = []
     signature = inspect.signature(func)
 
     return_annotation = signature.return_annotation

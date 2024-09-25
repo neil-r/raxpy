@@ -7,7 +7,7 @@ import types
 from dataclasses import MISSING, fields
 from typing import List, Type, Union, get_args, get_origin
 
-from raxpy.spaces import s
+from .. import spaces as s
 
 
 UndefinedValue = object()

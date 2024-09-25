@@ -2,11 +2,8 @@
     Units test for the dimension complexity computation hueristics
 """
 
-import math
-from typing import List, Tuple, Iterable
-import raxpy.spaces.s as d
 import raxpy.spaces.complexity as c
-import raxpy.spaces.root as s
+import raxpy.spaces as s
 
 
 def test_assign_null_portions():
@@ -20,34 +17,34 @@ def test_assign_null_portions():
     """
     space = s.Space(
         dimensions=[
-            d.Float(id="x1", lb=3.0, ub=5.0),
-            d.Float(
+            s.Float(id="x1", lb=3.0, ub=5.0),
+            s.Float(
                 id="x2",
                 lb=-3.0,
                 ub=-5.0,
                 nullable=True,
             ),
-            d.Composite(
+            s.Composite(
                 id="x3",
                 nullable=True,
                 children=[
-                    d.Int(id="x4", lb=6, ub=7),
-                    d.Float(
+                    s.Int(id="x4", lb=6, ub=7),
+                    s.Float(
                         id="x5",
                         value_set=[0.1, 0.5, 0.9],
                         nullable=True,
                     ),
                 ],
             ),
-            d.Variant(
+            s.Variant(
                 id="x6",
                 nullable=True,
                 options=[
-                    d.Float(
+                    s.Float(
                         id="x7",
                         value_set=[0.1, 0.5, 0.9],
                     ),
-                    d.Float(
+                    s.Float(
                         id="x8",
                         value_set=[0.1, 0.5, 0.9],
                     ),
@@ -88,20 +85,20 @@ def test_subspace_portitions_computations():
     """
     space = s.Space(
         dimensions=[
-            d.Float(id="x1", lb=3.0, ub=5.0),
-            d.Float(
+            s.Float(id="x1", lb=3.0, ub=5.0),
+            s.Float(
                 id="x2",
                 lb=-3.0,
                 ub=-5.0,
                 nullable=True,
                 portion_null=0.1,
             ),
-            d.Composite(
+            s.Composite(
                 id="x3",
                 nullable=True,
                 children=[
-                    d.Int(id="x4", lb=6, ub=7),
-                    d.Float(
+                    s.Int(id="x4", lb=6, ub=7),
+                    s.Float(
                         id="x5",
                         value_set=[0.1, 0.5, 0.9],
                         nullable=True,
@@ -110,15 +107,15 @@ def test_subspace_portitions_computations():
                 ],
                 portion_null=0.5,
             ),
-            d.Variant(
+            s.Variant(
                 id="x6",
                 nullable=True,
                 options=[
-                    d.Float(
+                    s.Float(
                         id="x7",
                         value_set=[0.1, 0.5, 0.9],
                     ),
-                    d.Float(
+                    s.Float(
                         id="x8",
                         value_set=[0.1, 0.5, 0.9],
                     ),

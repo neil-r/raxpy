@@ -2,7 +2,7 @@
     Unit tests for the code-intorspection of functions Union parameters
 """
 
-from typing import Annotated, Optional, Union
+from typing import Annotated, Union
 from dataclasses import dataclass
 import sys
 import pytest

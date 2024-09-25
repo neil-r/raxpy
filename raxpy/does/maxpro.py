@@ -1,16 +1,10 @@
-from typing import Optional
-
 import random
 import numpy as np
 from ..spaces.complexity import estimate_complexity
 
-from ..spaces.s import Dimension, Variant, Composite
-from ..spaces import root as s
+from .. import spaces as s
 from .doe import DesignOfExperiment, EncodingEnum
-from .full_sub_spaces import (
-    SubSpaceTargetAllocations,
-    allocate_points_to_full_sub_spaces,
-)
+
 
 """
 

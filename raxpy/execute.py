@@ -10,7 +10,7 @@ if sys.version_info >= (3, 10):
 else:
     from typing_extensions import Callable, TypeVar, List, ParamSpec, Tuple
 
-from raxpy.spaces.s import convert_values_from_dict
+from raxpy.spaces.dimensions import convert_values_from_dict
 from raxpy.spaces.complexity import assign_null_portions
 from raxpy.spaces import InputSpace, create_level_iterable
 from raxpy.annotations import function_spec

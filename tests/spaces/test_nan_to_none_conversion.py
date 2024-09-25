@@ -3,8 +3,8 @@
 """
 
 import numpy as np
-import raxpy.spaces.s as d
-import raxpy.spaces.root as s
+import raxpy.spaces as s
+from raxpy.spaces.root import _create_dict_from_flat_values
 
 
 def test_create_dict_for_nan():
@@ -12,7 +12,7 @@ def test_create_dict_for_nan():
     Tests if create_dict_from_flat_values function outputs a NaN value
     """
     input_f = [
-        d.Float(
+        s.Float(
             id="x1",
             local_id="x1",
             nullable=False,
@@ -25,7 +25,7 @@ def test_create_dict_for_nan():
             ub=4.0,
             value_set=None,
         ),
-        d.Float(
+        s.Float(
             id="x2",
             local_id="x2",
             nullable=True,
@@ -42,9 +42,7 @@ def test_create_dict_for_nan():
     input_set_map = {"x1": 0, "x2": 1}
     input_array = [3.8165008, np.nan]
 
-    output = s._create_dict_from_flat_values(
-        input_f, input_array, input_set_map
-    )
+    output = _create_dict_from_flat_values(input_f, input_array, input_set_map)
 
     for key, value in output.items():
         if value != value:

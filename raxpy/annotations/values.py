@@ -6,7 +6,7 @@
 from typing import Optional, Set, Union, Tuple, List
 from dataclasses import dataclass
 
-from ..spaces import s as d
+from .. import spaces as s
 
 
 CategorySpec = Union[str, Tuple[str, str]]
@@ -21,7 +21,7 @@ class Base:
     label: Optional[str] = None
     tags: Optional[List[str]] = None
 
-    def apply_to(self, d: d.Dimension) -> None:
+    def apply_to(self, d: s.Dimension) -> None:
         """
         Applies the annotated attributes to the
         dimension d.
@@ -61,7 +61,7 @@ class Float(Base):
     lb: Optional[float] = None
     value_set: Optional[Set[float]] = None
 
-    def apply_to(self, d: d.Float):
+    def apply_to(self, d: s.Float):
         """
         Applies the annotated attributes to the
         dimension d.
@@ -89,7 +89,7 @@ class Integer(Base):
     lb: Optional[int] = None
     value_set: Optional[Set[int]] = None
 
-    def apply_to(self, d: d.Int):
+    def apply_to(self, d: s.Int):
         """
         Applies the annotated attributes to the
         dimension d.
