@@ -7,7 +7,7 @@ from typing import List, Callable
 
 import inspect
 
-from raxpy.spaces import dimensions as dimensions
+from raxpy.spaces import dimensions
 from raxpy.spaces.root import InputSpace, OutputSpace
 from .type_spec import map_type, UndefinedValue
 
