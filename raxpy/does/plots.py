@@ -2,8 +2,6 @@
     This modules provides some custom plots to show experiment designs.
 """
 
-import itertools
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -17,7 +15,7 @@ def scatterplot_matrix(data, names: str, **kwargs):
     Arguments
     ---------
     data
-        TODO **Explanation**
+        matrix of data points
     names : str
         Labels for subplot names
     **kwargs
@@ -28,7 +26,6 @@ def scatterplot_matrix(data, names: str, **kwargs):
     -------
     Returns the matplotlib figure object containg the
     subplot grid.
-
     """
     n_points, n_columns = data.shape
     fig, axes = plt.subplots(nrows=n_columns, ncols=n_columns, figsize=(8, 8))
