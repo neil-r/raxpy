@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.stats.qmc import discrepancy
 
-import raxpy.does.assess as a
+import raxpy.does.measure as a
 import raxpy.spaces as s
 import raxpy.does.doe as doe
 
