@@ -1,4 +1,7 @@
-""" TODO """
+""" 
+    This module provides some capabilites that integrate
+    the designing and execution of experiments.
+"""
 
 import sys
 
@@ -9,7 +12,7 @@ else:
 
 from raxpy.spaces.dimensions import convert_values_from_dict
 from raxpy.spaces.complexity import assign_null_portions
-from raxpy.spaces.root import InputSpace, create_level_iterable
+from raxpy.spaces import InputSpace, create_level_iterable
 from raxpy.annotations import function_spec
 from raxpy.does import lhs
 
@@ -26,15 +29,14 @@ def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
     Arguments
     ---------
     f (Function) : Callable[I, T]
-        TODO **Explanation**
+        the function to execute
     inputs : List[I]
-        **Explanation**
+        the values to pass into the function
 
     Returns
     -------
     results : List[T]
         List of sequential results from input function
-
     """
     results = []
 
@@ -48,12 +50,14 @@ def _default_designer(
     input_space: InputSpace, target_number_of_runs: int
 ) -> List[I]:
     """
-    TODO Explain the Function
+    Designs an experiment of size target_number_of_runs
+    for the values varied in the input_space.
 
     Arguments
     ---------
     input_space : InputSpace
-        **Explanation**
+        the specification of the range of values to
+        consider for the design
     target_number_of_runs : int
         The requested quantity of iterations
         of the experiment being designed
@@ -61,7 +65,7 @@ def _default_designer(
     Returns
     -------
     arg_set : List[I]
-        **Explanation**
+        a list of points (i.e., the design of the experiment)
     """
 
     # assign unassigned null poritions using complexity hueristic
@@ -81,7 +85,7 @@ def _default_designer(
     return arg_set
 
 
-def perform_batch_experiment(
+def perform_experiment(
     f: Callable[I, T],
     target_number_of_runs: int,
     designer: Callable[[InputSpace, int], List[I]] = _default_designer,
@@ -102,20 +106,22 @@ def perform_batch_experiment(
     Arguments
     ---------
     f : Callable[I, T]
-        **Explanation**
+        The function to design an experiment with respect to
+        and to execute this experiment by calling
     target_number_of_runs : int
-        **Explanation**
+        The maximum number of points to execute the function
+        with.
     designer : Callable[[InputSpace, int], List[I]]
-        Set to default= _default_designer TODO**Explanation**
+        A function that designs the experiment
     orchistrator : Callable[[Callable[I, T], List[I]], List[T]]
-        Set to default= _default_orchistrator TODO**Explanation**
+        A function that executes the experiment on f
 
     Returns
     -------
-    arg_sets : List[I@perform_batch_experiment]
-        **Explanation**
-    results : List[T@perform_batch_experiment]
-        **Explanation**
+    arg_sets : List[I@perform_experiment]
+        the points passed into f as inputs (i.e., the design of the experiment)
+    results : List[T@perform_experiment]
+        the values returned from f for each point
     """
 
     input_space = function_spec.extract_input_space(f)

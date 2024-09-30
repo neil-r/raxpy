@@ -1,4 +1,8 @@
-""" TODO Explain Module """
+""" 
+    This modules implements the data structures to represent 
+    compositions of dimensions and common functions working with
+    a list of dimensions.
+"""
 
 import itertools
 from dataclasses import dataclass
@@ -11,17 +15,17 @@ from .dimensions import Dimension, Variant
 
 def _generate_combinations(base_list: list) -> list:
     """
-    TODO Explain the Function
+    Helper function to combinations of the elements in base_list
 
     Arguments
     ---------
     base_list : list
-        **Explanation**
+        the list of elements to consider
 
     Returns
     -------
     all_combinations : list
-        **Explanation**
+        the list of combinations
     """
     # Create an empty list to store all combinations
     all_combinations = []
@@ -38,17 +42,19 @@ def _generate_combinations(base_list: list) -> list:
 
 def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
     """
-    TODO Explain the Function
+    Dervies every possible sub-spaces. Each sub-space defines a set
+    of dimensions that corrospond to a valid set of non-null
+    inputs.
 
     Arguments
     ---------
     level : Interable[Dimension]
-        **Explanation**
+        The dimensions to consider
 
     Returns
     -------
     condensed_lists : List[List[str]]
-        **Explanation**
+        a list of lists containing dimension's ids
     """
 
     optional_dims = []
@@ -133,18 +139,19 @@ def create_level_iterable(
     base_dimensions: List[Dimension],
 ) -> Iterable[Dimension]:
     """
-    TODO Explain the Function
+    Creates a iterable over base_dimensions, including
+    the children dimensions of dimensions that are only
+    used for structure.
 
     Arguments
     ---------
     base_dimensions : List[Dimension]
-        **Explanation**
+        the dimensions to consider
 
     Returns
     -------
     resolved_dimension_list : Iterable[Dimension]
-        **Explanation**
-
+        the dimensions at the same level
     """
     resolved_dimension_list: List[Dimension] = []
 
@@ -171,17 +178,18 @@ def create_all_iterable(
     base_dimensions: List[Dimension],
 ) -> Iterable[Dimension]:
     """
-    TODO Explain the Function
+    Creates an Iterable over all the dimensions in
+    base_dimensions and their children.
 
     Arguments
     ---------
     base_dimensions : List[Dimension]
-        **Explanation**
+        the dimensions to consider
 
     Returns
     -------
     resolved_dimension_list : Iterable[Dimension]
-        **Explanation**
+        the flattened list of dimensions
     """
     resolved_dimension_list: List[Dimension] = []
 
@@ -201,21 +209,23 @@ def _create_dict_from_flat_values(
     dimensions: List[Dimension], inputs, dim_to_index_mapping
 ) -> Dict:
     """
-    TODO Explain the Function
+    Helper function that converts a flat array of values, inputs,
+    to a dictionary with the keys representing the dimensions' ids
+    and the values from inputs. Also converts np.nan values in input to None.
 
     Arguments
     ---------
     dimensions : List[Dimension]
-        **Explanation**
+        the list of dimensions
     inputs
-        **Explanation**
+        a flattened array of values
     dim_to_index_mapping
-        **Explanation**
+        the mapping of dimensions'' ids to their index of values in inputs
 
     Returns
     -------
-    dict_values : Dict
-        **Explanation**
+    Dict
+        the dict form of inputs
     """
     dict_values = {}
     for dim in dimensions:
@@ -246,42 +256,10 @@ def _create_dict_from_flat_values(
 
 
 @dataclass
-class SubSpace:
-    """
-    TODO Explain Class
-    """
-
-    active_dimensions: Dict
-    target_sample_count = 0
-
-    pass
-
-
-def _project_null(x1, x2):
-    """
-    TODO Explain the Function
-
-    Arguments
-    ---------
-    x1
-        **Explanation**
-    x2
-        **Explanation**
-
-    Returns
-    -------
-    np.nan
-        **Explanation**
-
-    """
-    return [(np.nan if np.isnan(xp2) else xp1) for xp1, xp2 in zip(x1, x2)]
-
-
-@dataclass
 class Space:
     """
-    TODO Explain Class
-
+    Composition of dimensions that together define a domain
+    of tuples with values from the dimensions.
     """
 
     dimensions: List[Dimension]
@@ -289,33 +267,34 @@ class Space:
     @property
     def children(self) -> List[Dimension]:
         """
-        TODO Explain the Function
+        Gets the list of root-dimensions that form this space.
 
         Arguments
         ---------
         self : Space
-            **Explanation**
+            Space
 
         Returns
         -------
-        self.dimension : List[Dimension]
-            **Explanation**
+        List[Dimension]
+            a list of dimensions
         """
         return self.dimensions
 
     def create_dim_map(self) -> Dict[str, Dimension]:
         """
-        TODO Explain the Function
+        Creates a dict of dimension's id as keys to
+        to the Dimension objects as values.
 
         Arguments
         ---------
         self : Space
-            **Explanation**
+            self
 
         Returns
         -------
-        dim_map : Dict[str, Dimension]
-            **Explanation**
+        Dict[str, Dimension]
+            the resulting dictionary mapping of ids to Dimension objects
         """
         dim_map = {}
 
@@ -371,7 +350,12 @@ class Space:
     def count_dimensions(self) -> int:
         """
         Counts and returns the dimensions of the space
-        that are not only for structure. TODO Look at wording
+        that contribute to the domain of values (Dimensions
+        that are only used for structure are not counted).
+
+        Returns
+        -------
+        int: the number of dimensions, including all children dimensions
         """
         return sum(
             [
@@ -418,43 +402,123 @@ class Space:
 
         return value_dicts
 
+    def encode_to_zero_one_null_matrix(
+        self,
+        zero_one_encoded_values: np.array,
+        dim_column_map: Dict[str, int],
+    ):
+        """
+        Encodes a 0-1 matrix of values to a 0-1 and np.nan matrix
+        given dimensions null_portion attributes
+
+        Arguments
+        ---------
+        self : Space
+            Space
+        zero_one_encoded_values : np.array
+            the 0-1 matrix with rows representing data-points and columns dimensions
+        dim_column_map : Dict[str, int]
+            the index of dimensions in zero_one_encoded_values given the dimensions' ids
+
+        Returns
+        -------
+        np.array
+            a 0-1 matrix with np.nan values
+        """
+
+        adjusted_encoded_values = np.array(zero_one_encoded_values)
+        flatted_dimensions = create_all_iterable(self.children)
+        for dim in flatted_dimensions:
+
+            if dim.portion_null is not None and dim.portion_null > 0.0:
+                if dim.id in dim_column_map:
+                    column_index = dim_column_map[dim.id]
+                    encoded_column = zero_one_encoded_values[:, column_index]
+                    adjusted_encoded_column = [
+                        (
+                            (xp - dim.portion_null) / (1.0 - dim.portion_null)
+                            if xp is not None and xp > dim.portion_null
+                            else None
+                        )
+                        for xp in encoded_column
+                    ]
+                    decoded_column = dim.collapse_uniform(encoded_column, True)
+                    # address broadcast any nan to children
+                    if dim.has_child_dimensions():
+                        nan_mask = np.isnan(decoded_column)
+                        if nan_mask.sum() > 0:
+                            children = create_all_iterable(dim.children)
+                            non_nan_mask = ~nan_mask
+                            for c_dim in children:
+                                if c_dim.id in dim_column_map:
+                                    c_column_index = dim_column_map[c_dim.id]
+                                    zero_one_encoded_values[:, c_column_index][
+                                        non_nan_mask
+                                    ] = zero_one_encoded_values[
+                                        :, c_column_index
+                                    ][
+                                        non_nan_mask
+                                    ]
+                                    zero_one_encoded_values[:, c_column_index][
+                                        nan_mask
+                                    ] = np.nan
+                        if isinstance(dim, Variant):
+                            # determine active child, null out others
+                            for i, c_dim in enumerate(dim.children):
+                                nan_mask = [x != i for x in decoded_column]
+
+                                for c_c_dim in create_all_iterable([c_dim]):
+                                    if c_c_dim.id in dim_column_map:
+                                        c_column_index = dim_column_map[
+                                            c_c_dim.id
+                                        ]
+                                        zero_one_encoded_values[
+                                            :, c_column_index
+                                        ][nan_mask] = np.nan
+
+                    adjusted_encoded_values[:, column_index] = (
+                        adjusted_encoded_column
+                    )
+        return adjusted_encoded_values
+
     def decode_zero_one_matrix(
         self,
-        x: np.array,
+        zero_one_encoded_values: np.array,
         dim_column_map: Dict[str, int],
         map_null_to_children_dim=False,
         utilize_null_portitions=True,
     ):
         """
-        TODO Explain the Function
+        Decodes a 0-1 matrix given the dimensions specifications.
 
         Arguments
         ---------
         self : Space
-            **Explanation**
+            the specification of dimensions
         x : np.array
-            **Explanation**
+            the 0-1 matrix to consider
         dim_column_map : Dict[str, int]
-            **Explanation**
+            the index of dimensions given the dimensions' ids
         map_null_to_children_dim=False
-            **Explanation**
+            flag to include mapping null across the children cells given
+            parents that are determined to be null
         utilize_null_portitions=True
-            **Explanation**
+            flag to indicate the activation of logic that addresses
+            mapping null values given dimensions' null_portion attribute
 
         Returns
         -------
-        decoded_values : ndarray
-            **Explanation**
-
+        np.array:
+            matrix of decoded values with np.nan representing nulls
         """
 
-        decoded_values = np.array(x)
+        decoded_values = np.array(zero_one_encoded_values)
         flatted_dimensions = create_all_iterable(self.children)
         for dim in flatted_dimensions:
 
             if dim.id in dim_column_map:
                 column_index = dim_column_map[dim.id]
-                encoded_column = x[:, column_index]
+                encoded_column = zero_one_encoded_values[:, column_index]
                 decoded_column = dim.collapse_uniform(
                     encoded_column, utilize_null_portitions
                 )
@@ -466,10 +530,14 @@ class Space:
                         for c_dim in children:
                             if c_dim.id in dim_column_map:
                                 c_column_index = dim_column_map[c_dim.id]
-                                x[:, c_column_index][non_nan_mask] = x[
-                                    :, c_column_index
-                                ][non_nan_mask]
-                                x[:, c_column_index][nan_mask] = np.nan
+                                zero_one_encoded_values[:, c_column_index][
+                                    non_nan_mask
+                                ] = zero_one_encoded_values[:, c_column_index][
+                                    non_nan_mask
+                                ]
+                                zero_one_encoded_values[:, c_column_index][
+                                    nan_mask
+                                ] = np.nan
                     if isinstance(dim, Variant):
                         # determine active child, null out others
                         for i, c_dim in enumerate(dim.children):
@@ -478,7 +546,9 @@ class Space:
                             for c_c_dim in create_all_iterable([c_dim]):
                                 if c_c_dim.id in dim_column_map:
                                     c_column_index = dim_column_map[c_c_dim.id]
-                                    x[:, c_column_index][nan_mask] = np.nan
+                                    zero_one_encoded_values[:, c_column_index][
+                                        nan_mask
+                                    ] = np.nan
 
                 decoded_values[:, column_index] = decoded_column
         return decoded_values
@@ -487,7 +557,7 @@ class Space:
 @dataclass
 class InputSpace(Space):
     """
-    TODO Explain Class
+    A Space representing inputs into an experimentation subject
     """
 
     multi_dim_contraints: Optional[List] = None
@@ -496,7 +566,6 @@ class InputSpace(Space):
 @dataclass
 class OutputSpace(Space):
     """
-    TODO Explain Class
+    A Space representing outputs returned from passing inputs
+    through an experimentation subject
     """
-
-    dimensions: List[Dimension]

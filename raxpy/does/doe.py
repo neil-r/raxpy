@@ -37,6 +37,7 @@ class DesignOfExperiment:
     encoding: Encoding
 
     _decoded_cache: Optional[np.array] = None
+    _zero_one_null_encoding_cache: Optional[np.array] = None
 
     def __post_init__(self):
         """
@@ -74,7 +75,33 @@ class DesignOfExperiment:
                     )
 
     @property
+    def index_dim_id_map(self):
+        """
+        Creates a dict mapping the indexes to dimension
+        ids of the columns in input_sets matrix.
+
+        Returns
+        -------
+        dict[int,str]
+            key-value of indexes to dimension ids
+        """
+        i_map = {}
+        for dim_id, i in self.input_set_map.items():
+            i_map[i] = dim_id
+        return i_map
+
+    @property
     def decoded_input_sets(self):
+        """
+        Creates, as needed, the decoded version of the experiment design.
+        The numpy array is cached if created.
+
+        Returns
+        -------
+        np.array
+            decoded matrix with rows as points and columns representing
+            the dimensions
+        """
         if self._decoded_cache is None:
             if self.encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
                 self._decoded_cache = self.input_space.decode_zero_one_matrix(
@@ -95,8 +122,38 @@ class DesignOfExperiment:
 
         return self._decoded_cache
 
+    @property
+    def zero_one_null_input_sets(self):
+        """
+        Creates, as needed, the null-encoded version of the experiment design.
+        The numpy array is cached if created. Null values are represented as
+        np.nan values in the numpy array.
+
+        Returns
+        -------
+        np.array
+            encoded matrix with rows as points and columns representing
+            the dimensions.
+        """
+        if self._zero_one_null_encoding_cache is None:
+            if self.encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
+                self._zero_one_null_encoding_cache = self.input_sets
+            elif self.encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+                self._zero_one_null_encoding_cache = (
+                    self.input_space.encode_to_zero_one_null_matrix(
+                        self.input_sets,
+                        self.input_set_map,
+                    )
+                )
+            else:
+                raise NotImplementedError(
+                    "Going from decoded-design to encoded-design not implemented"
+                )
+
+        return self._zero_one_null_encoding_cache
+
     def extract_points_and_dimensions(
-        self, point_row_mask, dim_set: List[str]
+        self, point_row_mask, dim_set: List[str], encoding: Encoding
     ) -> "DesignOfExperiment":
         """
         Extracts a sub-design given a row mask and a subset of dimensions
@@ -109,6 +166,7 @@ class DesignOfExperiment:
             the row mask, true if the row should be included in extracted design
         dim_set : List[str]
             the id of the columns that should be included in the extracted design
+        encoding: Encoding
 
         Returns
         -------
@@ -118,12 +176,50 @@ class DesignOfExperiment:
 
         column_indexes = [self.input_set_map[dim_id] for dim_id in dim_set]
 
+        if encoding == EncodingEnum.NONE:
+            base_design_points = self.decoded_input_sets
+        elif encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
+            base_design_points = self.zero_one_null_input_sets
+        else:
+            if EncodingEnum.ZERO_ONE_RAW_ENCODING == self.encoding:
+                base_design_points = self.input_sets
+            else:
+                raise ValueError(
+                    "Unable to derive a zero-one-raw encoding due to information loss"
+                )
+
         return DesignOfExperiment(
             input_space=self.input_space,
-            input_sets=self.input_sets[point_row_mask][:, column_indexes],
+            input_sets=base_design_points[point_row_mask][:, column_indexes],
             input_set_map={dim_id: i for i, dim_id in enumerate(dim_set)},
-            encoding=self.encoding,
+            encoding=encoding,
         )
+
+    def get_data_points(self, encoding: Encoding):
+        """
+        Gets numpy array of design given the encoding
+        provided.
+
+        Arguments
+        ---------
+        encoding:Encoding
+            The encoding of the design requested
+
+        Returns
+        -------
+        np.array
+            The design is the encoding requested
+        """
+        if encoding == EncodingEnum.NONE:
+            return self.decoded_input_sets
+        elif encoding == EncodingEnum.ZERO_ONE_NULL_ENCODING:
+            return self.zero_one_null_input_sets
+        elif encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+            if self.encoding != EncodingEnum.ZERO_ONE_RAW_ENCODING:
+                raise ValueError(
+                    "Unable to derive raw zero-one encoding due to information loss"
+                )
+            return self.input_sets
 
     @property
     def point_count(self) -> int:
@@ -133,7 +229,7 @@ class DesignOfExperiment:
 
         Returns
         -------
-        np.size : int
+        int
             The count of points/rows the design provides values.
         """
         return np.size(self.input_sets, axis=0)
@@ -146,7 +242,26 @@ class DesignOfExperiment:
 
         Returns
         -------
-        np.size : int
+        int
             The count of dimensions/columns the design provides values.
         """
         return np.size(self.input_sets, axis=1)
+
+    def copy(self) -> "DesignOfExperiment":
+        """
+        Creates a copy of the design. A shallow copy is
+        performed on the input_space, the input_set_map.
+        A deep copy is performed on the input_sets.
+
+        Returns
+        -------
+        DesignOfExperiment
+            copy of the experiment
+        """
+        design_copy = DesignOfExperiment(
+            input_space=self.input_space,
+            input_set_map=self.input_set_map,
+            input_sets=np.copy(self.input_sets),
+            encoding=self.encoding,
+        )
+        return design_copy

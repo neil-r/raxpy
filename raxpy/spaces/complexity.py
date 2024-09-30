@@ -1,4 +1,7 @@
-""" TODO Explain Module"""
+""" 
+    Analyzes dimensions to estimate their complexity corrosponding
+    to a discrete-categorical value unit of measurement.
+"""
 
 from typing import Iterable, List
 
@@ -11,27 +14,30 @@ from . import root as s
 
 def estimate_complexity(dim: d.Dimension) -> float:
     """
-    TODO Explain the Function
+    Estimates the complexity of dim corrosponding
+    to a discrete-categorical value unit of measurement.
+    For example, a categorical dimension with 3 possible categories
+    returns 3.  This same dimension marked as optional returns
+    4.
 
     Arguments
     ---------
     dim : d.Dimension
-        **Explanation**
+        the dimension to analzye the complexity of
 
     Returns
     -------
     complexity_estimate : float
-        **Explanation**
-
+        an estimation of the number of "levels" a dimension has
     """
     complexity_estimate = 1.0
 
     # default complexity heuristics
     if isinstance(dim, d.Float):
         if dim.lb is not None and dim.ub is not None:
-            complexity_estimate = 9.0
+            complexity_estimate = 3.0
         elif dim.value_set is not None:
-            complexity_estimate = len(dim.value_set)
+            complexity_estimate = min(3.0, len(dim.value_set))
         else:
             # TODO issue warning about not supporting
             # complexity of unbounded floats
@@ -40,16 +46,11 @@ def estimate_complexity(dim: d.Dimension) -> float:
         if dim.value_set is not None:
             complexity_estimate = len(dim.value_set)
         elif dim.lb is not None and dim.ub is not None:
-            complexity_estimate = min(9.0, dim.ub - dim.lb + 1)
+            complexity_estimate = min(3.0, dim.ub - dim.lb + 1)
     elif isinstance(dim, d.Text):
         if dim.value_set is not None:
             complexity_estimate = len(dim.value_set)
-    elif isinstance(dim, d.Variant):
-        complexity_estimate = 0.0
-        # summerize complexity of children
-        for child in dim.children:
-            complexity_estimate += estimate_complexity(child)
-    elif isinstance(dim, d.Composite):
+    elif isinstance(dim, d.Variant) or isinstance(dim, d.Composite):
         complexity_estimate = 0.0
         expected_significant_interactions = dim.has_tag(
             dim_tags.EXPECT_INTERACTIONS
@@ -58,13 +59,17 @@ def estimate_complexity(dim: d.Dimension) -> float:
         if expected_significant_interactions:
             complexity_estimate = 1.0
         # summerize complexity of children
-        for i, child in enumerate(dim.children):
+        children_com = []
+        for child in dim.children:
             if expected_significant_interactions:
                 complexity_estimate += estimate_complexity(child)
             else:
-                complexity_estimate = max(
-                    estimate_complexity(child), complexity_estimate
-                )
+                children_com.append(estimate_complexity(child))
+
+        if not expected_significant_interactions:
+            children_com.sort(reverse=True)
+            for i, child_com in enumerate(children_com):
+                complexity_estimate += child_com ** (1 / (i + 1))
 
     if dim.nullable:
         complexity_estimate += 1.0
@@ -76,45 +81,29 @@ def assign_null_portions(
     dimensions: Iterable[d.Dimension], complexity_estimator=estimate_complexity
 ) -> None:
     """
-    TODO Explain the Function
+    Assigns dimensions' unspecified null_poritions attributes,
+    if not specified, with given their complexity.
 
     Arguments
     ---------
     dimensions : Iterable[d.Dimension]
-        **Explanation**
+        the dimensions to assign their complexity
     complexity_estimator=estimate_complexity
-        **Explanation**
-
+        the hueristic function that estimates a dimension's complexity
     """
 
     children_sets: List[Iterable[d.Dimension]] = []
 
-    # count nullable dimensions
-    nullable_children = 0
-    not_nullable_children = 0
-    for dim in dimensions:
-
-        if dim.nullable:
-            nullable_children += 1
-        else:
-            not_nullable_children += 1
-
     # compute portion for active dimensions
     for dim in dimensions:
 
-        if dim.nullable:
-            complexity_estimate = complexity_estimator(dim)
+        if dim.portion_null is None:
+            if dim.nullable:
+                complexity_estimate = complexity_estimator(dim)
 
-            dim.portion_null = (
-                (1.0 / complexity_estimate)
-                + (1.0 / complexity_estimate)
-                + (
-                    nullable_children
-                    / (nullable_children + not_nullable_children)
-                )
-            ) / 3.0
-        else:
-            dim.portion_null = 0.0
+                dim.portion_null = 1.0 / complexity_estimate
+            else:
+                dim.portion_null = 0.0
 
         if (
             dim.has_child_dimensions()
@@ -131,19 +120,22 @@ def compute_subspace_portions(
     space: s.Space, full_subspace_sets: List[List[str]]
 ) -> List[float]:
     """
-    TODO Explain the Function
+    Given a space and a list of full subspace dimension specified sets,
+    computes the sub-space portions of an experiment's design that
+    should be targeted given dimensions null_portion settings.
 
     Arguments
     ---------
     space : s.Space
-        **Explanation**
+        The whole input space
     full_subspace_sets : List[List[str]]
-        **Explanation**
+        The list of sub-spaces of the whole that should be considered
 
     Returns
     -------
     portions : List[float]
-        **Explanation**
+        A list of values that sum to 1 that indicates the portion allocations
+        of a whole design to the subspaces specified.
 
     """
     portions = []

@@ -1,4 +1,8 @@
-""" TODO Explain Module"""
+""" 
+    This module provides support function decorators,
+    designed to work with raxpy input space introspection
+    features.
+"""
 
 import sys
 
@@ -20,16 +24,18 @@ R = TypeVar("R")
 
 def validate_function_inputs(space: InputSpace, args, kwargs) -> None:
     """
-    TODO Explain the Function
+        Validates args and kwargs given the space constraints.
+        Raises an exception if any values are invalid.
 
     Arguments
     ---------
     space : InputSpace
-        **Explanation**
+        The constraint specification of args and kwargs.
     args
-        **Explanation**
+        the arguments to validate
     kwargs
-        **Explanation**
+        the keyword arguments to validate
+
     """
 
     for i, dim in enumerate(space.children):
@@ -48,53 +54,54 @@ def validate_function_inputs(space: InputSpace, args, kwargs) -> None:
 
 def validate_at_runtime(check_inputs=True, check_outputs=True):
     """
-    TODO Explain the Function
+        A function decorator that validates
+        a function's inputs at runtime given parameter annotations.
 
     Arguments
     ---------
     check_inputs=True
-        **Explanation**
+        Flag to check the arguments provided to a function
     check_outputs=True
-        **Explanation**
+        Flag to check the returned values from a function
 
     Returns
     -------
     _validate_at_runtime
-        **Explanation**
+        a runtime validator function
     """
 
     def _validate_at_runtime(func: Callable[P, R]) -> Callable[P, R]:
         """
-        TODO Explain the Function
+        Wraps func to implement runtime validation logic
 
         Arguments
         ---------
         func (Function) : Callable[P, R]
-            **Explanation**
+            The func to wrap
 
         Returns
         -------
         wrapper : Callable[P, R]
-            **Explanation**
+            the wrapped representation of func
         """
         input_space = function_spec.extract_input_space(func)
 
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             """
-            TODO Explain the Function
+            Implements runtime validation logic
 
             Arguments
             ---------
             *args : P.args
-                **Explanation**
+                the input arguments to consider
             **kwargs : P.kwargs
-                **Explanation**
+                the input keyword arguments to consider
 
             Returns
             -------
             outputs : R
-                **Explanation**
+                the function's returned value
 
             """
 

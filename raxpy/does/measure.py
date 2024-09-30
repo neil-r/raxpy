@@ -11,11 +11,11 @@ import itertools
 import numpy as np
 from scipy.stats.qmc import discrepancy
 from scipy.spatial import distance_matrix
-from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import minimum_spanning_tree
 
-from .doe import DesignOfExperiment
-from ..spaces import root as s
+from .doe import DesignOfExperiment, Encoding, EncodingEnum
+from .. import spaces as s
+from .maxpro import _create_max_pro_dist_func
 
 
 @dataclass
@@ -46,6 +46,10 @@ METRIC_WHOLE_MIN_POINT_DISTANCE = "max_whole_min_point_distance"
 
 METRIC_WHOLE_MIN_PROJECTED_DISTANCE = "max_whole_min_projected_distance"
 
+METRIC_WHOLE_STAR_DISCREPANCY = "star_discrepancy"
+
+METRIC_MAX_PRO = "max_pro"
+
 # FullSubDesign Metrics
 METRIC_AVG_PORTION_LEVELS_INCLUDED = "avg_portion_of_levels_included"
 
@@ -56,19 +60,241 @@ METRIC_DISCREPANCY = "discrepancy"
 METRIC_MIN_POINT_DISTANCE = "max_min_point_distance"
 
 
+def determine_relevant_dimensions(
+    design: DesignOfExperiment, point
+) -> List[str]:
+    """
+    Dervies the non-null and active dimensions from a point
+    within a design.
+
+    Arguments
+    ---------
+    design:DesignOfExperiment
+        the design
+    point: np.array
+        a row from the decoded design matrix
+
+    Returns
+    -------
+    List[str]
+        a list of dimension ids
+    """
+    relevant_dims = []
+
+    children_sets = [design.input_space.children]
+    while len(children_sets) > 0:
+        children_set = children_sets.pop(0)
+        for dim in s.create_level_iterable(children_set):
+            if dim.id in design.input_set_map:
+                if isinstance(dim, s.Variant):
+                    raise NotImplementedError(
+                        "Relevant dimensions given Variant not implemented"
+                    )
+                d_index = design.input_set_map[dim.id]
+                relevant_dims.append(dim.id)
+
+                if (
+                    dim.has_child_dimensions()
+                    and not np.isnan(point[d_index])
+                    and point[d_index] > 0.0
+                ):
+                    children_sets.append(dim.children)
+
+    return relevant_dims
+
+
+def compute_max_pro(
+    design: DesignOfExperiment,
+    encoding=EncodingEnum.ZERO_ONE_NULL_ENCODING,
+) -> float:
+    """
+    Computes a varition of the MaxPro design objective
+    critiera, supportinng optional and heirarchical dimensions.
+
+    Arguments
+    ---------
+    design: DesignOfExperiment
+        the design
+    encoding=EncodingEnum.ZERO_ONE_NULL_ENCODING
+        The encoding to use for computation
+
+    Returns
+    -------
+    float
+        the MaxPro multi-dimensional projection design measurement
+
+    """
+    n = design.point_count
+    point_comps = np.zeros((n, n))
+    x = design.get_data_points(encoding)
+    d = design.dim_specification_count
+
+    index_dim_map = design.index_dim_id_map
+
+    dim_map = design.input_space.create_dim_map()
+
+    root_dim_ids = {
+        dim.id: True
+        for dim in s.create_level_iterable(design.input_space.children)
+    }
+
+    dist_funcs = []
+
+    for k in range(d):
+        dim_id = index_dim_map[k]
+        dim = dim_map[dim_id]
+
+        if (
+            dim.portion_null > 0
+            or dim_id not in root_dim_ids
+            or dim.has_finite_values()
+        ):
+            dist_funcs.append(_create_max_pro_dist_func(dim))
+        else:
+            dist_funcs.append(lambda x1_value, x2_value: x1_value - x2_value)
+
+    for i in range(n - 1):
+        for j in range(i + 1, n):
+            m = 1
+            for k in range(0, d):
+                m *= dist_funcs[k](x[i, k], x[j, k]) ** 2
+
+            point_comps[i, j] = 1.0 / m
+
+    return (np.sum(np.triu(point_comps, -1)) / (n * (n - 1))) ** (1.0 / d)
+
+
+def compute_star_discrepancy(
+    design: DesignOfExperiment,
+    p=np.inf,
+    encoding=EncodingEnum.ZERO_ONE_NULL_ENCODING,
+) -> float:
+    """
+    Computes a varition of the star discrepancy design objective
+    critiera, supportinng optional and heirarchical dimensions.
+
+    Arguments
+    ---------
+    design: DesignOfExperiment
+        the design
+    p:int = np.inf
+        the distance computation (p=1 manhatten distance
+        p=2 eucludian distance, etc)
+    encoding=EncodingEnum.ZERO_ONE_NULL_ENCODING
+        The encoding to use for computation
+
+    Returns
+    -------
+    float
+        the star discrepancy design measurement
+
+    """
+    x = design.get_data_points(encoding)
+
+    # determine projections for each releval dimension set
+    relevant_dim_sets_proj_map = {}
+    point_relevant_dims = []
+
+    # determine which heirachiral dimensions are active for each point
+    # determine which vairant dimensions are active for each point
+    for point in x:
+        # determine relevant dimensions for point
+        relevant_dims_set = tuple(determine_relevant_dimensions(design, point))
+
+        if relevant_dims_set not in relevant_dim_sets_proj_map:
+            projection_sets = []
+            l = len(relevant_dims_set)
+            # determine projects to consider for this set of dimensions
+            for i in range(l):
+                rhs_dim_id = relevant_dims_set[i]
+                projection_sets.append((rhs_dim_id,))
+                for j in range(i + 1, l):
+                    lhs_dim_id = relevant_dims_set[j]
+                    projection_sets.append((rhs_dim_id, lhs_dim_id))
+
+            relevant_dim_sets_proj_map[relevant_dims_set] = projection_sets
+
+        point_relevant_dims.append(relevant_dims_set)
+
+    local_discrepancies = []
+    n = design.point_count
+    dim_map = design.input_space.create_dim_map()
+    # use each point for region discrepancy sample
+    for relevant_dims_set, point in zip(point_relevant_dims, x):
+
+        projection_sets = relevant_dim_sets_proj_map[relevant_dims_set]
+
+        point_projection_discrepancies = []
+        for u in projection_sets:
+            col_indexes = list(design.input_set_map[dim_id] for dim_id in u)
+            point_count_in_projection_region = 0
+            for c_relevant_dims_set, c_point in zip(point_relevant_dims, x):
+                relevant_point = True
+                in_region = True
+                for col_index, dim_id in zip(col_indexes, u):
+                    if dim_id not in c_relevant_dims_set:
+                        relevant_point = False
+                        break
+                    else:
+                        if np.isnan(point[col_index]):
+                            if np.isnan(c_point[col_index]):
+                                pass
+                            else:
+                                in_region = False
+                                break
+                        else:
+                            if np.isnan(c_point[col_index]):
+                                pass
+                            elif c_point[col_index] > point[col_index]:
+                                in_region = False
+                                break
+                if relevant_point and in_region:
+                    point_count_in_projection_region += 1
+
+            region_volumn_percent = 1.0
+            for col_index, dim_id in zip(col_indexes, u):
+                dim = dim_map[dim_id]
+                # compute dimension's culmative distribution for point value
+                v = point[col_index]
+                if np.isnan(v):
+                    region_volumn_percent *= dim.portion_null
+                else:
+                    region_volumn_percent *= (
+                        dim.portion_null + (1 - dim.portion_null) * v
+                    )
+
+            portion_of_points_in_region = point_count_in_projection_region / n
+
+            ppd = abs(portion_of_points_in_region - region_volumn_percent)
+
+            point_projection_discrepancies.append(ppd)
+
+        if p == np.inf:
+            local_discrepancies.append(max(point_projection_discrepancies))
+        else:
+            local_discrepancies.append(
+                sum(ppd ** (p) for ppd in point_projection_discrepancies)
+            )
+
+    if p == np.inf:
+        return max(local_discrepancies)
+    else:
+        return sum(local_discrepancies) ** (1 / p)
+
+
 def compute_min_point_distance(context: SubSpaceMetricComputeContext) -> float:
     """
     Computes and returns the minimum-interpoint-distance (MIPD)
-    among every pair of points
+    among every pair of points.
 
     Arguments
     ---------
     context : SubSpaceMetricComputeContext
-        **Explanation**
+        a full sub-design without null designs
 
     Returns
     -------
-    np.min(dm) : float
+    float
         The minimum-interpoint-distance
     """
     if context.sub_space_doe.point_count <= 1:
@@ -95,15 +321,16 @@ def compute_average_reciprocal_distance_projection(
     Arguments
     ---------
     context : SubSpaceMetricComputeContext
-        **Explanation**
+        a full sub-design without null values
     lambda_hp=2 : int
-        **Explanation**
+        see reference
     z_hp=2 : int
-        **Explanation**
+        see reference
 
     Returns
     -------
-    TODO **Explanation**
+    float
+        The design's average reciprocal distance projection measurement
     """
     if context.sub_space_doe.point_count <= 1:
         raise ValueError("Not enough points to compute ard")
@@ -160,7 +387,7 @@ def compute_mst_stats(
     Arguments
     ---------
     context : SubSpaceMetricComputeContext
-        **Explanation**
+         a full sub-design without null values
 
     Returns
     -------
@@ -182,72 +409,60 @@ def compute_mst_stats(
     return mst_mean, mst_std
 
 
-def compute_discrepancy(context: SubSpaceMetricComputeContext) -> float:
+def compute_discrepancy(
+    context: SubSpaceMetricComputeContext, method="MD"
+) -> float:
     """
-    TODO Explain the Function
+    Computes discrepancy with `scipy.stats.qmc.discrepancy`.
 
     Arguments
     ---------
     context : SubSpaceMetricComputeContext
-        **Explanation**
-
+         a full sub-design without null values
+    method:str
+        see `scipy.stats.qmc.discrepancy` for options
     Returns
     -------
-    discrepancy : float
-        **Explanation**
+    float
+        discrepancy
 
     """
-    return discrepancy(context.sub_space_doe.input_sets)
+    return discrepancy(context.sub_space_doe.input_sets, method=method)
 
 
 def compute_portion_of_total(context: SubSpaceMetricComputeContext) -> float:
     """
-    TODO Explain the Function
+    Computes the percentage of the whole design
+    the full-sub-design represents.
 
     Arguments
     ---------
     context : SubSpaceMetricComputeContext
-        **Explanation**
+        a full sub-design without null values
 
     Returns
     -------
-    Portion of whole DoE as a float
+    float
+        Portion of whole DoE as a float
 
     """
     return context.sub_space_doe.point_count / context.whole_doe.point_count
 
 
-def compute_avg_portion_of_levels(
-    context: SubSpaceMetricComputeContext,
-) -> float:
-    """
-    TODO Explain the Function
-
-    Arguments
-    ---------
-    context : SubSpaceMetricComputeContext
-        **Explanation**
-
-    Returns
-    -------
-    Not Implemented
-
-    """
-    pass
-
-
+# dictionary of metrics to compute in `assess_with_all_metrics`
 subspace_metric_computation_map = {
     METRIC_DISCREPANCY: compute_discrepancy,
     METRIC_PORTION_OF_TOTAL: compute_portion_of_total,
-    METRIC_AVG_PORTION_LEVELS_INCLUDED: compute_avg_portion_of_levels,
     METRIC_MIN_POINT_DISTANCE: compute_min_point_distance,
 }
 
 
 @dataclass
-class FullSubDesignAssessment:
+class FullSubDesignMeasurementSet:
     """
-    TODO Explain Class
+    Represents a set of measurements for a sub-set of points
+    and dimensions of a whole design that corrospond to
+    active and non-null inputs.
     """
 
     point_count: int
@@ -256,55 +471,142 @@ class FullSubDesignAssessment:
     space_attributes: Set[str]
 
     def compare_dimensions(self, dim_list) -> bool:
+        """
+        Compares the dimensions ids in dim_list to itself and
+        returns True if they match
+
+        Arguments
+        ---------
+        dim_list
+            list of str dimensions ids
+
+        Returns
+        -------
+        bool
+            True if the dimensions match
+        """
         return len(dim_list) == len(self.active_dimensions) and all(
             d in self.active_dimensions for d in dim_list
         )
 
 
 @dataclass
-class DoeAssessment:
+class DesignMeasurementSet:
     """
-    TODO Explain Class
+    Composition of design measurements.
     """
 
     total_point_count: int
-    full_sub_set_assessments: List[FullSubDesignAssessment]
+    full_sub_design_measurements: List[FullSubDesignMeasurementSet]
     measurements: Dict[str, float]
 
-    def get_full_sub_design_assessment(
+    def get_full_sub_design_measurements(
         self, active_dimensions: List[str]
-    ) -> Optional[FullSubDesignAssessment]:
-        for assessment in self.full_sub_set_assessments:
-            if assessment.compare_dimensions(active_dimensions):
-                return assessment
+    ) -> Optional[FullSubDesignMeasurementSet]:
+        """
+        Looks up the full-sub-design measurement sets
+        matching the active_dimensions.
+
+        Arguments
+        ---------
+        active_dimensions : List[str]
+
+        Returns
+        -------
+        Optional[FullSubDesignMeasurementSet]
+            the measurement set, if matching active_dimensions, otherwise None
+
+        """
+        for measurement_set in self.full_sub_design_measurements:
+            if measurement_set.compare_dimensions(active_dimensions):
+                return measurement_set
         return None
 
 
-def compute_weighted_discrepancy(
-    doe: DesignOfExperiment,
-    full_design_assessments: List[FullSubDesignAssessment],
-    weighting_metric=METRIC_PORTION_OF_TOTAL,
+def compute_whole_design_max_pro(
+    design: DesignOfExperiment,
+    _: List[FullSubDesignMeasurementSet],
+    encoding: Encoding,
 ) -> float:
     """
-    TODO Explain the Function
+    Computes a MaxPro-objective design measurement of the design,
+    customized to support null values.
 
     Arguments
     ---------
     doe : DesignOfExperiment
-        **Explanation**
-    full_design_assessments : List[CompleteSubDesignAssessment]
-        **Explanation**
-    weighting_metric=METRIC_PORTION_OF_TOTAL
-        **Explanation**
+        the design to measure
+    - : List[FullSubDesignMeasurementSet]
+        list of sub-design measurements
+    encoding: Encoding
+        design encoding to use for measurement
 
     Returns
     -------
-        **Explanation**
+    float
+        MaxPro measurement
+    """
+    if encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+        encoding = EncodingEnum.ZERO_ONE_NULL_ENCODING
+    return compute_max_pro(design, encoding=encoding)
 
+
+def compute_whole_design_star_discrepancy(
+    design: DesignOfExperiment,
+    _: List[FullSubDesignMeasurementSet],
+    encoding: Encoding,
+) -> float:
+    """
+    Computes a discrepancy measurement of the whole design
+    using a custom discrepancy metric that addresses
+    null values.
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        the design to measure
+    - : List[FullSubDesignMeasurementSet]
+        list of full-sub-design measurements
+    _encoding: Encoding
+
+    Returns
+    -------
+    float
+        discrepancy
+    """
+    if encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
+        encoding = EncodingEnum.ZERO_ONE_NULL_ENCODING
+    return compute_star_discrepancy(design, encoding=encoding)
+
+
+def compute_weighted_discrepancy(
+    _doe: DesignOfExperiment,
+    full_design_measurements: List[FullSubDesignMeasurementSet],
+    _encoding: Encoding,
+    weighting_metric=METRIC_PORTION_OF_TOTAL,
+) -> float:
+    """
+    Computes a weighted discrepancy measurement of the full-sub-design
+    discrepancy computations.
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        the design to measure
+    full_design_measurements : List[FullSubDesignMeasurementSet]
+        list of sub-design measurements
+    _encoding: Encoding
+    weighting_metric=METRIC_PORTION_OF_TOTAL
+        the metric to use as weights
+
+    Returns
+    -------
+    float
+        weighted discrepancy
     """
     discrepancies = []
     weights = []
-    for full_design in full_design_assessments:
+    for full_design in full_design_measurements:
         if METRIC_DISCREPANCY in full_design.measurements:
             discrepancies.append(full_design.measurements[METRIC_DISCREPANCY])
             weights.append(full_design.measurements[weighting_metric])
@@ -315,26 +617,29 @@ def compute_weighted_discrepancy(
 
 
 def compute_weighted_mipd(
-    doe: DesignOfExperiment,
-    full_design_assessments: List[FullSubDesignAssessment],
+    _doe: DesignOfExperiment,
+    full_design_assessments: List[FullSubDesignMeasurementSet],
+    _encoding: Encoding,
     weighting_metric=METRIC_PORTION_OF_TOTAL,
 ) -> float:
     """
-    TODO Explain the Function
+    Computes a weighted interpoint distance measurement
+    of the full-sub-design interpoint distance computations.
 
     Arguments
     ---------
     doe : DesignOfExperiment
         **Explanation**
-    full_design_assessments : List[CompleteSubDesignAssessment]
+    full_design_assessments : List[FullSubDesignMeasurementSet]
         **Explanation**
+    _: Encoding
     weighting_metric=METRIC_PORTION_OF_TOTAL
         **Explanation**
 
     Returns
     -------
-        **Explanation**
-
+    float
+        weighted interpoint distance
     """
     discrepancies = []
     weights = []
@@ -413,7 +718,7 @@ def _compute_nan_distance_matrix(matrix: np.array, p=2):
 
     for i in range(num_rows):
         for j in range(i + 1, num_rows):
-            dist = _compute_nan_distance(matrix[i], matrix[j], p=2)
+            dist = _compute_nan_distance(matrix[i], matrix[j], p=p)
             dm[i, j] = dist
             dm[j, i] = dist
 
@@ -421,7 +726,10 @@ def _compute_nan_distance_matrix(matrix: np.array, p=2):
 
 
 def compute_whole_min_point_distance(
-    doe: DesignOfExperiment, _: List[FullSubDesignAssessment], p: int = 2
+    doe: DesignOfExperiment,
+    _: List[FullSubDesignMeasurementSet],
+    encoding: Encoding,
+    p: int = 2,
 ) -> float:
     """
     Computes the minimum distance between two points in the DOE with nan
@@ -433,24 +741,29 @@ def compute_whole_min_point_distance(
     Arguments
     ---------
     doe : DesignOfExperiment
-        The design to assess
-    _ : List[CompleteSubDesignAssessment]
-        The sub-design assessments (not-used, specified to support common
+        The design to measure
+    _ : List[FullSubDesignMeasurementSet]
+        The full-sub-design measurements (not-used, specified to support common
         metric computation interface)
+    encoding: Encoding
+
     p:int=2
         Which Minkowski p-norm to use in the distance computation
 
     Returns
     -------
-        A float value representing the minimum distance
+    float
+        minimum interpoint distance
     """
-    dm = _compute_nan_distance_matrix(doe.input_sets, p=p)
+    dm = _compute_nan_distance_matrix(doe.get_data_points(encoding), p=p)
     np.fill_diagonal(dm, np.inf)
     return np.min(dm)
 
 
 def compute_min_projected_distance(
-    doe: DesignOfExperiment, _: List[FullSubDesignAssessment]
+    doe: DesignOfExperiment,
+    _: List[FullSubDesignMeasurementSet],
+    encoding: Encoding,
 ) -> float:
     """
     Computes the minimum projected distance between any two values within the
@@ -460,19 +773,30 @@ def compute_min_projected_distance(
     ---------
     doe : DesignOfExperiment
         The design to assess
-    _ : List[CompleteSubDesignAssessment]
+    _ : List[FullSubDesignMeasurementSet]
         The sub-design assessments (not-used, specified to support common
         metric computation interface)
+    encoding: Encoding
+
     Returns
     -------
-        A float value representing the minimum projected distance
+    float
+        minimum projected distance ignoring null values
     """
+    data_points = doe.get_data_points(encoding)
+    dim_map = doe.input_space.create_dim_map()
     min_so_far = np.inf
-    for column_i in range(doe.dim_specification_count):
+    for dim_id, column_i in doe.input_set_map.items():
+        dim = dim_map[dim_id]
+        # ignore dimensions that have children dimensions since the projected
+        # should not apply to these dimensions
+        if dim.has_child_dimensions():
+            continue
+
         for row_1i in range(doe.point_count):
-            lhs = doe.input_sets[row_1i][column_i]
+            lhs = data_points[row_1i][column_i]
             for row_2i in range(row_1i + 1, doe.point_count):
-                d = np.abs(lhs - doe.input_sets[row_2i][column_i])
+                d = np.abs(lhs - data_points[row_2i][column_i])
                 if d != np.nan and d < min_so_far:
                     min_so_far = d
 
@@ -486,22 +810,29 @@ doe_metric_computation_map = {
     METRIC_WEIGHTED_MIPD: compute_weighted_mipd,
     METRIC_WHOLE_MIN_POINT_DISTANCE: compute_whole_min_point_distance,
     METRIC_WHOLE_MIN_PROJECTED_DISTANCE: compute_min_projected_distance,
+    METRIC_WHOLE_STAR_DISCREPANCY: compute_whole_design_star_discrepancy,
+    METRIC_MAX_PRO: compute_whole_design_max_pro,
 }
 
 
-def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
+def measure_with_all_metrics(
+    doe: DesignOfExperiment,
+    encoding: Encoding = EncodingEnum.ZERO_ONE_NULL_ENCODING,
+) -> DesignMeasurementSet:
     """
-    Assesses the experiment design for the given input space.
+    Compute design measurements for the experiment design.
 
     Arguments
     ---------
     doe : DesignOfExperiment
-        **Explanation**
+        The design to compute measurements for
+    encoding: Encoding
+        The suggested encoding to use during the measurement process
 
     Returns
     -------
-    DoeAssessment
-        Results from an assessment for the whole design and sub-designs.
+    DesignMeasurementSet
+        composition of design measurements
     """
     # determine every full-combination of input dimensions
     # that could be defined in this space
@@ -526,12 +857,12 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
         return sub_space_index_map[tuple(active_dim_ids)]
 
     # compute the subspace each point belongs to
-    mapped_values = [map_point(point) for point in doe.input_sets]
+    mapped_values = [map_point(point) for point in doe.decoded_input_sets]
 
     # prepare data structures for returned assessment structure
     total_point_count = len(mapped_values)
 
-    full_sub_set_assessments: List[FullSubDesignAssessment] = []
+    full_sub_set_assessments: List[FullSubDesignMeasurementSet] = []
 
     ################################
     # full-sub-design metrics
@@ -540,7 +871,7 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
     for i, sub_space in enumerate(sub_spaces):
         point_row_mask = [v == i for v in mapped_values]
         sub_space_doe = doe.extract_points_and_dimensions(
-            point_row_mask, sub_space
+            point_row_mask, sub_space, encoding
         )
         measurements = {}
         space_attributes = set()
@@ -562,7 +893,7 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
                 )
 
         full_sub_set_assessments.append(
-            FullSubDesignAssessment(
+            FullSubDesignMeasurementSet(
                 point_count=sub_space_doe.point_count,
                 active_dimensions=sub_space,
                 measurements=measurements,
@@ -577,15 +908,15 @@ def assess_with_all_metrics(doe: DesignOfExperiment) -> DoeAssessment:
 
     for m_id, compute in doe_metric_computation_map.items():
 
-        value = compute(doe, full_sub_set_assessments)
+        value = compute(doe, full_sub_set_assessments, encoding)
         if isinstance(value, Tuple):
             for i, v in enumerate(value):
                 total_measurements[f"{m_id}-{i}"] = v
         else:
             total_measurements[m_id] = value
 
-    return DoeAssessment(
+    return DesignMeasurementSet(
         total_point_count=total_point_count,
-        full_sub_set_assessments=full_sub_set_assessments,
+        full_sub_design_measurements=full_sub_set_assessments,
         measurements=total_measurements,
     )

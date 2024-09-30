@@ -1,27 +1,29 @@
-""" TODO Explain Module """
+""" 
+    Unit tests considering the introspection of a function's
+    return-type specification defining an output space.
+"""
 
 from typing import Annotated, Optional, Union
-from dataclasses import dataclass
 
 import raxpy.annotations.function_spec as fs
-import raxpy.spaces.dimensions as d
+import raxpy.spaces as s
 import raxpy
 
 
 def test_no_return_type_func():
     """
-    TODO Explain the Function
+    Testing the code intospection of a function
+    without a return-type specified.
 
     Asserts
     -------
-    **Explanation**
-
+        Output space has 0 dimensions
     """
+
     def f():
         """
-        TODO Explain the Function
+        functions supporting unit test
         """
-        pass
 
     output_space = fs.extract_output_space(f)
     assert output_space is not None
@@ -57,93 +59,156 @@ def assert_parameters(
 
 def test_unannotated_single_value_return_type_func():
     """
-    TODO Explain the Function
+    Testing the code intospection of functions
+    with simple, single value return-types specified.
+
+    Asserts
+    -------
+        Output spaces have 1 dimension with the
+        appropriate flags
     """
+
     def f() -> float:
         """
-        TODO Explain the Function
+        Function used for unit testing
         """
         return 0.0
+
     output_space = fs.extract_output_space(f)
     assert output_space is not None
     assert output_space.dimensions is not None
     assert len(output_space.dimensions) == 1
     assert_parameters(
-        output_space.dimensions[0], d.Float, fs.ID_ROOT_RETURN,
-        None, None, None, None, nullable=False
+        output_space.dimensions[0],
+        s.Float,
+        fs.ID_ROOT_RETURN,
+        None,
+        None,
+        None,
+        None,
+        nullable=False,
     )
 
     def f2() -> Optional[float]:
         """
-        TODO Explain the Function
+        Function used for unit testing
         """
         return 0.0
+
     output_space2 = fs.extract_output_space(f2)
     assert output_space2 is not None
     assert output_space2.dimensions is not None
     assert len(output_space2.dimensions) == 1
     assert_parameters(
-        output_space2.dimensions[0], d.Float, fs.ID_ROOT_RETURN,
-        None, None, None, None, nullable=True
+        output_space2.dimensions[0],
+        s.Float,
+        fs.ID_ROOT_RETURN,
+        None,
+        None,
+        None,
+        None,
+        nullable=True,
     )
 
     def f3() -> Union[int, None]:
         """
-        TODO Explain the Function
+        Function used for unit testing
         """
         return 0
+
     output_space3 = fs.extract_output_space(f3)
     assert output_space3 is not None
     assert output_space3.dimensions is not None
     assert len(output_space3.dimensions) == 1
     assert_parameters(
-        output_space3.dimensions[0], d.Int, fs.ID_ROOT_RETURN,
-        None, None, None, None, nullable=True
+        output_space3.dimensions[0],
+        s.Int,
+        fs.ID_ROOT_RETURN,
+        None,
+        None,
+        None,
+        None,
+        nullable=True,
     )
 
 
 def test_annotated_single_value_return_type_func():
     """
-    TODO Explain the Function
+    Testing the code intospection of functions
+    with simple, annotated single value return-types
+    specified.
+
+    Asserts
+    -------
+        Output spaces have 1 dimension with the
+        appropriate attributes
     """
+
     def f() -> Annotated[float, raxpy.Float(label="Zero")]:
         """
-        TODO Explain the Function
+        Function used for unit testing
         """
         return 0.0
+
     output_space = fs.extract_output_space(f)
     assert output_space is not None
     assert output_space.dimensions is not None
     assert len(output_space.dimensions) == 1
     assert_parameters(
-        output_space.dimensions[0], d.Float, fs.ID_ROOT_RETURN,
-        None, None, None, None, nullable=False, label="Zero"
+        output_space.dimensions[0],
+        s.Float,
+        fs.ID_ROOT_RETURN,
+        None,
+        None,
+        None,
+        None,
+        nullable=False,
+        label="Zero",
     )
 
-    def f2() -> (Annotated[Optional[float],
-                 raxpy.Float(label="ZeroOrNone", tags=[raxpy.tags.MAXIMIZE])]):
+    def f2() -> Annotated[
+        Optional[float],
+        raxpy.Float(label="ZeroOrNone", tags=[raxpy.tags.MAXIMIZE]),
+    ]:
         """
-        TODO Explain the Function
+        Function used for unit testing
         """
         return 0.0
+
     output_space2 = fs.extract_output_space(f2)
     assert output_space2 is not None
     assert output_space2.dimensions is not None
     assert len(output_space2.dimensions) == 1
     assert_parameters(
-        output_space2.dimensions[0], d.Float, fs.ID_ROOT_RETURN,
-        None, None, None, None, nullable=True, tags=[raxpy.tags.MAXIMIZE],
-        label="ZeroOrNone"
+        output_space2.dimensions[0],
+        s.Float,
+        fs.ID_ROOT_RETURN,
+        None,
+        None,
+        None,
+        None,
+        nullable=True,
+        tags=[raxpy.tags.MAXIMIZE],
+        label="ZeroOrNone",
     )
 
-    def f3() -> Annotated[Union[int, None], raxpy.Integer(label="Int",
-                                                          lb=0, ub=4)]:
+    def f3() -> (
+        Annotated[Union[int, None], raxpy.Integer(label="Int", lb=0, ub=4)]
+    ):
         return 0
+
     output_space3 = fs.extract_output_space(f3)
     assert output_space3 is not None
     assert output_space3.dimensions is not None
     assert len(output_space3.dimensions) == 1
     assert_parameters(
-        output_space3.dimensions[0], d.Int, fs.ID_ROOT_RETURN,
-        None, 0, 4, None, nullable=True, label="Int"
+        output_space3.dimensions[0],
+        s.Int,
+        fs.ID_ROOT_RETURN,
+        None,
+        0,
+        4,
+        None,
+        nullable=True,
+        label="Int",
     )
