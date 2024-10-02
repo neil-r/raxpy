@@ -360,3 +360,59 @@ def test_compute_max_pro():
 
     assert max_pro_value is not None
     assert max_pro_value > 0.0
+
+
+def test_compute_average_dim_distance():
+    """
+    Tests the computation of the average miniumn distance for dimensions.
+
+    Asserts
+    -------
+        the proper average is computed
+    """
+    space = s.InputSpace(
+        dimensions=[
+            s.Float(id="x1", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x2", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Float(id="x3", lb=0.0, ub=10.0, nullable=True, portion_null=0.1),
+            s.Composite(
+                id="c1",
+                children=[
+                    s.Float(
+                        id="x4",
+                        lb=0.0,
+                        ub=10.0,
+                        nullable=True,
+                        portion_null=0.1,
+                    ),
+                    s.Float(
+                        id="x5",
+                        lb=0.0,
+                        ub=10.0,
+                        nullable=True,
+                        portion_null=0.1,
+                    ),
+                ],
+                nullable=True,
+                portion_null=0.1,
+            ),
+        ]
+    )
+    design = doe.DesignOfExperiment(
+        input_space=space,
+        input_set_map={"x1": 0, "x2": 1, "x3": 2, "c1": 3, "x4": 4, "x5": 5},
+        input_sets=np.array(
+            [
+                [0.0, 0.2, np.nan, 1.0, 0.95, 0.2],
+                [0.3, np.nan, np.nan, 1.0, np.nan, 0.3],
+                [0.9, 1.0, 0.7, np.nan, np.nan, np.nan],
+            ]
+        ),
+        encoding=doe.EncodingEnum.ZERO_ONE_NULL_ENCODING,
+    )
+
+    actual_average = a.compute_average_dim_distance(design)
+
+    expected_average = (0.3 + 0.8 + 0.0 + 0.1) / 4
+
+    assert actual_average == expected_average
