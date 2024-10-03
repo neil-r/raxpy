@@ -4,11 +4,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
 
 
-def scatterplot_matrix(data, names: str, **kwargs):
+def plot_scatterplot_matrix(data, names, title="Pairplot"):
     """
     Plots a scatterplot matrix of subplots.  Each row of "data" is
     plotted against other rows, resulting in a nrows by nrows grid of
@@ -20,7 +18,7 @@ def scatterplot_matrix(data, names: str, **kwargs):
         matrix of data points
     names : str
         Labels for subplot names
-    **kwargs
+    title : str
         Additional keyword arguments are passed on to matplotlib's
         "plot" command.
 
@@ -29,91 +27,17 @@ def scatterplot_matrix(data, names: str, **kwargs):
     Returns the matplotlib figure object containg the
     subplot grid.
     """
-    n_points, n_columns = data.shape
-    fig, axes = plt.subplots(nrows=n_columns, ncols=n_columns, figsize=(8, 13))
-    fig.subplots_adjust(hspace=0.05, wspace=0.05)
-
-    for ax in axes.flat:
-        # Hide all ticks and labels
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
-
-        # Set up ticks only on one side for the "edge" subplots...
-
-        # if ax.is_first_col():
-        #     ax.yaxis.set_ticks_position('left')
-        # if ax.is_last_col():
-        #     ax.yaxis.set_ticks_position('right')
-        # if ax.is_first_row():
-        #     ax.xaxis.set_ticks_position('top')
-        # if ax.is_last_row():
-        #     ax.xaxis.set_ticks_position('bottom')
-
-    # Plot the data.
-    for i, j in zip(*np.triu_indices_from(axes, k=1)):
-        for x, y in [(i, j), (j, i)]:
-            x_d = [
-                (xp if xp is not None and not np.isnan(xp) else -0.25)
-                for xp in data[:, x]
-            ]
-            y_d = [
-                (xp if xp is not None and not np.isnan(xp) else -0.25)
-                for xp in data[:, y]
-            ]
-            axes[x, y].scatter(y_d, x_d, **kwargs)
-            axes[x, y].spines["top"].set_visible(True)
-            axes[x, y].spines["bottom"].set_visible(True)
-            axes[x, y].spines["left"].set_visible(True)
-            axes[x, y].spines["right"].set_visible(True)
-
-    # Turn on the proper x or y axes ticks.
-    for i in range(n_columns):
-        axes[n_columns - 1, i].xaxis.set_visible(True)
-        axes[i, 0].yaxis.set_visible(True)
-    # for i, j in zip(range(n_columns), itertools.cycle((-1, 0))):
-    #    axes[j, i].xaxis.set_visible(True)
-    #    axes[i, j].yaxis.set_visible(True)
-
-    # Label the diagonal subplots...
-    for i, label in enumerate(names):
-        axes[i, i].annotate(
-            label,
-            (0.5, 0.5),
-            xycoords="axes fraction",
-            ha="center",
-            va="center",
-        )
-        axes[i, i].spines["top"].set_visible(False)
-        axes[i, i].spines["bottom"].set_visible(False)
-        axes[i, i].spines["left"].set_visible(False)
-        axes[i, i].spines["right"].set_visible(False)
-
-    return fig
-
-
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-
-
-def plot_with_seaborn(data, names, title="Pairplot"):
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    # Convert data to DataFrame
-    df = pd.DataFrame(data, columns=names)
 
     # Check for NaN values
-    has_nan = df.isna().any().any()
+    has_nan = np.isnan(data).any()
 
     # Fill NaNs with -0.2 if any NaNs are present
     if has_nan:
-        df_filled = df.fillna(-0.2)
+        np_a_filled = np.nan_to_num(data, nan=-0.2)
     else:
-        df_filled = df.copy()
+        np_a_filled = np.copy(data)
 
-    num_vars = len(df_filled.columns)
+    num_vars = np_a_filled.shape[1]
 
     # Create an n x n grid of subplots
     fig, axes = plt.subplots(
@@ -129,12 +53,12 @@ def plot_with_seaborn(data, names, title="Pairplot"):
     for i in range(num_vars):
         for j in range(num_vars):
             ax = axes[i, j]
-            x_col = df_filled.columns[j]
-            y_col = df_filled.columns[i]
+            x_col = np_a_filled[:, j]
+            y_col = np_a_filled[:, i]
 
             if i == j:
                 # Diagonal: histogram
-                data_col = df_filled[x_col]
+                data_col = x_col
                 counts, bins, patches = ax.hist(
                     data_col, bins=8, color="gray", edgecolor="black"
                 )
@@ -147,7 +71,7 @@ def plot_with_seaborn(data, names, title="Pairplot"):
                     y_max += 0.5
 
                 # Snap y_max to nearest 0.1 if close
-                y_max_snapped = snap_to_nearest_point_one(y_max)
+                y_max_snapped = _snap_to_nearest_point_one(y_max)
 
                 ax.set_ylim(y_min, y_max_snapped)
 
@@ -161,7 +85,7 @@ def plot_with_seaborn(data, names, title="Pairplot"):
                     x_max += 0.5
 
                 # Snap x_max to nearest 0.1 if close
-                x_max_snapped = snap_to_nearest_point_one(x_max)
+                x_max_snapped = _snap_to_nearest_point_one(x_max)
 
                 ax.set_xlim(x_min, x_max_snapped)
 
@@ -193,8 +117,8 @@ def plot_with_seaborn(data, names, title="Pairplot"):
 
             else:
                 # Off-diagonal: scatter plot
-                x_data = df_filled[x_col]
-                y_data = df_filled[y_col]
+                x_data = x_col
+                y_data = y_col
                 ax.scatter(x_data, y_data, color="black", edgecolor="k", s=40)
 
                 # Determine x and y limits
@@ -213,8 +137,8 @@ def plot_with_seaborn(data, names, title="Pairplot"):
                     y_max += 0.5
 
                 # Snap x_max and y_max to nearest 0.1 if close
-                x_max_snapped = snap_to_nearest_point_one(x_max)
-                y_max_snapped = snap_to_nearest_point_one(y_max)
+                x_max_snapped = _snap_to_nearest_point_one(x_max)
+                y_max_snapped = _snap_to_nearest_point_one(y_max)
 
                 ax.set_xlim(x_min, x_max_snapped)
                 ax.set_ylim(y_min, y_max_snapped)
@@ -282,7 +206,7 @@ def plot_with_seaborn(data, names, title="Pairplot"):
     return fig
 
 
-def snap_to_nearest_point_one(value, tolerance=0.05):
+def _snap_to_nearest_point_one(value, tolerance=0.05):
     """
     If the value is within 'tolerance' of the next multiple of 0.1,
     snap it to that multiple.
