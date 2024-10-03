@@ -46,6 +46,8 @@ METRIC_WHOLE_MIN_POINT_DISTANCE = "max_whole_min_point_distance"
 
 METRIC_WHOLE_MIN_PROJECTED_DISTANCE = "max_whole_min_projected_distance"
 
+METRIC_AVG_MIN_PROJECTED_DISTANCE = "avg_min_projected_distance"
+
 METRIC_WHOLE_STAR_DISCREPANCY = "star_discrepancy"
 
 METRIC_MAX_PRO = "max_pro"
@@ -523,6 +525,55 @@ class DesignMeasurementSet:
         return None
 
 
+def compute_average_dim_distance(
+    design: DesignOfExperiment,
+    _: Optional[List[FullSubDesignMeasurementSet]] = None,
+    encoding: Optional[Encoding] = None,
+) -> float:
+    """
+    Computes the average minimum dimension distance. First
+    computes the minimum distance for each dimension. Then averages
+    these values.
+
+    Arguments
+    ---------
+    design: DesignOfExperiment
+        The design to measure
+    _: Optional[List[FullSubDesignMeasurementSet]]
+        unused parameter to support standard measurement interface
+    encoding: Optional[Encoding] = None
+        the encoding to use of distance computations
+
+    Returns
+    -------
+    float
+        The average distance
+    """
+
+    if encoding is None:
+        points = design.input_sets
+    else:
+        points = design.get_data_points(encoding)
+
+    columns_data = points.T
+
+    min_distances = []
+
+    for k in range(design.dim_specification_count):
+        column_vector = columns_data[k]
+        filtered_vector = column_vector[~np.isnan(column_vector)]
+        # skip dimensions with one or less non null values
+        if len(filtered_vector) > 1:
+            # convert vector to matrix for computatoin
+            f_m = filtered_vector.reshape(len(filtered_vector), 1)
+            dm = distance_matrix(f_m, f_m)
+
+            np.fill_diagonal(dm, np.inf)
+            min_distances.append(dm.min())
+
+    return np.mean(min_distances)
+
+
 def compute_whole_design_max_pro(
     design: DesignOfExperiment,
     _: List[FullSubDesignMeasurementSet],
@@ -812,6 +863,7 @@ doe_metric_computation_map = {
     METRIC_WHOLE_MIN_PROJECTED_DISTANCE: compute_min_projected_distance,
     METRIC_WHOLE_STAR_DISCREPANCY: compute_whole_design_star_discrepancy,
     METRIC_MAX_PRO: compute_whole_design_max_pro,
+    METRIC_AVG_MIN_PROJECTED_DISTANCE: compute_average_dim_distance,
 }
 
 
