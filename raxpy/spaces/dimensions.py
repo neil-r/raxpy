@@ -90,18 +90,18 @@ def convert_values_from_dict(dimensions, input_value: Dict[str, Any]) -> Dict:
     args = {}
 
     for dim in dimensions:
-        if dim.id in input_value:
-            child_value = input_value[dim.id]
+        if dim.local_id in input_value:
+            child_value = input_value[dim.local_id]
             if child_value is None:
                 if dim.nullable:
-                    args[dim.id] = None
+                    args[dim.local_id] = None
                 else:
                     # TODO reassess this logic, may want to raise error
-                    args[dim.id] = dim.default_value
+                    args[dim.local_id] = dim.default_value
             else:
-                args[dim.id] = dim.convert_to_argument(child_value)
+                args[dim.local_id] = dim.convert_to_argument(child_value)
         else:
-            args[dim.id] = dim.default_value
+            args[dim.local_id] = dim.default_value
     return args
 
 
@@ -755,8 +755,8 @@ class Composite(Dimension):
         if input_value is not None:
             for dim in self.children:
                 specified_child_input = False
-                if hasattr(input_value, dim.id):
-                    value = getattr(input_value, dim.id)
+                if hasattr(input_value, dim.local_id):
+                    value = getattr(input_value, dim.local_id)
                     specified_child_input = True
                 else:
                     value = None

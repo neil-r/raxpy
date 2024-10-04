@@ -44,10 +44,10 @@ def validate_function_inputs(space: InputSpace, args, kwargs) -> None:
             value = args[i]
             specified_input = True
         else:
-            if dim.id not in kwargs:
+            if dim.local_id not in kwargs:
                 value = None
             else:
-                value = kwargs[dim.id]
+                value = kwargs[dim.local_id]
                 specified_input = True
         dim.validate(value, specified_input)
 
