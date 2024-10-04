@@ -144,7 +144,7 @@ class WorkingDesignOfExpertiment:
     def inject(self, new_dims, data_points, parent_mask):
         for i, dim in enumerate(new_dims):
             self.column_map[self.active_index] = dim
-            self.input_set_map[dim.local_id] = self.active_index
+            self.input_set_map[dim.id] = self.active_index
             self.final_data_points[parent_mask, self.active_index] = (
                 data_points[:, i]
             )
@@ -310,7 +310,7 @@ def generate_design(
             # Count the number of non-null data-points for parent dimension
             parent_dim = design_request[0]
             parent_inputs = working_design.final_data_points[
-                :, working_design.input_set_map[parent_dim.local_id]
+                :, working_design.input_set_map[parent_dim.id]
             ]
             parent_mask = parent_inputs > parent_dim.portion_null
             points_to_create = np.sum(parent_mask)
@@ -411,9 +411,7 @@ def generate_design_by_level_opt_merge(
         if not base_level:
             # Count the number of non-null data-points for parent dimension
             parent_dim = design_request[0]
-            parent_inputs = final_data_points[
-                :, input_set_map[parent_dim.local_id]
-            ]
+            parent_inputs = final_data_points[:, input_set_map[parent_dim.id]]
             parent_mask = parent_inputs > parent_dim.portion_null
             points_to_create = np.sum(parent_mask)
         else:
@@ -445,7 +443,7 @@ def generate_design_by_level_opt_merge(
 
             for i, dim in enumerate(active_dims):
                 column_map[active_index] = dim
-                input_set_map[dim.local_id] = active_index
+                input_set_map[dim.id] = active_index
                 final_data_points[parent_mask, active_index] = data_points[
                     :, i
                 ]
