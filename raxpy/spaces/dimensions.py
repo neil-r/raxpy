@@ -739,9 +739,12 @@ class Composite(Dimension):
         return sum(
             [
                 (
-                    c.count_children_dimensions()
-                    if c.has_child_dimensions()
-                    else 1
+                    1
+                    if not c.has_child_dimensions()
+                    else (
+                        (0 if c.only_supports_spec_structure() else 1)
+                        + (c.count_children_dimensions())
+                    )
                 )
                 for c in self.children
             ]
