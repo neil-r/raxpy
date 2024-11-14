@@ -16,6 +16,7 @@ _type_dimension_mapper: Type = {
     int: s.Int,
     float: s.Float,
     str: s.Text,
+    bool: s.Bool,
 }
 
 
@@ -180,6 +181,9 @@ def map_type(
     else:
         dt = _map_base_type(parent_prefix, base_type, initalization_values)
 
+    if dt == s.Bool:
+        initalization_values["lb"] = 0
+        initalization_values["ub"] = 1
     d = dt(**initalization_values)
 
     if metadata is not None:

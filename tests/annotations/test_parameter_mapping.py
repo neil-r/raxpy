@@ -142,6 +142,7 @@ def test_mixed_spec_param_func():
         ] = None,
         _x5: int = 3,
         _x6: Optional[float] = None,
+        _x7: bool = True,
     ):
         """
         Function supporting unit testing.
@@ -151,7 +152,7 @@ def test_mixed_spec_param_func():
     input_space = fs.extract_input_space(f)
     assert input_space is not None
     assert input_space.dimensions is not None
-    assert len(input_space.dimensions) == 6
+    assert len(input_space.dimensions) == 7
     assert_parameters(input_space.dimensions[0], s.Int, "x1", None, 0, 5, None)
     assert_parameters(
         input_space.dimensions[1], s.Float, "_x2", None, 1.7, 3.3, None
@@ -190,6 +191,17 @@ def test_mixed_spec_param_func():
         None,
         None,
         nullable=True,
+        specified_default=True,
+    )
+    assert_parameters(
+        input_space.dimensions[6],
+        s.Bool,
+        "_x7",
+        True,
+        0,
+        1,
+        None,
+        nullable=False,
         specified_default=True,
     )
 

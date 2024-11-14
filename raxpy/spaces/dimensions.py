@@ -376,6 +376,43 @@ class Int(Dimension[int]):
 
 
 @dataclass
+class Bool(Int):
+    """
+    A range of integer values.
+    """
+
+    def validate(self, input_value, specified_input: bool) -> None:
+        """
+        Implementation of abstract method. See `Dimension.validate`.
+
+        Raises
+        ------
+        ValueError:
+            If input value, lower bound and upper bound
+            are out of range/not in set
+
+        """
+        Dimension.validate(self, input_value, specified_input)
+        if input_value is not None:
+            if not isinstance(input_value, bool):
+                raise ValueError(
+                    f"Invalid value, the value {input_value} is not the right type"
+                )
+
+    def convert_to_argument(self, input_value) -> T:
+        """
+        Implementation of abstract method. See `Dimension.convert_to_argument`.
+        """
+        return int(input_value) == 1
+
+    def acceptable_types(self):
+        """
+        Implementation of abstract method. See `Dimension.acceptable_types`.
+        """
+        return (bool,)
+
+
+@dataclass
 class Float(Dimension[float]):
     """
     A range of float values.
