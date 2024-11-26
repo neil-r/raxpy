@@ -1,9 +1,120 @@
-# raxpy, Pythom Library to simplify experimentation over complex search spaces
+# New README.mb
+# raxpy, a Python library to simplify experimentation over complex search spaces
 | | |
 |---|---|
 | Testing | [![CI - Test](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml) ![Code Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fneil-r%2Fraxpy%2Fmain%2Fcoverage.json%3Ftoken%3DGHSAT0AAAAAACUX5ZW2YBA4DDCOU27KJPKSZVKMFCA&query=%24.totals.percent_covered_display&suffix=%25&label=Code%20Coverage&color=Green) |
 | Meta | [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/neil-r/raxpy/blob/main/LICENSE)
 
+## About
+Raxpy is a python library designed to enable rapid experimentation by supporting design of experiments, dataset generation and machine learning. It incorporates code introspection to derive a Python function's input space and novel algorithms to automate the design of space-filling experiments for spaces with optional and hierarchical input dimensions. The
+package includes support for nullable and hierarchical parameters, parallelization execution and distributed execution. It contains the following features:
+- Python static typing annotation configuration, self-contained documentation
+- Exploration heuristics
+- Hierarchical Monte Carlo search
+- MPI parallelization support
+- Auto-generated data schema and database
+- Response-surface-methodology
+- Constrained search spaces
+- Trial folder management
+
+## Usage
+1. Import raxpy and dependencies, and 
+
+from typing import Annotated, Optional
+import functools
+import raxpy
+import numpy as np
+
+2. Define f() with your input space and function. 
+
+ ```python
+ def f(
+     age:Annotated[float, raxpy.Float(label="Age", lb=20.0, ub=80.0)],
+     bmi:Annotated[float, raxpy.Float(label="BMI", lb=18.0, ub=40.0)],
+     blood_pressure:Annotated[float, raxpy.Float(label="Blood Pressure", lb=90.0, ub=180.0)]
+ )-> Annotated[bool, raxpy.Binary(label="Disease Presence")]:
+     
+     glucose_factor = 0 if glucose is None else (glucose - 70) / (200 - 70)
+     cholesterol_factor = 0 if cholesterol is None else (cholesterol - 150) / (300 - 150)
+ 
+     my_calc = (
+         (age / 80) +
+         ((bmi - 18) / (40 - 18)) +
+         ((blood_pressure - 90) / (180 - 90)) +
+         (glucose_factor) +
+         (cholesterol_factor) -
+         (physical_activity / 2)
+     )
+         
+     if noise:
+         print('with noise')
+         my_output = np.random.uniform(-0.60, 0.60) * my_calc
+     else:
+         print('no noise')
+         my_output =  my_calc
+     return  my_output
+```
+
+3. Run experiment
+
+ ```python
+ test_results = raxpy.perform_experiment(functools.partial(f,noise=True),n_points=5)
+```
+
+4. Raxpy outputs a tuple containing two lists. The first list contains a dictionary element describing each datapoint generated in the space-filling design. The second list contains all experiment results.
+
+5. Here is visualization of a space-filling design using three nullable parameters x1, x2 & x3 in the input space. The specified design is Latin Hypercube with full subspace algorithm (FSS-LHD), and the output shows a desired uniform distribution.
+   
+ <img src="https://github.com/user-attachments/assets/dba6e533-cf30-4944-b788-07566f101fb4" alt="image" width="400"/>
+
+
+## Static Type Annotations
+
+Documentation as code. 
+
+## Experimentation Orchestration Types
+
+- Coordinated Agent Search
+- Runners managed by Coordinators
+- IndependentRunner
+- Sequential Batch Search
+- DependentRunner
+
+- Task Types
+- Analyze Function's Space
+- Run Function Given Inputs (with/without checkpoint details)
+  
+- Task Executor
+- TaskExecutionContext
+- PreProcessor
+- EpochProcessor
+- CheckpointRestorer
+- CheckpointSaver
+- PostProcessor
+ 
+ - Database
+  - InitalizeSpaces
+  - InsertDataPoints
+  - MarkDataPoints
+  - UpdateDataPoints
+  - RetrieveDataPoints
+
+## Configuration Methods
+
+ - MPI delegator, with centralized data-point processing, decentralized artifact processing
+ - Task Message Broker (task results)
+  - 
+ - 
+
+
+
+
+# Old README.mb
+# raxpy, Pythom Library to simplify experimentation over complex search spaces
+| | |
+|---|---|
+| Testing | [![CI - Test](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml) ![Code Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fneil-r%2Fraxpy%2Fmain%2Fcoverage.json%3Ftoken%3DGHSAT0AAAAAACUX5ZW2YBA4DDCOU27KJPKSZVKMFCA&query=%24.totals.percent_covered_display&suffix=%25&label=Code%20Coverage&color=Green) |
+| Meta | [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/neil-r/raxpy/blob/main/LICENSE)
 
 - Python static typing annotation configuration, self-contained documentation
 - Exploration heuristics
@@ -53,6 +164,9 @@ Documentation as code.
  - Task Message Broker (task results)
   - 
  - 
+
+
+
 
 ## Getting started
 
