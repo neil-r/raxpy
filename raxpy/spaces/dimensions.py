@@ -610,8 +610,17 @@ class Variant(Dimension):
         """
         Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
-        option = self.options[input_value.option_index]
-        return option.convert_to_argument(input_value.content)
+        # find the children
+        for option in self.options:
+            if option.local_id in input_value:
+                return option.convert_to_argument(input_value[option.local_id])
+
+        if self.nullable:
+            return None
+
+        raise ValueError(
+            f"non-nullable variant trying to convert input_value that does not have an option specified, : {input_value}"
+        )
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """

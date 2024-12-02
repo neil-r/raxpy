@@ -18,6 +18,7 @@ from raxpy.spaces.complexity import assign_null_portions
 from raxpy.spaces import InputSpace, create_level_iterable
 from raxpy.annotations import function_spec
 from raxpy.does import lhs
+from raxpy.does import maxpro
 from raxpy.does import random
 
 
@@ -138,7 +139,7 @@ def generate_design(
         Callable[I, T],
     ],
     n_points: int,
-    design_algorithm=lhs.generate_design,
+    design_algorithm=lhs.generate_seperate_designs_by_full_subspace_and_pool,
 ) -> DesignOfExperiment:
     """
     Designs a batch experiment for the subject.
@@ -166,6 +167,7 @@ def generate_design(
     assign_null_portions(create_level_iterable(input_space.children))
 
     design = design_algorithm(input_space, n_points)
+    design = maxpro.optimize_design_with_sa(design)
 
     return design
 

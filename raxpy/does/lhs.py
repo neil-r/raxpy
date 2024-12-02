@@ -251,12 +251,12 @@ def generate_design_merge_simple(
     n_points: int,
     base_creator=_default_base_lhs_creator,
 ) -> DesignOfExperiment:
-    return generate_design(
+    return generate_design_by_tree_traversal(
         space, n_points, base_creator, merge_method=MERGE_SIMPLE
     )
 
 
-def generate_design(
+def generate_design_by_tree_traversal(
     space: InputSpace,
     n_points: int,
     base_creator=_default_base_lhs_creator,
@@ -309,9 +309,27 @@ def generate_design(
         if not base_level:
             # Count the number of non-null data-points for parent dimension
             parent_dim = design_request[0]
+            if parent_dim.id not in working_design.input_set_map:
+                # already address this dimension
+                continue
             parent_inputs = working_design.final_data_points[
                 :, working_design.input_set_map[parent_dim.id]
             ]
+            """
+            parent_dim_mask = parent_dim
+            while True:
+                if parent_dim_mask.id in working_design.input_set_map:
+                    parent_inputs = working_design.final_data_points[
+                        :, working_design.input_set_map[parent_dim_mask.id]
+                    ]
+                    break
+                else:
+                    # parent is a structural-only composite, get its parent
+                    parent_dim_mask = space.find_parent(parent_dim_mask)
+                    if parent_dim_mask is None:
+                        raise ValueError("Parent not found")
+            """
+
             parent_mask = parent_inputs > parent_dim.portion_null
             points_to_create = np.sum(parent_mask)
         else:
@@ -495,6 +513,20 @@ def generate_design_by_level_opt_merge(
     )
 
 
+def _check_if_child_in_sub_space_allocation(dim, active_dim_ids):
+    if dim.id in active_dim_ids:
+        return True
+    elif isinstance(dim, Composite) and not dim.nullable:
+        # must handle case when Composite it only used for structure of children dimensions
+        for child_dim in dim.children:
+            c = _check_if_child_in_sub_space_allocation(
+                child_dim, active_dim_ids
+            )
+            if c:
+                return True
+    return False
+
+
 def generate_seperate_designs_by_full_subspace(
     space: InputSpace,
     n_points: int,
@@ -614,11 +646,17 @@ def generate_seperate_designs_by_full_subspace(
                 else:
                     # if Variant type must determine the child dimension active
                     for i, child_dim in enumerate(dim.children):
-                        if child_dim.id in sub_space_allocation.active_dim_ids:
+                        if _check_if_child_in_sub_space_allocation(
+                            child_dim, sub_space_allocation.active_dim_ids
+                        ):
                             v = i
                             break
 
                 final_data_points[row_mask, dim_index] = v
+
+    # adjust if some dimensions never sampled
+    if total_dim_count > len(input_set_map):
+        final_data_points = final_data_points[:, 0 : len(input_set_map)]
 
     return DesignOfExperiment(
         input_space=space,
@@ -831,11 +869,17 @@ def generate_seperate_designs_by_full_subspace_and_pool(
                 else:
                     # if Variant type must determine the child dimension active
                     for i, child_dim in enumerate(dim.children):
-                        if child_dim.id in sub_space_allocation.active_dim_ids:
+                        if _check_if_child_in_sub_space_allocation(
+                            child_dim, sub_space_allocation.active_dim_ids
+                        ):
                             v = i
                             break
 
                 final_data_points[row_mask, dim_index] = v
+
+    # adjust if some dimensions never sampled
+    if total_dim_count > len(input_set_map):
+        final_data_points = final_data_points[:, 0 : len(input_set_map)]
 
     return DesignOfExperiment(
         input_space=space,
@@ -866,7 +910,9 @@ def generate_design_with_projection(
         **Explanation**
 
     """
-    active_dims = list(create_all_iterable(space.children))
+    active_dims = list(
+        create_all_iterable(space.children, skip_structual_dims=True)
+    )
     input_set_map = {}
     for i, dim in enumerate(active_dims):
         input_set_map[dim.id] = i

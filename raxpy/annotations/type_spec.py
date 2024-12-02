@@ -146,7 +146,11 @@ def map_type(
         metadata = base_type.__metadata__
         base_type = base_type.__origin__
 
-    id: str = parent_prefix + name
+    if parent_prefix != "":
+        id: str = parent_prefix + "##" + name
+    else:
+        id: str = name
+    child_parent_prefix = id
     initalization_values = {
         "local_id": name,
         "id": id,
@@ -179,7 +183,9 @@ def map_type(
 
             initalization_values["options"] = options
     else:
-        dt = _map_base_type(parent_prefix, base_type, initalization_values)
+        dt = _map_base_type(
+            child_parent_prefix, base_type, initalization_values
+        )
 
     if dt == s.Bool:
         initalization_values["lb"] = 0
