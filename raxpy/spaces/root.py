@@ -279,7 +279,9 @@ def _create_dict_from_flat_values(
                 if np.isnan(inputs[dim_index]):
                     dict_values[dim.local_id] = None
                 else:
-                    dict_values[dim.local_id] = inputs[dim_index]
+                    dict_values[dim.local_id] = dim.convert_to_argument(
+                        inputs[dim_index]
+                    )
 
     return dict_values
 
