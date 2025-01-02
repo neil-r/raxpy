@@ -95,7 +95,7 @@ def _map_base_type(parent_prefix: str, t, initialization_values):
         dt = _type_dimension_mapper[t]
     else:
         if get_origin(t) is get_origin(List):
-            dt = s.Listing
+            dt = s.ListDim
             element_type = None
 
             a = get_args(t)

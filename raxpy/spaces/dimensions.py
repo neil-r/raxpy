@@ -691,7 +691,7 @@ class Variant(Dimension):
 
 
 @dataclass
-class Listing(Dimension[List]):
+class ListDim(Dimension[List]):
     """
     Represents a dimension that is specified as a range of lists.
     """

@@ -167,9 +167,7 @@ def test_whole_min_distance_computation():
         encoding=doe.EncodingEnum.NONE,
     )
 
-    min_d = a.compute_whole_min_point_distance(
-        whole_doe, [], doe.EncodingEnum.NONE
-    )
+    min_d = a.compute_min_interpoint_dist(whole_doe, [], doe.EncodingEnum.NONE)
 
     # the minimum distance between the distance is between points 1 and 2 (1-based indexing)
     assert min_d == ((4.0 - 1.0) ** 2 + (1)) ** 0.5
@@ -411,7 +409,7 @@ def test_compute_average_dim_distance():
         encoding=doe.EncodingEnum.ZERO_ONE_NULL_ENCODING,
     )
 
-    actual_average = a.compute_average_dim_distance(design)
+    actual_average = a.compute_average_dim_dist(design)
 
     expected_average = (0.3 + 0.8 + 0.0 + 0.1) / 4
 

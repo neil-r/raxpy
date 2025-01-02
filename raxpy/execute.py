@@ -72,7 +72,7 @@ def _default_designer(
     design : DesignOfExperiment
 
     """
-    design = generate_design(input_space, n_points)
+    design = design_experiment(input_space, n_points)
 
     return design
 
@@ -133,7 +133,7 @@ def perform_experiment(
     return arg_sets, results
 
 
-def generate_design(
+def design_experiment(
     subject: Union[
         InputSpace,
         Callable[I, T],
@@ -173,5 +173,5 @@ def generate_design(
 
 
 generate_random_design = partial(
-    generate_design, design_algorithm=random.generate_design
+    design_experiment, design_algorithm=random.generate_design
 )

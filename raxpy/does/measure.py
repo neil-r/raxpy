@@ -525,7 +525,7 @@ class DesignMeasurementSet:
         return None
 
 
-def compute_average_dim_distance(
+def compute_average_dim_dist(
     design: DesignOfExperiment,
     _: Optional[List[FullSubDesignMeasurementSet]] = None,
     encoding: Optional[Encoding] = None,
@@ -540,7 +540,7 @@ def compute_average_dim_distance(
     design: DesignOfExperiment
         The design to measure
     _: Optional[List[FullSubDesignMeasurementSet]]
-        unused parameter to support standard measurement interface
+        unused parameter, specified to support standard measurement interface
     encoding: Optional[Encoding] = None
         the encoding to use of distance computations
 
@@ -576,7 +576,7 @@ def compute_average_dim_distance(
 
 def compute_whole_design_max_pro(
     design: DesignOfExperiment,
-    _: List[FullSubDesignMeasurementSet],
+    _: Optional[List[FullSubDesignMeasurementSet]],
     encoding: Encoding,
 ) -> float:
     """
@@ -588,7 +588,7 @@ def compute_whole_design_max_pro(
     doe : DesignOfExperiment
         the design to measure
     - : List[FullSubDesignMeasurementSet]
-        list of sub-design measurements
+        unused parameter, specified to support standard measurement interface
     encoding: Encoding
         design encoding to use for measurement
 
@@ -617,8 +617,9 @@ def compute_whole_design_star_discrepancy(
     doe : DesignOfExperiment
         the design to measure
     - : List[FullSubDesignMeasurementSet]
-        list of full-sub-design measurements
-    _encoding: Encoding
+        unused parameter, specified to support standard measurement interface
+    encoding: Encoding
+        design encoding to use for measurement
 
     Returns
     -------
@@ -683,7 +684,8 @@ def compute_weighted_mipd(
         **Explanation**
     full_design_assessments : List[FullSubDesignMeasurementSet]
         **Explanation**
-    _: Encoding
+    _encoding: Encoding
+        unused parameter, specified to support standard measurement interface
     weighting_metric=METRIC_PORTION_OF_TOTAL
         **Explanation**
 
@@ -776,10 +778,10 @@ def _compute_nan_distance_matrix(matrix: np.array, p=2):
     return dm
 
 
-def compute_whole_min_point_distance(
+def compute_min_interpoint_dist(
     doe: DesignOfExperiment,
-    _: List[FullSubDesignMeasurementSet],
-    encoding: Encoding,
+    _: Optional[List[FullSubDesignMeasurementSet]] = None,
+    encoding: Encoding = EncodingEnum.ZERO_ONE_NULL_ENCODING,
     p: int = 2,
 ) -> float:
     """
@@ -794,8 +796,7 @@ def compute_whole_min_point_distance(
     doe : DesignOfExperiment
         The design to measure
     _ : List[FullSubDesignMeasurementSet]
-        The full-sub-design measurements (not-used, specified to support common
-        metric computation interface)
+        unused parameter, specified to support standard measurement interface
     encoding: Encoding
 
     p:int=2
@@ -809,6 +810,27 @@ def compute_whole_min_point_distance(
     dm = _compute_nan_distance_matrix(doe.get_data_points(encoding), p=p)
     np.fill_diagonal(dm, np.inf)
     return np.min(dm)
+
+
+def compute_opt_coverage(doe: DesignOfExperiment) -> float:
+    """
+    Computes the porition of full-sub-spaces that the design
+    allocates points to given the optional dimensions specified
+    in the doe's input space.
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        The design to measure
+
+    Returns
+    -------
+    float
+        full-sub-space coverage
+    """
+    sub_spaces, mapped_values = allocate_points_to_full_subspaces(doe)
+
+    return len(set(mapped_values)) / len(sub_spaces)
 
 
 def compute_min_projected_distance(
@@ -859,12 +881,59 @@ def compute_min_projected_distance(
 doe_metric_computation_map = {
     METRIC_WEIGHTED_DISCREPANCY: compute_weighted_discrepancy,
     METRIC_WEIGHTED_MIPD: compute_weighted_mipd,
-    METRIC_WHOLE_MIN_POINT_DISTANCE: compute_whole_min_point_distance,
+    METRIC_WHOLE_MIN_POINT_DISTANCE: compute_min_interpoint_dist,
     METRIC_WHOLE_MIN_PROJECTED_DISTANCE: compute_min_projected_distance,
     METRIC_WHOLE_STAR_DISCREPANCY: compute_whole_design_star_discrepancy,
     METRIC_MAX_PRO: compute_whole_design_max_pro,
-    METRIC_AVG_MIN_PROJECTED_DISTANCE: compute_average_dim_distance,
+    METRIC_AVG_MIN_PROJECTED_DISTANCE: compute_average_dim_dist,
 }
+
+
+def allocate_points_to_full_subspaces(doe: DesignOfExperiment):
+    """
+    Allocates points within the doe to the full-sub-space
+    each belongs to.
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        The design to assess
+
+    Returns
+    -------
+    List[List[str]]
+        the full-sub-spaces
+    List[int]
+        list of indexing values for each point to the index of
+        the full-sub-space it belongs
+
+    """
+    # determine every full-combination of input dimensions
+    # that could be defined in this space
+    sub_spaces = doe.input_space.derive_full_subspaces()
+
+    # assign a index to each sub space
+    sub_space_index_map = {}
+    for i, sub_space in enumerate(sub_spaces):
+        sub_space.sort()
+        standardized_tuple_key = tuple(sub_space)
+        sub_space_index_map[standardized_tuple_key] = i
+
+    # determine the sub-space each data-point belongs to
+    def map_point(point):
+        active_dim_ids = []
+
+        for dim_id, column_index in doe.input_set_map.items():
+            if ~np.isnan(point[column_index]):
+                active_dim_ids.append(dim_id)
+
+        active_dim_ids.sort()
+        return sub_space_index_map[tuple(active_dim_ids)]
+
+    # compute the subspace each point belongs to
+    mapped_values = [map_point(point) for point in doe.decoded_input_sets]
+
+    return sub_spaces, mapped_values
 
 
 def measure_with_all_metrics(
@@ -886,30 +955,7 @@ def measure_with_all_metrics(
     DesignMeasurementSet
         composition of design measurements
     """
-    # determine every full-combination of input dimensions
-    # that could be defined in this space
-    sub_spaces = doe.input_space.derive_full_subspaces()
-
-    # assign a id/int to each sub space
-    sub_space_index_map = {}
-    for i, sub_space in enumerate(sub_spaces):
-        sub_space.sort()
-        standardized_tuple_key = tuple(sub_space)
-        sub_space_index_map[standardized_tuple_key] = i
-
-    # determine the sub-space each data-point belongs to
-    def map_point(point):
-        active_dim_ids = []
-
-        for dim_id, column_index in doe.input_set_map.items():
-            if ~np.isnan(point[column_index]):
-                active_dim_ids.append(dim_id)
-
-        active_dim_ids.sort()
-        return sub_space_index_map[tuple(active_dim_ids)]
-
-    # compute the subspace each point belongs to
-    mapped_values = [map_point(point) for point in doe.decoded_input_sets]
+    sub_spaces, mapped_values = allocate_points_to_full_subspaces(doe)
 
     # prepare data structures for returned assessment structure
     total_point_count = len(mapped_values)
