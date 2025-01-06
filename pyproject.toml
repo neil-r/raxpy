@@ -7,7 +7,7 @@ name = "raxpy"
 authors = [
     {name = "Neil Ranly", email = "neil.ranly@gmail.com"},
 ]
-description = "Python library that designs and executes experiments on Python function, enabling rapid experimentation."
+description = "Python library that designs and executes experiments on Python functions, enabling rapid experimentation."
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["experimentation", "synthetic data", "design of experiment", "model specification"]
