@@ -5,7 +5,7 @@
 | Meta | [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/neil-r/raxpy/blob/main/LICENSE)
 
 ## Description
-raxpy is a Python library that designs and executes experiments on Python annotated functions. Given a Python function provided by the user, raxpy introspects functions' signatures to derive experiment input-spaces. With a function's derived input-space, raxpy utilizes different experiment design algorithms to create a small set of function arguments, i.e., the design points, that attempt to cover the whole input-space. With the experiment design, raxpy maps the design points to the function's arguments to execute the function with each point.  
+raxpy is a Python library that designs and executes experiments on Python annotated functions. Given a Python function provided by the user, raxpy introspects the function signature to derive an experiment input-space. With a function's derived input-space, raxpy utilizes different experiment design algorithms to create a small set of function arguments, i.e., the design points, that attempt to cover the whole input-space. With the experiment design, raxpy maps the design points to the function's arguments to execute the function with each point.  
 
 To address limitations in factorial and random point selection algorithms, raxpy provide space-filling design algorithms to generate insightful results from a small number of function executions. For more information, see .
 
@@ -74,14 +74,13 @@ raxpy requires numpy and scipy.  To install with pip, execute
 pip install raxpy
 ```
 
-To execute distributed experiments with MPI, ensure you have the appropriate MPI cluster and also install mpi4py. 
+To execute distributed experiments with MPI, also ensure you have the appropriate MPI cluster and install mpi4py. 
 
 ## Support
 
 For community support, please use GitHub issues. 
 
 ## Roadmap
-
 
 ### Version 1.0
 

@@ -38,7 +38,7 @@ MANIFEST
 *.bkp
 
 # Local proof-of-concept code
-poc_*
+working/*
 
 # Installer logs
 pip-log.txt
