@@ -5,19 +5,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from .doe import DesignOfExperiment
 
-def plot_scatterplot_matrix(data, names, title="Pairplot"):
+
+def plot_scatterplot_matrix(
+    doe: DesignOfExperiment, title="Design of Experiment"
+):
     """
-    Plots a scatterplot matrix of subplots.  Each row of "data" is
-    plotted against other rows, resulting in a nrows by nrows grid of
-    subplots with the diagonal subplots labeled with "names".
+    Plots a scatterplot matrix of points from a design of experiment.
 
     Arguments
     ---------
-    data
-        matrix of data points
-    names : str
-        Labels for subplot names
+    doe
+        The design of experiment
     title : str
         Additional keyword arguments are passed on to matplotlib's
         "plot" command.
@@ -27,6 +27,11 @@ def plot_scatterplot_matrix(data, names, title="Pairplot"):
     Returns the matplotlib figure object containg the
     subplot grid.
     """
+
+    data = doe.decoded_input_sets
+    names = list(
+        doe.index_dim_id_map[i] for i in range(doe.dim_specification_count)
+    )
 
     # Check for NaN values
     has_nan = np.isnan(data).any()
