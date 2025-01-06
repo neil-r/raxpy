@@ -68,28 +68,67 @@ SPACE = s.InputSpace(
                 s.Float(id="x8", lb=3.0, ub=4.0),
             ],
         ),
+        s.Variant(
+            id="x9",
+            nullable=False,
+            portion_null=0.0,
+            options=[
+                s.Composite(
+                    id="x10",
+                    children=[
+                        s.Int(id="x11", lb=6, ub=7),
+                        s.Float(
+                            id="x12",
+                            value_set=[0.1, 0.5, 0.9],
+                        ),
+                    ],
+                ),
+                s.Float(
+                    id="x13",
+                    value_set=[0.1, 0.5, 0.9],
+                ),
+            ],
+        ),
     ]
 )
 
 SUB_SPACES = (
-    ("x1", "x2"),
-    ("x1", "x3", "x4", "x5"),
-    ("x1", "x3", "x4"),
-    ("x1", "x6", "x7"),
-    ("x1", "x6", "x8"),
-    ("x1", "x2", "x3", "x4", "x5"),
-    ("x1", "x2", "x3", "x4"),
-    ("x1", "x2", "x6", "x7"),
-    ("x1", "x2", "x6", "x8"),
-    ("x1", "x3", "x4", "x5", "x6", "x7"),
-    ("x1", "x3", "x4", "x6", "x7"),
-    ("x1", "x3", "x4", "x5", "x6", "x8"),
-    ("x1", "x3", "x4", "x6", "x8"),
-    ("x1", "x2", "x3", "x4", "x5", "x6", "x7"),
-    ("x1", "x2", "x3", "x4", "x6", "x7"),
-    ("x1", "x2", "x3", "x4", "x5", "x6", "x8"),
-    ("x1", "x2", "x3", "x4", "x6", "x8"),
-    ("x1",),
+    ("x1", "x13", "x2", "x9"),
+    ("x1", "x13", "x3", "x4", "x5", "x9"),
+    ("x1", "x13", "x3", "x4", "x9"),
+    ("x1", "x13", "x6", "x7", "x9"),
+    ("x1", "x13", "x6", "x8", "x9"),
+    ("x1", "x13", "x2", "x3", "x4", "x5", "x9"),
+    ("x1", "x13", "x2", "x3", "x4", "x9"),
+    ("x1", "x13", "x2", "x6", "x7", "x9"),
+    ("x1", "x13", "x2", "x6", "x8", "x9"),
+    ("x1", "x13", "x3", "x4", "x5", "x6", "x7", "x9"),
+    ("x1", "x13", "x3", "x4", "x6", "x7", "x9"),
+    ("x1", "x13", "x3", "x4", "x5", "x6", "x8", "x9"),
+    ("x1", "x13", "x3", "x4", "x6", "x8", "x9"),
+    ("x1", "x13", "x2", "x3", "x4", "x5", "x6", "x7", "x9"),
+    ("x1", "x13", "x2", "x3", "x4", "x6", "x7", "x9"),
+    ("x1", "x13", "x2", "x3", "x4", "x5", "x6", "x8", "x9"),
+    ("x1", "x13", "x2", "x3", "x4", "x6", "x8", "x9"),
+    ("x1", "x13", "x9"),
+    ("x1", "x11", "x12", "x2", "x9"),
+    ("x1", "x11", "x12", "x3", "x4", "x5", "x9"),
+    ("x1", "x11", "x12", "x3", "x4", "x9"),
+    ("x1", "x11", "x12", "x6", "x7", "x9"),
+    ("x1", "x11", "x12", "x6", "x8", "x9"),
+    ("x1", "x11", "x12", "x2", "x3", "x4", "x5", "x9"),
+    ("x1", "x11", "x12", "x2", "x3", "x4", "x9"),
+    ("x1", "x11", "x12", "x2", "x6", "x7", "x9"),
+    ("x1", "x11", "x12", "x2", "x6", "x8", "x9"),
+    ("x1", "x11", "x12", "x3", "x4", "x5", "x6", "x7", "x9"),
+    ("x1", "x11", "x12", "x3", "x4", "x6", "x7", "x9"),
+    ("x1", "x11", "x12", "x3", "x4", "x5", "x6", "x8", "x9"),
+    ("x1", "x11", "x12", "x3", "x4", "x6", "x8", "x9"),
+    ("x1", "x11", "x12", "x2", "x3", "x4", "x5", "x6", "x7", "x9"),
+    ("x1", "x11", "x12", "x2", "x3", "x4", "x6", "x7", "x9"),
+    ("x1", "x11", "x12", "x2", "x3", "x4", "x5", "x6", "x8", "x9"),
+    ("x1", "x11", "x12", "x2", "x3", "x4", "x6", "x8", "x9"),
+    ("x1", "x11", "x12", "x9"),
 )
 
 
@@ -106,7 +145,9 @@ def test_creation_of_space_filling_doe_simple_merge():
 
     """
 
-    design = doe.generate_design(SPACE, 100, merge_method=doe.MERGE_SIMPLE)
+    design = doe.generate_design_by_tree_traversal(
+        SPACE, 100, merge_method=doe.MERGE_SIMPLE
+    )
     assert design is not None
     assert design.point_count == 100
     assert_every_point_in_a_full_sub_space(
@@ -128,7 +169,7 @@ def test_creation_of_space_filling_doe_shadow_merge():
     every point in design is in a full-sub-space
 
     """
-    design = doe.generate_design(
+    design = doe.generate_design_by_tree_traversal(
         SPACE, 100, merge_method=doe.MERGE_SHADOW_DESIGN
     )
     assert design is not None
@@ -152,7 +193,7 @@ def test_creation_of_space_filling_doe_discrepancy_opt_merge():
     every point in design is in a full-sub-space
 
     """
-    design = doe.generate_design(
+    design = doe.generate_design_by_tree_traversal(
         SPACE, 100, merge_method=doe.MERGE_DISCREPANCY_OPT
     )
     assert design is not None
@@ -175,6 +216,44 @@ def test_creation_of_space_filling_by_subspaces():
 
     assert design is not None
     assert design.point_count == 100
+    assert_every_point_in_a_full_sub_space(
+        sub_spaces_list=SUB_SPACES, design=design
+    )
+
+    # ensure it can create a design smaller than the number of full subspaces
+    design = doe.generate_seperate_designs_by_full_subspace(SPACE, 5)
+
+    assert design is not None
+    assert design.point_count == 5
+    assert_every_point_in_a_full_sub_space(
+        sub_spaces_list=SUB_SPACES, design=design
+    )
+
+
+def test_creation_of_space_filling_by_subspaces_with_value_pool():
+    """
+    TODO Explain the Function
+
+    Asserts
+    -------
+    Design is not None
+
+    """
+    design = doe.generate_seperate_designs_by_full_subspace_and_pool(
+        SPACE, 100
+    )
+
+    assert design is not None
+    assert design.point_count == 100
+    assert_every_point_in_a_full_sub_space(
+        sub_spaces_list=SUB_SPACES, design=design
+    )
+
+    # ensure it can create a design smaller than the number of full subspaces
+    design = doe.generate_seperate_designs_by_full_subspace(SPACE, 5)
+
+    assert design is not None
+    assert design.point_count == 5
     assert_every_point_in_a_full_sub_space(
         sub_spaces_list=SUB_SPACES, design=design
     )

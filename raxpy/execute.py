@@ -5,6 +5,7 @@
 
 import sys
 from typing import Union
+from functools import partial
 
 if sys.version_info >= (3, 10):
     from typing import Callable, TypeVar, List, ParamSpec, Tuple
@@ -17,6 +18,8 @@ from raxpy.spaces.complexity import assign_null_portions
 from raxpy.spaces import InputSpace, create_level_iterable
 from raxpy.annotations import function_spec
 from raxpy.does import lhs
+from raxpy.does import maxpro
+from raxpy.does import random
 
 
 T = TypeVar("T")
@@ -136,6 +139,7 @@ def design_experiment(
         Callable[I, T],
     ],
     n_points: int,
+    design_algorithm=lhs.generate_seperate_designs_by_full_subspace_and_pool,
 ) -> DesignOfExperiment:
     """
     Designs a batch experiment for the subject.
@@ -162,6 +166,12 @@ def design_experiment(
     # assign unassigned null poritions using complexity hueristic
     assign_null_portions(create_level_iterable(input_space.children))
 
-    design = lhs.generate_design(input_space, n_points)
+    design = design_algorithm(input_space, n_points)
+    design = maxpro.optimize_design_with_sa(design)
 
     return design
+
+
+generate_random_design = partial(
+    design_experiment, design_algorithm=random.generate_design
+)

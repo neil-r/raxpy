@@ -376,6 +376,43 @@ class Int(Dimension[int]):
 
 
 @dataclass
+class Bool(Int):
+    """
+    A range of integer values.
+    """
+
+    def validate(self, input_value, specified_input: bool) -> None:
+        """
+        Implementation of abstract method. See `Dimension.validate`.
+
+        Raises
+        ------
+        ValueError:
+            If input value, lower bound and upper bound
+            are out of range/not in set
+
+        """
+        Dimension.validate(self, input_value, specified_input)
+        if input_value is not None:
+            if not isinstance(input_value, bool):
+                raise ValueError(
+                    f"Invalid value, the value {input_value} is not the right type"
+                )
+
+    def convert_to_argument(self, input_value) -> T:
+        """
+        Implementation of abstract method. See `Dimension.convert_to_argument`.
+        """
+        return int(input_value) == 1
+
+    def acceptable_types(self):
+        """
+        Implementation of abstract method. See `Dimension.acceptable_types`.
+        """
+        return (bool,)
+
+
+@dataclass
 class Float(Dimension[float]):
     """
     A range of float values.
@@ -573,8 +610,17 @@ class Variant(Dimension):
         """
         Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
-        option = self.options[input_value.option_index]
-        return option.convert_to_argument(input_value.content)
+        # find the children
+        for option in self.options:
+            if option.local_id in input_value:
+                return option.convert_to_argument(input_value[option.local_id])
+
+        if self.nullable:
+            return None
+
+        raise ValueError(
+            f"non-nullable variant trying to convert input_value that does not have an option specified, : {input_value}"
+        )
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
@@ -645,7 +691,7 @@ class Variant(Dimension):
 
 
 @dataclass
-class Listing(Dimension[List]):
+class ListDim(Dimension[List]):
     """
     Represents a dimension that is specified as a range of lists.
     """

@@ -16,6 +16,7 @@ _type_dimension_mapper: Type = {
     int: s.Int,
     float: s.Float,
     str: s.Text,
+    bool: s.Bool,
 }
 
 
@@ -94,7 +95,7 @@ def _map_base_type(parent_prefix: str, t, initialization_values):
         dt = _type_dimension_mapper[t]
     else:
         if get_origin(t) is get_origin(List):
-            dt = s.Listing
+            dt = s.ListDim
             element_type = None
 
             a = get_args(t)
@@ -145,7 +146,11 @@ def map_type(
         metadata = base_type.__metadata__
         base_type = base_type.__origin__
 
-    id: str = parent_prefix + name
+    if parent_prefix != "":
+        id: str = parent_prefix + "##" + name
+    else:
+        id: str = name
+    child_parent_prefix = id
     initalization_values = {
         "local_id": name,
         "id": id,
@@ -178,8 +183,13 @@ def map_type(
 
             initalization_values["options"] = options
     else:
-        dt = _map_base_type(parent_prefix, base_type, initalization_values)
+        dt = _map_base_type(
+            child_parent_prefix, base_type, initalization_values
+        )
 
+    if dt == s.Bool:
+        initalization_values["lb"] = 0
+        initalization_values["ub"] = 1
     d = dt(**initalization_values)
 
     if metadata is not None:

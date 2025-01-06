@@ -42,7 +42,9 @@ def f(
 
     y = 0.4 * x1
     if x3 is not None:
-        y += x3.x3_1 * x1 + x3.x3_2
+        y += x3.x3_1 * x1
+        if x3.x3_2 is not None:
+            y += x3.x3_2
     if x2 is not None:
         y += (x2 * 3.0) + (0.7 * x2 * x1)
     return y

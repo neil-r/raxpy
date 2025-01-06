@@ -59,6 +59,7 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
 
     optional_dims = []
     expansion_map = {}
+    required_variant_expansion_map = {}
     required_dims = []
 
     for dim in level:
@@ -74,21 +75,21 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
                     children_subspaces = derive_subspaces(
                         create_level_iterable(dim.children)
                     )
-                expansion_map[dim.local_id] = children_subspaces
-                optional_dims.append(dim.local_id)
+                expansion_map[dim.id] = children_subspaces
+                optional_dims.append(dim.id)
             else:
-                optional_dims.append(dim.local_id)
+                optional_dims.append(dim.id)
         else:
             if isinstance(dim, Variant):
-                optional_dims.append(dim.local_id)
+                required_dims.append(dim.id)
                 children_subspaces = []
                 for o in dim.children:
                     children_subspaces += derive_subspaces(
                         create_level_iterable([o])
                     )
-                expansion_map[dim.local_id] = children_subspaces
+                required_variant_expansion_map[dim.id] = children_subspaces
             else:
-                required_dims.append(dim.local_id)
+                required_dims.append(dim.id)
 
     base_dim_combinations = _generate_combinations(optional_dims)
 
@@ -131,6 +132,24 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
             condensed_lists.append(list(required_dims) + dim_list)
 
     condensed_lists.append(required_dims)
+
+    if len(required_variant_expansion_map) > 0:
+        condensed_lists_expanded = []
+        # expand required variants
+        for (
+            _v_dim_id,
+            children_spaces,
+        ) in required_variant_expansion_map.items():
+
+            # must mix each existing combination
+            # with each child combination
+            base_list_len = len(condensed_lists)
+            for css in children_spaces:
+                i = 0
+                while i < base_list_len:
+                    condensed_lists_expanded.append(condensed_lists[i] + css)
+                    i += 1
+        condensed_lists = condensed_lists_expanded
 
     return condensed_lists
 
@@ -175,7 +194,7 @@ def create_level_iterable(
 
 
 def create_all_iterable(
-    base_dimensions: List[Dimension],
+    base_dimensions: List[Dimension], skip_structual_dims=False
 ) -> Iterable[Dimension]:
     """
     Creates an Iterable over all the dimensions in
@@ -197,7 +216,8 @@ def create_all_iterable(
 
     while len(dimension_stack) > 0:
         dim1 = dimension_stack.pop(0)
-        resolved_dimension_list.append(dim1)
+        if not skip_structual_dims or not dim1.only_supports_spec_structure():
+            resolved_dimension_list.append(dim1)
         if dim1.has_child_dimensions():
             for child_dim in reversed(dim1.children):
                 dimension_stack.insert(0, child_dim)
@@ -232,25 +252,36 @@ def _create_dict_from_flat_values(
 
         if dim.has_child_dimensions():
             input_is_null = False
-            if dim.local_id in dim_to_index_mapping:
+            if dim.id in dim_to_index_mapping:
                 # check to see if the input is marked as none
-                dim_index = dim_to_index_mapping[dim.local_id]
-                if inputs[dim_index] is None:
+                dim_index = dim_to_index_mapping[dim.id]
+                if np.isnan(inputs[dim_index]):
                     input_is_null = True
 
             if not input_is_null:
-                children_dict = _create_dict_from_flat_values(
-                    dim.children, inputs, dim_to_index_mapping
-                )
-                if len(children_dict) > 0:
-                    dict_values[dim.local_id] = children_dict
+                if isinstance(dim, Variant):
+                    # must determine which child is active
+                    active_option_index = round(inputs[dim_index])
+                    dict_values[dim.local_id] = _create_dict_from_flat_values(
+                        [dim.children[active_option_index]],
+                        inputs,
+                        dim_to_index_mapping,
+                    )
+                else:
+                    children_dict = _create_dict_from_flat_values(
+                        dim.children, inputs, dim_to_index_mapping
+                    )
+                    if len(children_dict) > 0:
+                        dict_values[dim.local_id] = children_dict
         else:
-            if dim.local_id in dim_to_index_mapping:
-                dim_index = dim_to_index_mapping[dim.local_id]
+            if dim.id in dim_to_index_mapping:
+                dim_index = dim_to_index_mapping[dim.id]
                 if np.isnan(inputs[dim_index]):
                     dict_values[dim.local_id] = None
                 else:
-                    dict_values[dim.local_id] = inputs[dim_index]
+                    dict_values[dim.local_id] = dim.convert_to_argument(
+                        inputs[dim_index]
+                    )
 
     return dict_values
 
@@ -299,9 +330,22 @@ class Space:
         dim_map = {}
 
         for dim in create_all_iterable(self.dimensions):
-            dim_map[dim.local_id] = dim
+            dim_map[dim.id] = dim
 
         return dim_map
+
+    def find_parent(self, child_dim: Dimension):
+
+        parents = [self]
+
+        while len(parents) > 0:
+            parent_dim = parents.pop()
+            for c_dim in parent_dim.children:
+                if c_dim.id == child_dim.id:
+                    return parent_dim
+                elif c_dim.has_child_dimensions():
+                    parents.append(c_dim)
+        return None
 
     def derive_full_subspaces(self) -> List[List[str]]:
         """

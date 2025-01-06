@@ -4,6 +4,8 @@
 
 import raxpy.spaces as s
 
+from tests.does.test_creation_of_space_filling_doe import SPACE, SUB_SPACES
+
 
 def test_deriving_subspaces():
     """
@@ -142,3 +144,18 @@ def test_deriving_spanning_subspaces():
     assert ["x2"] in subspaces
     assert ["x3", "x4"] in subspaces
     assert ["x5"] in subspaces
+
+
+def test_deriving_subspaces_from_required_unions():
+    """
+    Tests the ability to derive full spaces when a
+    required Variant dimension is at the root level.
+
+    Asserts
+    -------
+        The proper number of full subspaces are
+        derived
+    """
+    full_subspaces = SPACE.derive_full_subspaces()
+
+    assert len(full_subspaces) == len(SUB_SPACES)
