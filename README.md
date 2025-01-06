@@ -4,7 +4,6 @@
 | Testing | [![CI - Test](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml) ![Code Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fneil-r%2Fraxpy%2Fmain%2Fcoverage.json%3Ftoken%3DGHSAT0AAAAAACUX5ZW2YBA4DDCOU27KJPKSZVKMFCA&query=%24.totals.percent_covered_display&suffix=%25&label=Code%20Coverage&color=Green) |
 | Meta | [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/neil-r/raxpy/blob/main/LICENSE)
 
-
 ## Description
 raxpy is a Python library that designs and executes experiments on Python annotated functions. Given a Python function provided by the user, raxpy introspects functions' signatures to derive experiment input-spaces. With a function's derived input-space, raxpy utilizes different experiment design algorithms to create a small set of function arguments, i.e., the design points, that attempt to cover the whole input-space. With the experiment design, raxpy maps the design points to the function's arguments to execute the function with each point.  
 
@@ -12,9 +11,39 @@ To address limitations in factorial and random point selection algorithms, raxpy
 
 ## Usage
 
+ 1. Install raxpy if not already installed.
+ 2. Import raxpy and typing Annotation
+ 3. Create a annotated function that is to be the subject of experimentation 
+
 ```python
+from typing import Annotated
+import raxpy
 
 
+def f(
+    age:Annotated[float, raxpy.Float(label="Age", lb=20.0, ub=80.0)],
+    bmi:Annotated[float, raxpy.Float(label="BMI", lb=18.0, ub=40.0)],
+    blood_pressure:Annotated[float, raxpy.Float(label="Blood Pressure", lb=90.0, ub=180.0)]
+)-> float:
+    
+    glucose_factor = 0 if glucose is None else (glucose - 70) / (200 - 70)
+    cholesterol_factor = 0 if cholesterol is None else (cholesterol - 150) / (300 - 150)
+
+    my_calc = (
+        (age / 80) +
+        ((bmi - 18) / (40 - 18)) +
+        ((blood_pressure - 90) / (180 - 90)) +
+        (glucose_factor) +
+        (cholesterol_factor) -
+        (physical_activity / 2)
+    )
+
+    return bmi_level
+```
+ 4. Run experiment 
+ 
+```python
+inputs, outputs = raxpy.perform_experiment(f, n_points=10)
 ```
 
 See examples folder for more usage examples.
