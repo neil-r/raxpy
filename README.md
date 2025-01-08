@@ -7,7 +7,7 @@
 ## Description
 raxpy is a Python library that designs and executes experiments on Python annotated functions. Given a Python function provided by the user, raxpy introspects the function signature to derive an experiment input-space. With a function's derived input-space, raxpy utilizes different experiment design algorithms to create a small set of function arguments, i.e., the design points, that attempt to cover the whole input-space. With the experiment design, raxpy maps the design points to the function's arguments to execute the function with each point.  
 
-To address limitations in factorial and random point selection algorithms, raxpy provide space-filling design algorithms to generate insightful results from a small number of function executions. For more information, see .
+To address limitations in factorial and random point selection algorithms, raxpy provide space-filling design algorithms to generate insightful results from a small number of function executions. For more information, see [https://arxiv.org/abs/2501.03398](https://arxiv.org/abs/2501.03398).
 
 ## Usage
 
@@ -109,7 +109,7 @@ This project is open for new contributions. Contributions should follow the codi
 If you used raxpy to support your academic research, please cite:
 
 ```
-
+https://doi.org/10.48550/arXiv.2501.03398
 ```
 
 ## Project status
