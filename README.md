@@ -29,7 +29,7 @@ def f(
     glucose_factor = 0 if glucose is None else (glucose - 70) / (200 - 70)
     cholesterol_factor = 0 if cholesterol is None else (cholesterol - 150) / (300 - 150)
 
-    my_calc = (
+    bmi = (
         (age / 80) +
         ((bmi - 18) / (40 - 18)) +
         ((blood_pressure - 90) / (180 - 90)) +
@@ -38,7 +38,7 @@ def f(
         (physical_activity / 2)
     )
 
-    return bmi_level
+    return bmi
 ```
  4. Run experiment 
  
