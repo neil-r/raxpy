@@ -15,7 +15,7 @@ from .coordinator import (
     CompletedTaskEvent,
 )
 from .task_provider import BatchExperimentTaskProvider
-from .. import generate_design, function_spec
+from .. import design_experiment, function_spec
 
 
 EVENT_TYPE_REGISTER = "register"  # sent from worker to coordinator
@@ -58,7 +58,7 @@ def perform_distributed_experiment(f, n_points, post_process):
     coordinator_rank = 0
     if rank == coordinator_rank:
         worker_pool = MPIWorkerPool(comm=comm, tag=tag)
-        doe = generate_design(input_space, n_points=n_points)
+        doe = design_experiment(input_space, n_points=n_points)
 
         task_provider = BatchExperimentTaskProvider(design=doe)
         coordinate(task_provider, worker_pool)
