@@ -1,6 +1,6 @@
 """
-    This module defines the data structures
-    used to represent designs of experiments.
+This module defines the data structures
+used to represent designs of experiments.
 """
 
 from typing import Dict, List, Literal, Optional
@@ -32,12 +32,12 @@ class DesignOfExperiment:
     """
 
     input_space: InputSpace
-    input_sets: np.array
+    input_sets: np.ndarray
     input_set_map: Dict[str, int]
     encoding: Encoding
 
-    _decoded_cache: Optional[np.array] = None
-    _zero_one_null_encoding_cache: Optional[np.array] = None
+    _decoded_cache: Optional[np.ndarray] = None
+    _zero_one_null_encoding_cache: Optional[np.ndarray] = None
 
     def __post_init__(self):
         """
@@ -146,9 +146,15 @@ class DesignOfExperiment:
                     )
                 )
             else:
-                raise NotImplementedError(
-                    "Going from decoded-design to encoded-design not implemented"
+                self._zero_one_null_encoding_cache = (
+                    self.input_space.reverse_decoding_to_zero_one_null_matrix(
+                        self.input_sets,
+                        self.input_set_map,
+                    )
                 )
+                # raise NotImplementedError(
+                #    "Going from decoded-design to encoded-design not implemented"
+                # )
 
         return self._zero_one_null_encoding_cache
 
@@ -195,7 +201,7 @@ class DesignOfExperiment:
             encoding=encoding,
         )
 
-    def get_data_points(self, encoding: Encoding):
+    def get_data_points(self, encoding: EncodingEnum):
         """
         Gets numpy array of design given the encoding
         provided.

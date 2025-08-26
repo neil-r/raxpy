@@ -1,5 +1,5 @@
-""" 
-    Tests the high-level perform experiment API and default settings.
+"""
+Tests the high-level perform experiment API and default settings.
 """
 
 from typing import Annotated, Optional
@@ -62,11 +62,12 @@ def test_perform_basic_batch_experiment():
 
     """
 
-    inputs, outputs = raxpy.perform_experiment(f, 10)
+    design, arg_sets, outputs = raxpy.perform_experiment(f, 10)
 
-    assert inputs is not None
-    assert len(inputs) == 10
-    assert len(inputs[2]) == 3
+    assert design is not None
+    assert arg_sets is not None
+    assert len(arg_sets) == 10
+    assert len(arg_sets[2]) == 3
     assert len(outputs) == 10
     assert isinstance(outputs[0], float)
 

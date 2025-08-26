@@ -1,15 +1,15 @@
 """
-    This module provide logic to create
-    LatinHypercube designs for InputSpaces.
+This module provide logic to create
+LatinHypercube designs for InputSpaces.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Literal, cast
 
 import numpy as np
 from scipy.stats.qmc import LatinHypercube
 from scipy.optimize import linear_sum_assignment
 
-from ..spaces.dimensions import Dimension, Variant, Composite
+from ..spaces.dimensions import ChildrenTypes, Dimension, Variant, Composite
 from ..spaces.root import (
     InputSpace,
     create_level_iterable,
@@ -24,7 +24,9 @@ from .scipy_optimizations import random_cd
 
 
 def create_base_lhs_creator(
-    scamble=False, strength=1, optimation: str = "random-cd"
+    scamble=False,
+    strength=1,
+    optimization: Literal["random-cd", "lloyd"] = "random-cd",
 ):
     """
     TODO Explain the Function
@@ -66,7 +68,7 @@ def create_base_lhs_creator(
             d=n_dim_count,
             strength=strength,
             scramble=scamble,
-            optimization=optimation,
+            optimization=optimization,
         )
 
         data_points = sampler.random(n=n_points)
@@ -81,7 +83,7 @@ _default_base_lhs_creator = create_base_lhs_creator()
 _default_base_lhs_creator_with_scramble = create_base_lhs_creator(scamble=True)
 
 
-def _compute_cost_matrix(array1: np.array, array2: np.array):
+def _compute_cost_matrix(array1: np.ndarray, array2: np.ndarray):
     """
     Compute the cost matrix (distance matrix) between two sets of points.
     """
@@ -91,7 +93,7 @@ def _compute_cost_matrix(array1: np.array, array2: np.array):
     return cost_matrix
 
 
-def _match_points_hungarian(array1: np.array, array2: np.array):
+def _match_points_hungarian(array1: np.ndarray, array2: np.ndarray):
     """
     Match points in two arrays using the Hungarian algorithm to minimize total distance.
     """
@@ -121,7 +123,14 @@ def _level_iterator(space):
                     design_request_stack.append(
                         (
                             dim,
-                            list(create_level_iterable(dim.children)),
+                            list(
+                                create_level_iterable(
+                                    cast(
+                                        List[Dimension],
+                                        cast(ChildrenTypes, dim).children,
+                                    )
+                                )
+                            ),
                         )
                     )
 
@@ -137,7 +146,7 @@ class WorkingDesignOfExpertiment:
         )
 
         self.active_index = 0
-        self.column_map: Dict[str, Dimension] = {}
+        self.column_map: Dict[int, Dimension] = {}
 
         self.input_set_map = {}
 
@@ -668,11 +677,23 @@ def generate_seperate_designs_by_full_subspace(
 
 class ValuePool:
 
-    def __init__(self, value_count):
-        self._values = list(
-            (i / value_count) + (1 / (value_count * 2))
-            for i in range(value_count)
-        )
+    def __init__(self, value_count, outline_mode=True):
+        # outline mode supports creating design points at the dimension bounds
+        if outline_mode:
+            if value_count == 0:
+                self._values = []
+            if value_count == 1:
+                self._values = [0.5]
+            else:
+                offset = 1 / (value_count - 1)
+                self._values = list(
+                    max(0.0, min(1.0, i * offset)) for i in range(value_count)
+                )
+        else:
+            self._values = list(
+                (i / value_count) + (1 / (value_count * 2))
+                for i in range(value_count)
+            )
 
     def pull(self, point_count):
         """

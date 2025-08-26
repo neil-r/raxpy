@@ -742,7 +742,7 @@ def _compute_nan_distance(row1, row2, p=2):
     # Replace nan's differences to 1 to represent the maximin difference
     parts = np.nan_to_num(parts, nan=1)
 
-    distance = np.sqrt(np.sum(parts))
+    distance = np.sqrt(np.sum(parts)) # TODO fix
 
     return distance
 

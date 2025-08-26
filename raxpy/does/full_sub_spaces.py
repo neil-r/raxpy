@@ -1,6 +1,6 @@
 """
-    This module provides support to compute 
-    point-allocation portions of a design to sub-spaces.
+This module provides support to compute
+point-allocation portions of a design to sub-spaces.
 """
 
 from typing import List, Optional
@@ -83,7 +83,7 @@ def allocate_points_to_full_sub_spaces(
     points_allocated = 0
     for sub_space_target in sub_space_target_allocations:
         if sub_space_target.allocated_point_count is not None:
-            points_allocated += sub_space_target_allocations
+            points_allocated += sub_space_target.allocated_point_count
 
     if points_allocated > 0 and points_allocated != n_points:
         raise ValueError(
@@ -116,12 +116,15 @@ def allocate_points_to_full_sub_spaces(
             # adjust for overly-allocated points
             while points_allocated > n_points:
                 max_target_allocation = -1.0
-                min_ssa = None
+                min_ssa: SubSpaceTargetAllocations
                 for sub_space_allocation in sub_space_target_allocations:
                     if (
                         skip_ones
                         and sub_space_allocation.allocated_point_count == 1
-                    ) or sub_space_allocation.allocated_point_count < 1:
+                    ) or (
+                        sub_space_allocation.allocated_point_count is not None
+                        and sub_space_allocation.allocated_point_count < 1
+                    ):
                         continue
                     offset = sub_space_allocation.compute_offset_from_target(
                         n_points,
@@ -131,13 +134,13 @@ def allocate_points_to_full_sub_spaces(
                         max_target_allocation = offset
                         min_ssa = sub_space_allocation
 
-                min_ssa.allocated_point_count -= 1
+                min_ssa.allocated_point_count -= 1  # type: ignore
                 points_allocated -= 1
         else:
             # adjust for under-allocated points
             while points_allocated < n_points:
                 min_target_allocation = 1.0
-                min_ssa = None
+                min_ssa: SubSpaceTargetAllocations
                 for sub_space_allocation in sub_space_target_allocations:
                     offset = sub_space_allocation.compute_offset_from_target(
                         n_points,
@@ -147,7 +150,7 @@ def allocate_points_to_full_sub_spaces(
                         min_target_allocation = offset
                         min_ssa = sub_space_allocation
 
-                min_ssa.allocated_point_count += 1
+                min_ssa.allocated_point_count += 1  # type: ignore
                 points_allocated += 1
 
     return sub_space_target_allocations

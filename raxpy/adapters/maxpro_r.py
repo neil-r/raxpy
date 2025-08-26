@@ -1,3 +1,7 @@
+"""
+Provides a Python function to generate a design with the MaxPro R-library.
+"""
+
 import numpy as np
 import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri

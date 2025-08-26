@@ -1,6 +1,6 @@
-""" 
-    This module provides some capabilites that integrate
-    the designing and execution of experiments.
+"""
+This module provides some capabilites that integrate
+the designing and execution of experiments.
 """
 
 import sys
@@ -8,9 +8,16 @@ from typing import Union
 from functools import partial
 
 if sys.version_info >= (3, 10):
-    from typing import Callable, TypeVar, List, ParamSpec, Tuple
+    from typing import Callable, TypeVar, List, ParamSpec, Tuple, Dict
 else:
-    from typing_extensions import Callable, TypeVar, List, ParamSpec, Tuple
+    from typing_extensions import (
+        Callable,
+        TypeVar,
+        List,
+        ParamSpec,
+        Tuple,
+        Dict,
+    )
 
 from raxpy.does.doe import DesignOfExperiment
 from raxpy.spaces.dimensions import convert_values_from_dict
@@ -26,7 +33,7 @@ T = TypeVar("T")
 I = ParamSpec("I")
 
 
-def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
+def _default_orchistrator(f: Callable[I, T], inputs: List[Dict]) -> List[T]:
     """
     Simply executes the function f sequentially,
     saving and returning the results
@@ -46,7 +53,7 @@ def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
     results = []
 
     for arg_set in inputs:
-        results.append(f(**arg_set))
+        results.append(f(**arg_set))  # type: ignore
 
     return results
 
@@ -84,9 +91,9 @@ def perform_experiment(
         [InputSpace, int], DesignOfExperiment
     ] = _default_designer,
     orchistrator: Callable[
-        [Callable[I, T], List[I]], List[T]
+        [Callable[I, T], List[Dict]], List[T]
     ] = _default_orchistrator,
-) -> Tuple[List[I], List[T]]:
+) -> Tuple[DesignOfExperiment, List[Dict], List[T]]:
     """
     Executes a batch experiment for function f.
     Begins by inspecting the input space of f.
@@ -130,7 +137,7 @@ def perform_experiment(
     )
 
     results = orchistrator(f, arg_sets)
-    return arg_sets, results
+    return design, arg_sets, results
 
 
 def design_experiment(
@@ -172,6 +179,45 @@ def design_experiment(
     return design
 
 
+def design_simple_random_experiment(
+    subject: Union[
+        InputSpace,
+        Callable[I, T],
+    ],
+    n_points: int,
+    design_algorithm=random.generate_seperate_designs_by_full_subspace,
+) -> DesignOfExperiment:
+    """
+    Designs a batch experiment for the subject.
+
+    Arguments
+    ---------
+    subject : Callable[I, T]
+        The function to design an experiment with respect to
+        or the InputSpace specification
+    n_points : int
+        The maximum number of points to execute the function
+        with.
+
+    Returns
+    -------
+    DesignOfExperiment
+        The designed experiment
+    """
+    if isinstance(subject, InputSpace):
+        input_space = subject
+    else:
+        input_space = function_spec.extract_input_space(subject)
+
+    # assign unassigned null poritions using complexity hueristic
+    assign_null_portions(create_level_iterable(input_space.children))
+
+    design = design_algorithm(input_space, n_points)
+
+    return design
+
+
 generate_random_design = partial(
-    design_experiment, design_algorithm=random.generate_design
+    design_experiment,
+    design_algorithm=random.generate_seperate_designs_by_full_subspace,
 )
