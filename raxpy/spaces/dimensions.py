@@ -51,9 +51,12 @@ def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
         return [
             (
                 value_set[
-                    int(
-                        ((xp - portion_null) / (1.0 - portion_null))
-                        // boundary_size
+                    min(
+                        int(
+                            ((xp - portion_null) / (1.0 - portion_null))
+                            // boundary_size
+                        ),
+                        value_count - 1,
                     )
                 ]
                 if (not np.isnan(xp)) and xp > portion_null
@@ -639,12 +642,20 @@ class Text(Dimension[str]):
     """
 
     length_limit: Optional[int] = None
-    value_set: Optional[Tuple[Union[CategoryValue, str]]] = None
+    value_set: Optional[Tuple[Union[CategoryValue, str], ...]] = None
 
     def convert_to_argument(self, input_value) -> str:
         """
         Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
+        if (
+            isinstance(input_value, (float, np.floating))
+            and self.value_set is not None
+        ):
+            index = int(input_value)
+            v = self.value_set[index]
+            return v.value if isinstance(v, CategoryValue) else v
+
         return str(input_value)
 
     def collapse_uniform(self, x, utilize_null_portions=True):
@@ -660,11 +671,12 @@ class Text(Dimension[str]):
         if self.value_set is not None:
             return _map_values(
                 x,
-                (
-                    (v if isinstance(v, str) else v.value)
-                    for v in self.value_set
-                ),
-                self.portion_null,
+                [
+                    # (v.value if isinstance(v, CategoryValue) else v)
+                    i
+                    for i in range(len(self.value_set))
+                ],
+                self.portion_null if utilize_null_portions else None,
             )
         raise ValueError(
             "Unbounded Text dimension cannot transform a uniform 0-1 value"

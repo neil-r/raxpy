@@ -746,9 +746,15 @@ def generate_seperate_designs_by_full_subspace_and_pool(
     sub_space_target_allocations: Optional[
         List[SubSpaceTargetAllocations]
     ] = None,
+    boundary_mode: bool = True,
 ) -> DesignOfExperiment:
     """
-    TODO Explain the Function
+    Generates an experiment design for the provided space by first
+    determining sub-space allocations, if not provided. Then creates
+    a LHS sampling for each dimension given the number values given
+    the sub-space allocations. It then assigns values from latin-hypercube
+    samples to a design that matches the sub-space allocations and
+    optimizes this centered discrepency of the design.
 
     Arguments
     ---------
@@ -759,6 +765,10 @@ def generate_seperate_designs_by_full_subspace_and_pool(
     ensure_at_least_one=True
         **Explanation**
     sub_space_target_allocations =None
+
+    boundary_mode=True
+        whether to generate latin-hypercube samples with
+        the boundary values for each dimension.
 
     Returns
     -------
@@ -789,7 +799,7 @@ def generate_seperate_designs_by_full_subspace_and_pool(
             dim_counts[dim_id] += ssta.allocated_point_count
 
     value_pool = {
-        dim_id: ValuePool(dim_count)
+        dim_id: ValuePool(dim_count, outline_mode=boundary_mode)
         for dim_id, dim_count in dim_counts.items()
     }
 

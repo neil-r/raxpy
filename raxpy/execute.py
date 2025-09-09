@@ -147,9 +147,11 @@ def design_experiment(
     ],
     n_points: int,
     design_algorithm=lhs.generate_seperate_designs_by_full_subspace_and_pool,
+    optimize_projections: bool = True,
 ) -> DesignOfExperiment:
     """
-    Designs a batch experiment for the subject.
+    Designs a batch experiment for the subject; ensures that all optional
+    dimensions have null poritions specifications.
 
     Arguments
     ---------
@@ -159,6 +161,11 @@ def design_experiment(
     n_points : int
         The maximum number of points to execute the function
         with.
+    design_algorithm
+        Generates an initial experiment that could be optimize further
+    optimize_projections: bool
+        If true, optimizes the design created by the design_algorithm to
+        maximize the projections
 
     Returns
     -------
@@ -174,48 +181,17 @@ def design_experiment(
     assign_null_portions(create_level_iterable(input_space.children))
 
     design = design_algorithm(input_space, n_points)
-    design = maxpro.optimize_design_with_sa(design)
+    if optimize_projections:
+        design = maxpro.optimize_design_with_sa(design)
 
     return design
 
 
-def design_simple_random_experiment(
-    subject: Union[
-        InputSpace,
-        Callable[I, T],
-    ],
-    n_points: int,
+design_simple_random_experiment = partial(
+    design_experiment,
     design_algorithm=random.generate_seperate_designs_by_full_subspace,
-) -> DesignOfExperiment:
-    """
-    Designs a batch experiment for the subject.
-
-    Arguments
-    ---------
-    subject : Callable[I, T]
-        The function to design an experiment with respect to
-        or the InputSpace specification
-    n_points : int
-        The maximum number of points to execute the function
-        with.
-
-    Returns
-    -------
-    DesignOfExperiment
-        The designed experiment
-    """
-    if isinstance(subject, InputSpace):
-        input_space = subject
-    else:
-        input_space = function_spec.extract_input_space(subject)
-
-    # assign unassigned null poritions using complexity hueristic
-    assign_null_portions(create_level_iterable(input_space.children))
-
-    design = design_algorithm(input_space, n_points)
-
-    return design
-
+    optimize_projections=False,
+)
 
 generate_random_design = partial(
     design_experiment,

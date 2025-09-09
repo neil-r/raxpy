@@ -75,7 +75,7 @@ class DesignOfExperiment:
                     )
 
     @property
-    def index_dim_id_map(self):
+    def index_dim_id_map(self) -> Dict[int, str]:
         """
         Creates a dict mapping the indexes to dimension
         ids of the columns in input_sets matrix.
@@ -94,7 +94,9 @@ class DesignOfExperiment:
     def decoded_input_sets(self):
         """
         Creates, as needed, the decoded version of the experiment design.
-        The numpy array is cached if created.
+        The numpy array is cached if created. Note that the discrete
+        dimensions values are represented as indicies of type numpy-float:
+        you must lookup the dimensions discrete values with these indicies.
 
         Returns
         -------

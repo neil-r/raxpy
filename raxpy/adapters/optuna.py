@@ -1,5 +1,5 @@
 """
-Provides helper functions to simplify the use of raxpy annotated functions 
+Provides helper functions to simplify the use of raxpy annotated functions
 with the Optuna Hyper-parameter optmization library.
 """
 
@@ -21,6 +21,7 @@ from ..spaces import (
     Variant,
     Composite,
     Bool,
+    Text,
 )
 
 
@@ -81,6 +82,8 @@ def _create_argument(d: Dimension, trial: optuna.Trial):
             args[child.local_id] = _create_argument(child, trial)
 
         return d.type_class(**args)
+    elif isinstance(d, Text):
+        return trial.suggest_categorical(d.id, d.value_set)
 
     if d.specified_default:
         return d.default_value
@@ -88,6 +91,22 @@ def _create_argument(d: Dimension, trial: optuna.Trial):
     assert NotImplementedError(
         f"Conversion for dimension {d} not implemented."
     )
+
+
+def convert_trial_to_dict(
+    trial,
+    input_space: InputSpace,
+):
+    """
+    Calls a raxpy annotated function f with the arguments extracted
+    from an Optuna trial.
+    """
+    args = {}
+
+    for child in input_space.children:
+        args[child.local_id] = _create_argument(child, trial)
+
+    return args
 
 
 def call_raxpy_f(
@@ -148,6 +167,10 @@ def _add_to_optuna_trial_dict(
                 trial_dict[f"{dim.id}"] = option_index
                 o_dim = dim.options[option_index]
                 _add_to_optuna_trial_dict(o_dim, point, doe, trial_dict)
+            elif isinstance(dim, Text):
+                trial_dict[dim.id] = dim.convert_to_argument(
+                    point[doe.input_set_map[dim.id]]
+                )
     elif isinstance(dim, Composite):
         for child in dim.children:
             _add_to_optuna_trial_dict(child, point, doe, trial_dict)
