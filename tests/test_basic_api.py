@@ -5,6 +5,7 @@ Tests the high-level perform experiment API and default settings.
 from typing import Annotated, Optional
 from dataclasses import dataclass
 import pytest
+import numpy as np
 
 import raxpy
 
@@ -72,6 +73,55 @@ def test_perform_basic_batch_experiment():
     assert isinstance(outputs[0], float)
 
 
+def _arrays_equal_with_nan(arr1, arr2):
+    # Check if NaNs are in the same locations
+    nan_mask1 = np.isnan(arr1)
+    nan_mask2 = np.isnan(arr2)
+
+    # Check if non-NaN elements are equal
+    return np.array_equal(nan_mask1, nan_mask2) and np.array_equal(
+        arr1[~nan_mask1], arr2[~nan_mask2]
+    )
+
+
+def test_random_seed_spec():
+    """
+    Tests the default perform experiment
+    settings
+
+    Asserts
+    -------
+        Experiment on f is executed without error and
+        returns the proper number of inputs and outputs.
+
+    """
+
+    design1 = raxpy.design_experiment(
+        f, 10, seed=42, optimize_projections=False
+    )
+
+    assert design1 is not None
+
+    design2 = raxpy.design_experiment(
+        f, 10, seed=42, optimize_projections=False
+    )
+
+    assert design2 is not None
+
+    design3 = raxpy.design_experiment(
+        f, 10, seed=8, optimize_projections=False
+    )
+
+    assert design3 is not None
+
+    assert np.all(
+        _arrays_equal_with_nan(design1.input_sets, design2.input_sets)
+    )
+    assert not np.all(
+        _arrays_equal_with_nan(design1.input_sets, design3.input_sets)
+    )
+
+
 def test_validation_decorator():
     """
         Tests the runtime validation decorator
@@ -101,3 +151,26 @@ def test_validation_decorator():
 
     # do not violoate any bounds
     f(3.0, 0.1, Object(-3.5, 3.0))
+
+
+def test_random_design_api():
+    """
+        Tests the design of random experimeents
+
+    Asserts
+    -------
+        designs are created and returned
+        seeding the generation creates the same design
+    """
+    design1 = raxpy.design_simple_random_experiment(f, n_points=10)
+    assert design1 is not None
+
+    design2 = raxpy.design_simple_random_experiment(f, n_points=10, seed=42)
+    assert design2 is not None
+
+    design3 = raxpy.design_simple_random_experiment(f, n_points=10, seed=42)
+    assert design3 is not None
+
+    assert np.all(
+        _arrays_equal_with_nan(design2.input_sets, design3.input_sets)
+    )

@@ -2,6 +2,8 @@
 Unit test for the ValuePool data structure.
 """
 
+import numpy as np
+
 from raxpy.does.lhs import ValuePool
 
 
@@ -15,19 +17,21 @@ def test_value_pool():
     """
     p = ValuePool(10, outline_mode=False)
 
-    values_1 = p.pull(3)
+    rng = np.random.default_rng(seed=42)
+
+    values_1 = p.pull(3, rng)
 
     assert len(values_1) == 3
 
-    values_2 = p.pull(4)
+    values_2 = p.pull(4, rng)
 
     assert len(values_2) == 4
 
-    values_3 = p.pull(1)
+    values_3 = p.pull(1, rng)
 
     assert len(values_3) == 1
 
-    values_4 = p.pull(2)
+    values_4 = p.pull(2, rng)
 
     assert len(values_4) == 2
 
@@ -53,19 +57,21 @@ def test_value_pool_outline_mode():
     """
     p = ValuePool(10, outline_mode=True)
 
-    values_1 = p.pull(3)
+    rng = np.random.default_rng(seed=42)
+
+    values_1 = p.pull(3, rng)
 
     assert len(values_1) == 3
 
-    values_2 = p.pull(4)
+    values_2 = p.pull(4, rng)
 
     assert len(values_2) == 4
 
-    values_3 = p.pull(1)
+    values_3 = p.pull(1, rng)
 
     assert len(values_3) == 1
 
-    values_4 = p.pull(2)
+    values_4 = p.pull(2, rng)
 
     assert len(values_4) == 2
 

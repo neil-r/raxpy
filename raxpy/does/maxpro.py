@@ -9,10 +9,9 @@ for more details about MaxPro.
 https://par.nsf.gov/servlets/purl/10199193
 """
 
-import random
 from typing import Optional, cast
-import numpy as np
 import math
+import numpy as np
 from ..spaces.complexity import estimate_complexity
 
 from .. import spaces as s
@@ -39,7 +38,8 @@ def optimize_design_with_sa(
     encoding: Optional[EncodingEnum] = None,
     maxiter: int = 10000,
     max_rabbit_whole_threshold: int = 1,
-    suppress_numerical_computation_warnings=True,
+    suppress_numerical_computation_warnings: bool = True,
+    rng: Optional[np.random.Generator] = None,
 ) -> DesignOfExperiment:
     """
     Makes a copy of base_design and swaps non-null values in the design
@@ -57,12 +57,21 @@ def optimize_design_with_sa(
         annealing algorithm
     max_rabbit_whole_threshold : int = 1
         experimental value, don't change, likely to remove
+    suppress_numerical_computation_warnings: bool=True
+        flag to suppress some numerical computation warnings that sometimes
+        occur with the algorithm
+    rng:Optional[np.random.Generator] = None
+        random number generator used to pick values to swap
 
     Returns
     -------
     DesignOfExperiment
         a design optimized with simulated anneeling
     """
+
+    if rng is None:
+        rng = np.random.default_rng()
+
     opt_design = base_design.copy()
 
     # initalize data structures
@@ -153,14 +162,14 @@ def optimize_design_with_sa(
             # choose a column from the [Dx, Du] components, and interchange two
             # randomly chosen elements within the selected column. Denote the new
             # design matrix as Dtry.
-            k = random.choice(column_indices_to_swap)
+            k = rng.choice(column_indices_to_swap)
             row_indices = active_row_indicies[k]
 
-            i = random.choice(row_indices)
-            j = random.choice(row_indices)
+            i = rng.choice(row_indices)
+            j = rng.choice(row_indices)
             # Step 6. If Dtry = D, repeat Step (5).
             while i == j:
-                j = random.choice(row_indices)
+                j = rng.choice(row_indices)
 
             d_try[i, k], d_try[j, k] = d_try[j, k], d_try[i, k]
 
@@ -188,7 +197,7 @@ def optimize_design_with_sa(
             # known as “temperature”.
             d_try_value = np.sum(np.triu(d_try_point_comps, -1))
             p_threshold = math.e ** (-(d_try_value - d_best_value) / t)
-            if d_try_value < d_best_value or p_threshold > random.random():
+            if d_try_value < d_best_value or p_threshold > rng.random():
                 # print("Found new best!")
                 d_best[:, :] = d_try
                 point_comps[:, :] = d_try_point_comps
