@@ -1,9 +1,9 @@
-""" 
-    This modules contains classes used to Annotate function
-    parameters.
+"""
+This modules contains classes used to Annotate function
+parameters.
 """
 
-from typing import Optional, Set, Union, Tuple, List
+from typing import Optional, Set, Union, Tuple, List, cast
 from dataclasses import dataclass
 
 from .. import spaces as s
@@ -51,7 +51,7 @@ class Categorical(Base):
     Annotation for a str parameter representing a finite set of values.
     """
 
-    value_set: Optional[List[CategorySpec]] = None
+    value_set: Optional[Tuple[CategorySpec]] = None
 
 
 @dataclass(frozen=True, eq=True)
@@ -62,9 +62,9 @@ class Float(Base):
 
     ub: Optional[float] = None
     lb: Optional[float] = None
-    value_set: Optional[Set[float]] = None
+    value_set: Optional[Tuple[float]] = None
 
-    def apply_to(self, d: s.Float):
+    def apply_to(self, d: s.Dimension):
         """
         Applies the annotated attributes to the
         dimension d.
@@ -77,6 +77,8 @@ class Float(Base):
             a dimension to apply annotation attributes onto
         """
         super().apply_to(d)
+        d = cast(s.Float, d)
+
         d.lb = self.lb
         d.ub = self.ub
         d.value_set = self.value_set
@@ -90,9 +92,9 @@ class Integer(Base):
 
     ub: Optional[int] = None
     lb: Optional[int] = None
-    value_set: Optional[Set[int]] = None
+    value_set: Optional[Tuple[int]] = None
 
-    def apply_to(self, d: s.Int):
+    def apply_to(self, d: s.Dimension):
         """
         Applies the annotated attributes to the
         dimension d.
@@ -105,6 +107,8 @@ class Integer(Base):
             a dimension to apply annotation attributes onto
         """
         super().apply_to(d)
+        d = cast(s.Int, d)
+
         d.lb = self.lb
         d.ub = self.ub
         d.value_set = self.value_set

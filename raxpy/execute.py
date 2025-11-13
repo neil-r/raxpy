@@ -1,16 +1,25 @@
-""" 
-    This module provides some capabilites that integrate
-    the designing and execution of experiments.
+"""
+This module provides some capabilites that integrate
+the designing and execution of experiments.
 """
 
 import sys
-from typing import Union
+from typing import Optional, Union
 from functools import partial
+import numpy as np
+
 
 if sys.version_info >= (3, 10):
-    from typing import Callable, TypeVar, List, ParamSpec, Tuple
+    from typing import Callable, TypeVar, List, ParamSpec, Tuple, Dict
 else:
-    from typing_extensions import Callable, TypeVar, List, ParamSpec, Tuple
+    from typing_extensions import (
+        Callable,
+        TypeVar,
+        List,
+        ParamSpec,
+        Tuple,
+        Dict,
+    )
 
 from raxpy.does.doe import DesignOfExperiment
 from raxpy.spaces.dimensions import convert_values_from_dict
@@ -26,7 +35,7 @@ T = TypeVar("T")
 I = ParamSpec("I")
 
 
-def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
+def _default_orchistrator(f: Callable[I, T], inputs: List[Dict]) -> List[T]:
     """
     Simply executes the function f sequentially,
     saving and returning the results
@@ -46,13 +55,13 @@ def _default_orchistrator(f: Callable[I, T], inputs: List[I]) -> List[T]:
     results = []
 
     for arg_set in inputs:
-        results.append(f(**arg_set))
+        results.append(f(**arg_set))  # type: ignore
 
     return results
 
 
 def _default_designer(
-    input_space: InputSpace, n_points: int
+    input_space: InputSpace, n_points: int, seed: Optional[int] = None
 ) -> DesignOfExperiment:
     """
     Designs an experiment of size target_number_of_runs
@@ -66,13 +75,17 @@ def _default_designer(
     n_points : int
         The requested quantity of iterations
         of the experiment being designed
+    seed : Optional[int]
+        If specified, seeds the random number generator(s) to ensure
+        design is created the same way
 
     Returns
     -------
     design : DesignOfExperiment
 
     """
-    design = design_experiment(input_space, n_points)
+
+    design = design_experiment(input_space, n_points=n_points, seed=seed)
 
     return design
 
@@ -81,12 +94,13 @@ def perform_experiment(
     f: Callable[I, T],
     n_points: int,
     designer: Callable[
-        [InputSpace, int], DesignOfExperiment
+        [InputSpace, int, Optional[int]], DesignOfExperiment
     ] = _default_designer,
     orchistrator: Callable[
-        [Callable[I, T], List[I]], List[T]
+        [Callable[I, T], List[Dict]], List[T]
     ] = _default_orchistrator,
-) -> Tuple[List[I], List[T]]:
+    seed: Optional[int] = None,
+) -> Tuple[DesignOfExperiment, List[Dict], List[T]]:
     """
     Executes a batch experiment for function f.
     Begins by inspecting the input space of f.
@@ -105,7 +119,7 @@ def perform_experiment(
     n_points : int
         The maximum number of points to execute the function
         with.
-    designer : Callable[[InputSpace, int], List[I]]
+    designer : Callable[[InputSpace, int], List[I], Optional[int]]
         A function that designs the experiment
     orchistrator : Callable[[Callable[I, T], List[I]], List[T]]
         A function that executes the experiment on f
@@ -119,7 +133,7 @@ def perform_experiment(
     """
 
     input_space = function_spec.extract_input_space(f)
-    design = designer(input_space, n_points)
+    design = designer(input_space, n_points, seed)
     value_dicts = input_space.convert_flat_values_to_dict(
         design.decoded_input_sets, design.input_set_map
     )
@@ -130,7 +144,7 @@ def perform_experiment(
     )
 
     results = orchistrator(f, arg_sets)
-    return arg_sets, results
+    return design, arg_sets, results
 
 
 def design_experiment(
@@ -140,9 +154,12 @@ def design_experiment(
     ],
     n_points: int,
     design_algorithm=lhs.generate_seperate_designs_by_full_subspace_and_pool,
+    optimize_projections: bool = True,
+    seed: Optional[int] = None,
 ) -> DesignOfExperiment:
     """
-    Designs a batch experiment for the subject.
+    Designs a batch experiment for the subject; ensures that all optional
+    dimensions have null poritions specifications.
 
     Arguments
     ---------
@@ -152,6 +169,14 @@ def design_experiment(
     n_points : int
         The maximum number of points to execute the function
         with.
+    design_algorithm
+        Generates an initial experiment that could be optimize further
+    optimize_projections: bool
+        If true, optimizes the design created by the design_algorithm to
+        maximize the projections
+    seed:Optional[int]
+        If specified, seeds the random number generator(s) to ensure
+        design is created the same way
 
     Returns
     -------
@@ -166,12 +191,25 @@ def design_experiment(
     # assign unassigned null poritions using complexity hueristic
     assign_null_portions(create_level_iterable(input_space.children))
 
-    design = design_algorithm(input_space, n_points)
-    design = maxpro.optimize_design_with_sa(design)
+    if seed is not None:
+        rng = np.random.default_rng(seed=seed)
+    else:
+        rng = np.random.default_rng()
+
+    design = design_algorithm(input_space, n_points, rng=rng)
+    if optimize_projections:
+        design = maxpro.optimize_design_with_sa(design, rng=rng)
 
     return design
 
 
+design_simple_random_experiment = partial(
+    design_experiment,
+    design_algorithm=random.generate_seperate_designs_by_full_subspace,
+    optimize_projections=False,
+)
+
 generate_random_design = partial(
-    design_experiment, design_algorithm=random.generate_design
+    design_experiment,
+    design_algorithm=random.generate_seperate_designs_by_full_subspace,
 )

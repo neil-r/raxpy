@@ -1,7 +1,7 @@
 """
-  This module defines Dimension object tags that can be attached
-  to dimensions to provide suggestions to algorithms in how to
-  treat the dimensions.
+This module defines Dimension object tags that can be attached
+to dimensions to provide suggestions to algorithms in how to
+treat the dimensions.
 """
 
 # Input Dimension Tags
@@ -27,6 +27,12 @@ of interest.
 
 This flag may be used in dimensional complexity hueristics to support
 how to summarize the complexity of multiple children dimensions.
+"""
+
+LOG = "log"
+"""
+Flag to indicate an input dimension as log transforms should be used
+to decode values.
 """
 
 

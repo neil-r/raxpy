@@ -224,6 +224,7 @@ def random_cd(
     n_iters: int,
     n_nochange: int,
     column_bounds: Optional[Tuple[int, int]] = None,
+    rng: Optional[np.random.Generator] = None,
 ) -> np.ndarray:
     """Optimal LHS on CD.
 
@@ -235,9 +236,15 @@ def random_cd(
     Two stopping criterion are used to stop the algorithm: at most,
     `n_iters` iterations are performed; or if there is no improvement
     for `n_nochange` consecutive iterations.
-    """
 
-    rng = np.random.default_rng()
+    Arguments
+    ---------
+
+    rng:Optional[np.random.Generator]
+        Random number generator to support design creation
+    """
+    if rng is None:
+        rng = np.random.default_rng()
 
     n, d = best_sample.shape
 

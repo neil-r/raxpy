@@ -1,6 +1,6 @@
-""" 
-    This modules provides support to create random
-    experiment designs.
+"""
+This modules provides support to create random
+experiment designs.
 """
 
 from typing import List, Optional
@@ -12,28 +12,49 @@ from .full_sub_spaces import SubSpaceTargetAllocations
 from . import lhs
 
 
-def create_random_points(n_dim_count: int, n_points: int):
+def create_random_points_f(rng: np.random.Generator):
     """
-    Creates a matrix of random values ranging from 0 to 1
+    Creates and returns a function that can create an random matrix using rng
+
 
     Arguments
     ---------
-    n_dim_count : int
-        the number of columns in the matrix
-    n_points : int
-        the number of rows in the matrix
-
+    rng: Optional[np.random.Generator]
+        random number generator used to pick values
     Returns
     -------
-    np.array
-        the created matrix of random points
+    a function that generates the random matrix
+
     """
-    data_points = np.random.rand(n_points, n_dim_count)
 
-    return data_points
+    def create_random_points(n_dim_count: int, n_points: int):
+        """
+        Creates a matrix of random values ranging from 0 to 1
+
+        Arguments
+        ---------
+        n_dim_count : int
+            the number of columns in the matrix
+        n_points : int
+            the number of rows in the matrix
+
+        Returns
+        -------
+        np.array
+            the created matrix of random points
+        """
+        data_points = rng.random(size=(n_points, n_dim_count))
+
+        return data_points
+
+    return create_random_points
 
 
-def generate_design(space: s.InputSpace, n_points: int) -> DesignOfExperiment:
+def generate_design(
+    space: s.InputSpace,
+    n_points: int,
+    rng: Optional[np.random.Generator] = None,
+) -> DesignOfExperiment:
     """
     Designs an experiment using random number generation.
 
@@ -43,15 +64,18 @@ def generate_design(space: s.InputSpace, n_points: int) -> DesignOfExperiment:
         the input space
     n_points : int
         the number of points to generate
-
+    rng: Optional[np.random.Generator]
+        random number generator used to pick values
     Returns
     -------
     DesignOfExperiment
         the designed experiment
 
     """
+    if rng is None:
+        rng = np.random.default_rng()
     return lhs.generate_design_with_projection(
-        space, n_points, base_creator=create_random_points
+        space, n_points, base_creator=create_random_points_f(rng)
     )
 
 
@@ -62,6 +86,7 @@ def generate_seperate_designs_by_full_subspace(
     sub_space_target_allocations: Optional[
         List[SubSpaceTargetAllocations]
     ] = None,
+    rng: Optional[np.random.Generator] = None,
 ) -> DesignOfExperiment:
     """
     Generates a random design given the full-sub-space target
@@ -82,16 +107,21 @@ def generate_seperate_designs_by_full_subspace(
         the subspace target allocations, if None, then
         the target allocations are derived from the
         dimensions and the full-sub-spaces
+    rng: Optional[np.random.Generator]
+        random number generator used to pick values
 
     Returns
     -------
     DesignOfExperiment
         the designed experiment
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     return lhs.generate_seperate_designs_by_full_subspace(
         space,
         n_points,
-        base_creator=create_random_points,
+        base_creator=create_random_points_f(rng),
         ensure_at_least_one=ensure_at_least_one,
         sub_space_target_allocations=sub_space_target_allocations,
     )

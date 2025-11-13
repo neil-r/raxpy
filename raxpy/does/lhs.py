@@ -1,15 +1,15 @@
 """
-    This module provide logic to create
-    LatinHypercube designs for InputSpaces.
+This module provide logic to create
+LatinHypercube designs for InputSpaces.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Literal, cast
 
 import numpy as np
 from scipy.stats.qmc import LatinHypercube
 from scipy.optimize import linear_sum_assignment
 
-from ..spaces.dimensions import Dimension, Variant, Composite
+from ..spaces.dimensions import ChildrenTypes, Dimension, Variant, Composite
 from ..spaces.root import (
     InputSpace,
     create_level_iterable,
@@ -24,7 +24,10 @@ from .scipy_optimizations import random_cd
 
 
 def create_base_lhs_creator(
-    scamble=False, strength=1, optimation: str = "random-cd"
+    scamble=False,
+    strength=1,
+    optimization: Literal["random-cd", "lloyd"] = "random-cd",
+    rng: Optional[np.random.Generator] = None,
 ):
     """
     TODO Explain the Function
@@ -37,6 +40,8 @@ def create_base_lhs_creator(
         **Explanation**
     optimation : str
         random-cd **Explanation**
+    rng:Optional[np.random.Generator]
+        Random number generator to support design creation
 
     Returns
     -------
@@ -66,7 +71,12 @@ def create_base_lhs_creator(
             d=n_dim_count,
             strength=strength,
             scramble=scamble,
-            optimization=optimation,
+            optimization=optimization,
+            seed=(
+                rng.integers(0, np.iinfo(np.int32).max)
+                if rng is not None
+                else None
+            ),
         )
 
         data_points = sampler.random(n=n_points)
@@ -81,7 +91,7 @@ _default_base_lhs_creator = create_base_lhs_creator()
 _default_base_lhs_creator_with_scramble = create_base_lhs_creator(scamble=True)
 
 
-def _compute_cost_matrix(array1: np.array, array2: np.array):
+def _compute_cost_matrix(array1: np.ndarray, array2: np.ndarray):
     """
     Compute the cost matrix (distance matrix) between two sets of points.
     """
@@ -91,7 +101,7 @@ def _compute_cost_matrix(array1: np.array, array2: np.array):
     return cost_matrix
 
 
-def _match_points_hungarian(array1: np.array, array2: np.array):
+def _match_points_hungarian(array1: np.ndarray, array2: np.ndarray):
     """
     Match points in two arrays using the Hungarian algorithm to minimize total distance.
     """
@@ -121,7 +131,14 @@ def _level_iterator(space):
                     design_request_stack.append(
                         (
                             dim,
-                            list(create_level_iterable(dim.children)),
+                            list(
+                                create_level_iterable(
+                                    cast(
+                                        List[Dimension],
+                                        cast(ChildrenTypes, dim).children,
+                                    )
+                                )
+                            ),
                         )
                     )
 
@@ -137,7 +154,7 @@ class WorkingDesignOfExpertiment:
         )
 
         self.active_index = 0
-        self.column_map: Dict[str, Dimension] = {}
+        self.column_map: Dict[int, Dimension] = {}
 
         self.input_set_map = {}
 
@@ -315,20 +332,6 @@ def generate_design_by_tree_traversal(
             parent_inputs = working_design.final_data_points[
                 :, working_design.input_set_map[parent_dim.id]
             ]
-            """
-            parent_dim_mask = parent_dim
-            while True:
-                if parent_dim_mask.id in working_design.input_set_map:
-                    parent_inputs = working_design.final_data_points[
-                        :, working_design.input_set_map[parent_dim_mask.id]
-                    ]
-                    break
-                else:
-                    # parent is a structural-only composite, get its parent
-                    parent_dim_mask = space.find_parent(parent_dim_mask)
-                    if parent_dim_mask is None:
-                        raise ValueError("Parent not found")
-            """
 
             parent_mask = parent_inputs > parent_dim.portion_null
             points_to_create = np.sum(parent_mask)
@@ -576,6 +579,7 @@ def generate_seperate_designs_by_full_subspace(
     # create designs for sub-spaces given the allocated points counts
     for i, sub_space_allocation in enumerate(sub_space_target_allocations):
         points_to_create = sub_space_allocation.allocated_point_count
+        assert points_to_create is not None
 
         if points_to_create < 1:
             print("Skipping dimensions")
@@ -668,19 +672,32 @@ def generate_seperate_designs_by_full_subspace(
 
 class ValuePool:
 
-    def __init__(self, value_count):
-        self._values = list(
-            (i / value_count) + (1 / (value_count * 2))
-            for i in range(value_count)
-        )
+    def __init__(self, value_count, outline_mode=True):
+        # outline mode supports creating design points at the dimension bounds
+        if outline_mode:
+            if value_count == 0:
+                self._values = []
+            if value_count == 1:
+                self._values = [0.5]
+            else:
+                offset = 1 / (value_count - 1)
+                self._values = list(
+                    max(0.0, min(1.0, i * offset)) for i in range(value_count)
+                )
+        else:
+            self._values = list(
+                (i / value_count) + (1 / (value_count * 2))
+                for i in range(value_count)
+            )
 
-    def pull(self, point_count):
+    def pull(self, point_count, rng: np.random.Generator):
         """
         Pull a random element from each quantile in a sorted list.
 
         Parameters:
         sorted_list (list): A sorted list of elements.
         num_quantiles (int): The number of quantiles to divide the list into.
+        rng:np.random.Generator: the random number generator
 
         Returns:
         list: A list containing a randomly selected element from each quantile.
@@ -701,7 +718,6 @@ class ValuePool:
             0, len(self._values), point_count + 1, dtype=int
         )
         indices = []
-        rng = np.random.default_rng()
         selected_values = []
         for i in range(point_count):
             start_index = quantiles[i]
@@ -725,9 +741,16 @@ def generate_seperate_designs_by_full_subspace_and_pool(
     sub_space_target_allocations: Optional[
         List[SubSpaceTargetAllocations]
     ] = None,
+    boundary_mode: bool = True,
+    rng: Optional[np.random.Generator] = None,
 ) -> DesignOfExperiment:
     """
-    TODO Explain the Function
+    Generates an experiment design for the provided space by first
+    determining sub-space allocations, if not provided. Then creates
+    a LHS sampling for each dimension given the number values given
+    the sub-space allocations. It then assigns values from latin-hypercube
+    samples to a design that matches the sub-space allocations and
+    optimizes this centered discrepency of the design.
 
     Arguments
     ---------
@@ -739,6 +762,11 @@ def generate_seperate_designs_by_full_subspace_and_pool(
         **Explanation**
     sub_space_target_allocations =None
 
+    boundary_mode=True
+        whether to generate latin-hypercube samples with
+        the boundary values for each dimension.
+    rng:Optional[np.random.Generator]
+        Random number generator to support design creation
     Returns
     -------
     DesignOfExperiment :
@@ -768,7 +796,7 @@ def generate_seperate_designs_by_full_subspace_and_pool(
             dim_counts[dim_id] += ssta.allocated_point_count
 
     value_pool = {
-        dim_id: ValuePool(dim_count)
+        dim_id: ValuePool(dim_count, outline_mode=boundary_mode)
         for dim_id, dim_count in dim_counts.items()
     }
 
@@ -779,6 +807,8 @@ def generate_seperate_designs_by_full_subspace_and_pool(
     )
 
     lb_index = 0
+    if rng is None:
+        rng = np.random.default_rng()
 
     # create designs for sub-spaces given the allocated points counts
     for i, sub_space_allocation in enumerate(sorted_allocations):
@@ -814,19 +844,18 @@ def generate_seperate_designs_by_full_subspace_and_pool(
 
             data_points = np.array(
                 [
-                    value_pool[dim_id.id].pull(points_to_create)
+                    value_pool[dim_id.id].pull(points_to_create, rng)
                     for dim_id in active_dims
                 ]
             )
-
-            rng = np.random.default_rng()
             for i in range(len(active_dims)):
                 rng.shuffle(data_points[i, :])
             data_points = data_points.T
 
             from .scipy_optimizations import random_cd
 
-            data_points = random_cd(data_points, 20000, 200)
+            data_points = random_cd(data_points, 20000, 200, rng=rng)
+            print(data_points)
 
             part_input_set_map = {}
             for i, dim in enumerate(active_dims):

@@ -1,4 +1,4 @@
-""" TODO Explain Module """
+"""TODO Explain Module"""
 
 import numpy as np
 
@@ -61,15 +61,16 @@ def test_collapse_of_random_numbers():
                     s.Float(id="x8", lb=3.0, ub=4.0, nullable=False),
                 ],
             ),
+            s.Text(id="x9", value_set=("one", "two", "three")),
         ]
     )
-    assert space.count_dimensions() == 8
+    assert space.count_dimensions() == 9
 
     flatted_dimensions = s.create_all_iterable(space.children)
     dim_map = {}
     for i, dim in enumerate(flatted_dimensions):
         dim_map[dim.local_id] = i
-    random_x = np.random.rand(10, 8)
+    random_x = np.random.rand(10, 9)
     collapsed_x = space.decode_zero_one_matrix(
         random_x, dim_map, map_null_to_children_dim=True
     )

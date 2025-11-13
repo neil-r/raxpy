@@ -1,6 +1,6 @@
 """
-    This module defines the data structures
-    used to represent designs of experiments.
+This module defines the data structures
+used to represent designs of experiments.
 """
 
 from typing import Dict, List, Literal, Optional
@@ -32,12 +32,12 @@ class DesignOfExperiment:
     """
 
     input_space: InputSpace
-    input_sets: np.array
+    input_sets: np.ndarray
     input_set_map: Dict[str, int]
     encoding: Encoding
 
-    _decoded_cache: Optional[np.array] = None
-    _zero_one_null_encoding_cache: Optional[np.array] = None
+    _decoded_cache: Optional[np.ndarray] = None
+    _zero_one_null_encoding_cache: Optional[np.ndarray] = None
 
     def __post_init__(self):
         """
@@ -75,7 +75,7 @@ class DesignOfExperiment:
                     )
 
     @property
-    def index_dim_id_map(self):
+    def index_dim_id_map(self) -> Dict[int, str]:
         """
         Creates a dict mapping the indexes to dimension
         ids of the columns in input_sets matrix.
@@ -94,7 +94,9 @@ class DesignOfExperiment:
     def decoded_input_sets(self):
         """
         Creates, as needed, the decoded version of the experiment design.
-        The numpy array is cached if created.
+        The numpy array is cached if created. Note that the discrete
+        dimensions values are represented as indicies of type numpy-float:
+        you must lookup the dimensions discrete values with these indicies.
 
         Returns
         -------
@@ -146,9 +148,15 @@ class DesignOfExperiment:
                     )
                 )
             else:
-                raise NotImplementedError(
-                    "Going from decoded-design to encoded-design not implemented"
+                self._zero_one_null_encoding_cache = (
+                    self.input_space.reverse_decoding_to_zero_one_null_matrix(
+                        self.input_sets,
+                        self.input_set_map,
+                    )
                 )
+                # raise NotImplementedError(
+                #    "Going from decoded-design to encoded-design not implemented"
+                # )
 
         return self._zero_one_null_encoding_cache
 
@@ -195,7 +203,7 @@ class DesignOfExperiment:
             encoding=encoding,
         )
 
-    def get_data_points(self, encoding: Encoding):
+    def get_data_points(self, encoding: EncodingEnum):
         """
         Gets numpy array of design given the encoding
         provided.
