@@ -20,6 +20,7 @@ class Base:
 
     label: Optional[str] = None
     tags: Optional[List[str]] = None
+    portion_null: Optional[float] = None
 
     def apply_to(self, d: s.Dimension) -> None:
         """
@@ -40,6 +41,8 @@ class Base:
                 d.tags = self.tags
             else:
                 d.tags.extend(self.tags)
+        if self.portion_null is not None:
+            d.portion_null = self.portion_null
 
 
 @dataclass(frozen=True, eq=True)

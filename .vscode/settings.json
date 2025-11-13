@@ -10,5 +10,8 @@
     "editor.defaultFormatter": "ms-python.black-formatter",
     "formatting.blackArgs": ["--line-length", "79"],
     "editor.formatOnSave": true
+  },
+  "files.watcherExclude": {
+    "**/target": true
   }
 }

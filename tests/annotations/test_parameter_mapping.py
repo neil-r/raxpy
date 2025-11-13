@@ -138,7 +138,7 @@ def test_mixed_spec_param_func():
         _x2: Annotated[float, raxpy.Float(lb=1.7, ub=3.3)],
         _x3: Annotated[int, raxpy.Integer(ub=5)],
         _x4: Annotated[
-            Optional[int], raxpy.Integer(value_set={1, 2, 4})
+            Optional[int], raxpy.Integer(value_set={1, 2, 4}, portion_null=0.5)
         ] = None,
         _x5: int = 3,
         _x6: Optional[float] = None,
@@ -171,6 +171,8 @@ def test_mixed_spec_param_func():
         nullable=True,
         specified_default=True,
     )
+
+    assert input_space.dimensions[3].portion_null == 0.5
     assert_parameters(
         input_space.dimensions[4],
         s.Int,
