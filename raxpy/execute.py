@@ -198,7 +198,15 @@ def design_experiment(
 
     design = design_algorithm(input_space, n_points, rng=rng)
     if optimize_projections:
-        design = maxpro.optimize_design_with_sa(design, rng=rng)
+        design = maxpro.optimize_design_with_sa(
+            design,
+            # We want to ensure that the projections are optimized
+            # with the encoded values not the decoded values
+            # (Decoded values could be on different unit-of-measurement scales
+            # and the optimization is more effective)
+            encoding=maxpro.EncodingEnum.ZERO_ONE_NULL_ENCODING,
+            rng=rng,
+        )
 
     return design
 

@@ -79,6 +79,10 @@ def optimize_design_with_sa(
         d_best = opt_design.input_sets
     else:
         d_best = opt_design.get_data_points(encoding)
+        # since we are changing the encoding and d_best is
+        # assigned to the design's input_sets, we need to
+        # update the design's encoding to match the encoding of d_best
+        opt_design.encoding = encoding
 
     n = opt_design.point_count
     point_comps = np.zeros((n, n))
