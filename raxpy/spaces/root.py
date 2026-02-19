@@ -5,7 +5,7 @@ a list of dimensions.
 """
 
 import itertools
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import Dict, Iterable, List, Optional, Union, cast
 
 import numpy as np
@@ -668,6 +668,9 @@ class Space:
 
                 decoded_values[:, column_index] = decoded_column
         return decoded_values
+
+    def to_json_dict(self):
+        return asdict(self)
 
 
 @dataclass

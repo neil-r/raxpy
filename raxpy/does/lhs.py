@@ -764,7 +764,7 @@ def generate_seperate_designs_by_full_subspace_and_pool(
 
     boundary_mode=True
         whether to generate latin-hypercube samples with
-        the boundary values for each dimension.
+        the boundary values for each continous/float dimension.
     rng:Optional[np.random.Generator]
         Random number generator to support design creation
     Returns
