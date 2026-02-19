@@ -145,6 +145,8 @@ class Dimension(Generic[T]):
             self.local_id = self.id
         if self.id == "":
             raise ValueError("Invalid identifier for dimension")
+        if self.nullable is False and self.portion_null is None:
+            self.portion_null = 0.0
 
     def has_finite_values(self) -> bool:
         """
@@ -811,6 +813,37 @@ class Variant(Dimension):
         for option in cast(List[Dimension], self.options):
             at += option.acceptable_types()
         return tuple(at)
+
+    def reverse_decoding(self, x):
+        """
+        Converts a decoded array x to 0-1 with null encoded values.
+
+        Arguments
+        ---------
+        self
+            dimension
+        x
+            decoded array of values
+
+        Returns
+        -------
+            list of encoded values
+        """
+
+        possible_values = self.options
+
+        c = len(possible_values)
+
+        map_dict = {}
+        for i, _ in enumerate(possible_values):
+            map_dict[i] = i / max(1, c - 1)
+
+        def mapping_f(x_value):
+            if np.isnan(x_value):
+                return x_value
+            return map_dict[x_value]
+
+        return np.array(list(map(mapping_f, x)))
 
 
 @dataclass
