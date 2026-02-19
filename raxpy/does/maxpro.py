@@ -1,18 +1,17 @@
 """
-    Provides extensions to the MaxPro optmization algorithm 
-    to support design optimizations.
+Provides extensions to the MaxPro optmization algorithm
+to support design optimizations.
 
-    See "Designing Computer Experiments with
-    Multiple Types of Factors: The MaxPro Approach"
-    for more details about MaxPro.
+See "Designing Computer Experiments with
+Multiple Types of Factors: The MaxPro Approach"
+for more details about MaxPro.
 
-    https://par.nsf.gov/servlets/purl/10199193
+https://par.nsf.gov/servlets/purl/10199193
 """
 
-import random
-from typing import Optional
-import numpy as np
+from typing import Optional, cast
 import math
+import numpy as np
 from ..spaces.complexity import estimate_complexity
 
 from .. import spaces as s
@@ -39,6 +38,8 @@ def optimize_design_with_sa(
     encoding: Optional[EncodingEnum] = None,
     maxiter: int = 10000,
     max_rabbit_whole_threshold: int = 1,
+    suppress_numerical_computation_warnings: bool = True,
+    rng: Optional[np.random.Generator] = None,
 ) -> DesignOfExperiment:
     """
     Makes a copy of base_design and swaps non-null values in the design
@@ -56,12 +57,21 @@ def optimize_design_with_sa(
         annealing algorithm
     max_rabbit_whole_threshold : int = 1
         experimental value, don't change, likely to remove
+    suppress_numerical_computation_warnings: bool=True
+        flag to suppress some numerical computation warnings that sometimes
+        occur with the algorithm
+    rng:Optional[np.random.Generator] = None
+        random number generator used to pick values to swap
 
     Returns
     -------
     DesignOfExperiment
         a design optimized with simulated anneeling
     """
+
+    if rng is None:
+        rng = np.random.default_rng()
+
     opt_design = base_design.copy()
 
     # initalize data structures
@@ -105,7 +115,7 @@ def optimize_design_with_sa(
                 column_indices_to_swap.pop()
 
         if (
-            (dim.nullable and dim.portion_null > 0.0)
+            (dim.nullable and cast(float, dim.portion_null) > 0.0)
             or dim_id not in root_dim_ids
             or dim.has_finite_values()
         ):
@@ -135,64 +145,70 @@ def optimize_design_with_sa(
     def revise_temp(i):
         return 1.0 - (i / maxiter)
 
-    for i_iteration in range(maxiter):
-        t = revise_temp(i_iteration)
-        dig_count += 1
+    if suppress_numerical_computation_warnings:
+        numerical_issue_method = "ignore"
+    else:
+        numerical_issue_method = "warn"
 
-        attempt_from_best_count += 1
-        if attempt_from_best_count > max_attempt_from_best_count:
-            break
-        # Step 5. Denote the current design matrix as D = [Dx, Du, Dv]. Randomly
-        # choose a column from the [Dx, Du] components, and interchange two
-        # randomly chosen elements within the selected column. Denote the new
-        # design matrix as Dtry.
-        k = random.choice(column_indices_to_swap)
-        row_indices = active_row_indicies[k]
+    with np.errstate(all=numerical_issue_method):
+        for i_iteration in range(maxiter):
+            t = revise_temp(i_iteration)
+            dig_count += 1
 
-        i = random.choice(row_indices)
-        j = random.choice(row_indices)
-        # Step 6. If Dtry = D, repeat Step (5).
-        while i == j:
-            j = random.choice(row_indices)
+            attempt_from_best_count += 1
+            if attempt_from_best_count > max_attempt_from_best_count:
+                break
+            # Step 5. Denote the current design matrix as D = [Dx, Du, Dv]. Randomly
+            # choose a column from the [Dx, Du] components, and interchange two
+            # randomly chosen elements within the selected column. Denote the new
+            # design matrix as Dtry.
+            k = rng.choice(column_indices_to_swap)
+            row_indices = active_row_indicies[k]
 
-        d_try[i, k], d_try[j, k] = d_try[j, k], d_try[i, k]
+            i = rng.choice(row_indices)
+            j = rng.choice(row_indices)
+            # Step 6. If Dtry = D, repeat Step (5).
+            while i == j:
+                j = rng.choice(row_indices)
 
-        # adjust values that changed
-        for i_a in [i, j]:
-            # up
-            for j_a in range(0, i_a):
-                m = 1.0
-                for k in range(0, d):
-                    m *= dist_funcs[k](d_try[i_a, k], d_try[j_a, k]) ** 2
+            d_try[i, k], d_try[j, k] = d_try[j, k], d_try[i, k]
 
-                d_try_point_comps[j_a, i_a] = 1.0 / m
+            # adjust values that changed
+            for i_a in [i, j]:
+                # up
+                for j_a in range(0, i_a):
+                    m = 1.0
+                    for k in range(0, d):
+                        m *= dist_funcs[k](d_try[i_a, k], d_try[j_a, k]) ** 2
 
-            # over
-            for j_a in range(i_a + 1, n):
-                m = 1.0
-                for k in range(0, d):
-                    m *= dist_funcs[k](d_try[i_a, k], d_try[j_a, k]) ** 2
+                    d_try_point_comps[j_a, i_a] = 1.0 / m
 
-                d_try_point_comps[i_a, j_a] = 1.0 / m
+                # over
+                for j_a in range(i_a + 1, n):
+                    m = 1.0
+                    for k in range(0, d):
+                        m *= dist_funcs[k](d_try[i_a, k], d_try[j_a, k]) ** 2
 
-        # Step 7. If ψ(Dtry) < ψ(D), replace the current design D with Dtry;
-        # otherwise, replace the current design D with Dtry with probability
-        # π = exp{−[ψ(Dtry) − ψ(D)]/T }, where T is a preset parameter
-        # known as “temperature”.
-        d_try_value = np.sum(np.triu(d_try_point_comps, -1))
-        p_threshold = math.e ** (-(d_try_value - d_best_value) / t)
-        if d_try_value < d_best_value or p_threshold > random.random():
-            print("Found new best!")
-            d_best[:, :] = d_try
-            point_comps[:, :] = d_try_point_comps
-            d_best_value = d_try_value
-            attempt_from_best_count = 0
-            dig_count = 0
-        elif dig_count >= max_rabbit_whole_threshold:
-            # reset
-            dig_count = 0
-            d_try[:, :] = d_best
-            d_try_point_comps[:, :] = point_comps
+                    d_try_point_comps[i_a, j_a] = 1.0 / m
+
+            # Step 7. If ψ(Dtry) < ψ(D), replace the current design D with Dtry;
+            # otherwise, replace the current design D with Dtry with probability
+            # π = exp{−[ψ(Dtry) − ψ(D)]/T }, where T is a preset parameter
+            # known as “temperature”.
+            d_try_value = np.sum(np.triu(d_try_point_comps, -1))
+            p_threshold = math.e ** (-(d_try_value - d_best_value) / t)
+            if d_try_value < d_best_value or p_threshold > rng.random():
+                # print("Found new best!")
+                d_best[:, :] = d_try
+                point_comps[:, :] = d_try_point_comps
+                d_best_value = d_try_value
+                attempt_from_best_count = 0
+                dig_count = 0
+            elif dig_count >= max_rabbit_whole_threshold:
+                # reset
+                dig_count = 0
+                d_try[:, :] = d_best
+                d_try_point_comps[:, :] = point_comps
 
         # Step 8. Repeat Step (5) to Step (7) until some convergence requirements
         # are met. Report the design matrix with the smallest ψ(D) value as the

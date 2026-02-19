@@ -1,18 +1,18 @@
-""" 
-    This module contains type-hint and annotation conversion
-    logic to `raxpy.spaces` objects.
+"""
+This module contains type-hint and annotation conversion
+logic to `raxpy.spaces` objects.
 """
 
 import types
 from dataclasses import MISSING, fields
-from typing import List, Type, Union, get_args, get_origin
+from typing import List, Type, Union, get_args, get_origin, Dict
 
 from .. import spaces as s
 
 
 UndefinedValue = object()
 
-_type_dimension_mapper: Type = {
+_type_dimension_mapper: Dict[Type, Type] = {
     int: s.Int,
     float: s.Float,
     str: s.Text,

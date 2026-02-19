@@ -1,9 +1,9 @@
-""" 
-    Analyzes dimensions to estimate their complexity corrosponding
-    to a discrete-categorical value unit of measurement.
+"""
+Analyzes dimensions to estimate their complexity corrosponding
+to a discrete-categorical value unit of measurement.
 """
 
-from typing import Iterable, List
+from typing import Iterable, List, cast
 
 import math
 
@@ -60,7 +60,7 @@ def estimate_complexity(dim: d.Dimension) -> float:
             complexity_estimate = 1.0
         # summerize complexity of children
         children_com = []
-        for child in dim.children:
+        for child in cast(List[d.Dimension], dim.children):
             if expected_significant_interactions:
                 complexity_estimate += estimate_complexity(child)
             else:
@@ -109,7 +109,13 @@ def assign_null_portions(
             dim.has_child_dimensions()
             and not dim.only_supports_spec_structure()
         ):
-            children_sets.append(s.create_level_iterable(dim.children))
+            children_sets.append(
+                s.create_level_iterable(
+                    cast(
+                        List[d.Dimension], cast(d.ChildrenTypes, dim).children
+                    )
+                )
+            )
 
     # compute portions for children set dimensions
     for children_set in children_sets:
@@ -155,23 +161,33 @@ def compute_subspace_portions(
 
                 if dim.id in full_subspace:
                     if dim.nullable:
-                        p = 1.0 - dim.portion_null
+                        p = 1.0 - cast(float, dim.portion_null)
                     else:
                         p = 1.0
 
                     if dim.has_child_dimensions():
                         if isinstance(dim, d.Variant):
 
-                            portion_components.append(1.0 / len(dim.children))
+                            portion_components.append(
+                                1.0
+                                / len(cast(List[d.Dimension], dim.children))
+                            )
                             # only add active child to be processed
-                            for child_dim in dim.children:
+                            for child_dim in cast(
+                                List[d.Dimension], dim.children
+                            ):
                                 if child_dim.id in full_subspace:
                                     levels_to_process.append(
                                         s.create_level_iterable([child_dim])
                                     )
                         else:
                             levels_to_process.append(
-                                s.create_level_iterable(dim.children)
+                                s.create_level_iterable(
+                                    cast(
+                                        List[d.Dimension],
+                                        cast(d.ChildrenTypes, dim).children,
+                                    )
+                                )
                             )
                 else:
                     p = dim.portion_null

@@ -6,11 +6,11 @@ a list of dimensions.
 
 import itertools
 from dataclasses import dataclass, asdict
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Union, cast
 
 import numpy as np
 
-from .dimensions import Dimension, Variant
+from .dimensions import Dimension, Variant, ChildrenTypes
 
 
 def _generate_combinations(base_list: list) -> list:
@@ -67,13 +67,18 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
             if dim.has_child_dimensions():
                 if isinstance(dim, Variant):
                     children_subspaces = []
-                    for o in dim.children:
+                    for o in cast(List[Dimension], dim.children):
                         children_subspaces += derive_subspaces(
                             create_level_iterable([o])
                         )
                 else:
                     children_subspaces = derive_subspaces(
-                        create_level_iterable(dim.children)
+                        create_level_iterable(
+                            cast(
+                                List[Dimension],
+                                cast(ChildrenTypes, dim).children,
+                            )
+                        )
                     )
                 expansion_map[dim.id] = children_subspaces
                 optional_dims.append(dim.id)
@@ -83,7 +88,7 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
             if isinstance(dim, Variant):
                 required_dims.append(dim.id)
                 children_subspaces = []
-                for o in dim.children:
+                for o in cast(List[Dimension], dim.children):
                     children_subspaces += derive_subspaces(
                         create_level_iterable([o])
                     )
@@ -183,7 +188,9 @@ def create_level_iterable(
             if dim1.only_supports_spec_structure():
                 # insert children dimensions to stack
                 # to be processed in same level
-                for child_dim in reversed(dim1.children):
+                for child_dim in reversed(
+                    cast(List[Dimension], cast(ChildrenTypes, dim1).children)
+                ):
                     dimension_stack.insert(0, child_dim)
             else:
                 resolved_dimension_list.append(dim1)
@@ -219,7 +226,9 @@ def create_all_iterable(
         if not skip_structual_dims or not dim1.only_supports_spec_structure():
             resolved_dimension_list.append(dim1)
         if dim1.has_child_dimensions():
-            for child_dim in reversed(dim1.children):
+            for child_dim in reversed(
+                cast(List[Dimension], cast(ChildrenTypes, dim1).children)
+            ):
                 dimension_stack.insert(0, child_dim)
 
     return resolved_dimension_list
@@ -252,6 +261,7 @@ def _create_dict_from_flat_values(
 
         if dim.has_child_dimensions():
             input_is_null = False
+            dim_index = -1
             if dim.id in dim_to_index_mapping:
                 # check to see if the input is marked as none
                 dim_index = dim_to_index_mapping[dim.id]
@@ -263,13 +273,21 @@ def _create_dict_from_flat_values(
                     # must determine which child is active
                     active_option_index = round(inputs[dim_index])
                     dict_values[dim.local_id] = _create_dict_from_flat_values(
-                        [dim.children[active_option_index]],
+                        [
+                            cast(List[Dimension], dim.children)[
+                                active_option_index
+                            ]
+                        ],
                         inputs,
                         dim_to_index_mapping,
                     )
                 else:
                     children_dict = _create_dict_from_flat_values(
-                        dim.children, inputs, dim_to_index_mapping
+                        cast(
+                            List[Dimension], cast(ChildrenTypes, dim).children
+                        ),
+                        inputs,
+                        dim_to_index_mapping,
                     )
                     if len(children_dict) > 0:
                         dict_values[dim.local_id] = children_dict
@@ -336,15 +354,18 @@ class Space:
 
     def find_parent(self, child_dim: Dimension):
 
-        parents = [self]
+        parents: List[Union[Space, ChildrenTypes]] = [self]
 
         while len(parents) > 0:
             parent_dim = parents.pop()
-            for c_dim in parent_dim.children:
+            for c_dim in cast(
+                List[Dimension],
+                parent_dim.children,
+            ):
                 if c_dim.id == child_dim.id:
                     return parent_dim
                 elif c_dim.has_child_dimensions():
-                    parents.append(c_dim)
+                    parents.append(cast(ChildrenTypes, c_dim))
         return None
 
     def derive_full_subspaces(self) -> List[List[str]]:
@@ -408,7 +429,7 @@ class Space:
                     if not d.has_child_dimensions()
                     else (
                         (0 if d.only_supports_spec_structure() else 1)
-                        + (d.count_children_dimensions())
+                        + (cast(ChildrenTypes, d).count_children_dimensions())
                     )
                 )
                 for d in self.dimensions
@@ -448,7 +469,7 @@ class Space:
 
     def encode_to_zero_one_null_matrix(
         self,
-        zero_one_encoded_values: np.array,
+        zero_one_encoded_values: np.ndarray,
         dim_column_map: Dict[str, int],
     ):
         """
@@ -491,7 +512,12 @@ class Space:
                     if dim.has_child_dimensions():
                         nan_mask = np.isnan(decoded_column)
                         if nan_mask.sum() > 0:
-                            children = create_all_iterable(dim.children)
+                            children = create_all_iterable(
+                                cast(
+                                    List[Dimension],
+                                    cast(ChildrenTypes, dim).children,
+                                )
+                            )
                             non_nan_mask = ~nan_mask
                             for c_dim in children:
                                 if c_dim.id in dim_column_map:
@@ -508,7 +534,9 @@ class Space:
                                     ] = np.nan
                         if isinstance(dim, Variant):
                             # determine active child, null out others
-                            for i, c_dim in enumerate(dim.children):
+                            for i, c_dim in enumerate(
+                                cast(List[Dimension], dim.children)
+                            ):
                                 nan_mask = [x != i for x in decoded_column]
 
                                 for c_c_dim in create_all_iterable([c_dim]):
@@ -525,9 +553,46 @@ class Space:
                     )
         return adjusted_encoded_values
 
+    def reverse_decoding_to_zero_one_null_matrix(
+        self,
+        decoded_values: np.ndarray,
+        dim_column_map: Dict[str, int],
+    ):
+        """
+        Reverses decoded values to a 0-1 matrix of encoded values to a 0-1 and np.nan matrix
+        given dimensions null_portion attributes
+
+        Arguments
+        ---------
+        self : Space
+            Space
+        decoded_values : np.array
+            the 0-1 matrix with rows representing data-points and columns dimensions
+        dim_column_map : Dict[str, int]
+            the index of dimensions in decoded_values given the dimensions' ids
+
+        Returns
+        -------
+        np.array
+            a 0-1 matrix with np.nan values
+        """
+
+        adjusted_encoded_values = np.array(decoded_values)
+        flatted_dimensions = create_all_iterable(self.children)
+        for dim in flatted_dimensions:
+            if dim.id in dim_column_map:
+                column_index = dim_column_map[dim.id]
+                decoded_column = decoded_values[:, column_index]
+                adjusted_encoded_column = dim.reverse_decoding(decoded_column)
+
+                adjusted_encoded_values[:, column_index] = (
+                    adjusted_encoded_column
+                )
+        return adjusted_encoded_values
+
     def decode_zero_one_matrix(
         self,
-        zero_one_encoded_values: np.array,
+        zero_one_encoded_values: np.ndarray,
         dim_column_map: Dict[str, int],
         map_null_to_children_dim=False,
         utilize_null_portitions=True,
@@ -569,7 +634,12 @@ class Space:
                 if map_null_to_children_dim and dim.has_child_dimensions():
                     nan_mask = np.isnan(decoded_column)
                     if nan_mask.sum() > 0:
-                        children = create_all_iterable(dim.children)
+                        children = create_all_iterable(
+                            cast(
+                                List[Dimension],
+                                cast(ChildrenTypes, dim).children,
+                            )
+                        )
                         non_nan_mask = ~nan_mask
                         for c_dim in children:
                             if c_dim.id in dim_column_map:
@@ -584,7 +654,9 @@ class Space:
                                 ] = np.nan
                     if isinstance(dim, Variant):
                         # determine active child, null out others
-                        for i, c_dim in enumerate(dim.children):
+                        for i, c_dim in enumerate(
+                            cast(List[Dimension], dim.children)
+                        ):
                             nan_mask = [x != i for x in decoded_column]
 
                             for c_c_dim in create_all_iterable([c_dim]):

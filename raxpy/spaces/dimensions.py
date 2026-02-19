@@ -1,6 +1,6 @@
-""" 
-    This modules provides data structures to support the
-    specification of a space's dimensions (or factors).
+"""
+This modules provides data structures to support the
+specification of a space's dimensions (or factors).
 """
 
 from dataclasses import dataclass
@@ -14,6 +14,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -50,9 +51,12 @@ def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
         return [
             (
                 value_set[
-                    int(
-                        ((xp - portion_null) / (1.0 - portion_null))
-                        // boundary_size
+                    min(
+                        int(
+                            ((xp - portion_null) / (1.0 - portion_null))
+                            // boundary_size
+                        ),
+                        value_count - 1,
                     )
                 ]
                 if (not np.isnan(xp)) and xp > portion_null
@@ -62,7 +66,11 @@ def _map_values(x, value_set, portion_null) -> List[Union[int, float]]:
         ]
     else:
         return [
-            value_set[int(xp // boundary_size)] if not np.isnan(xp) else np.nan
+            (
+                value_set[min(int(xp // boundary_size), value_count - 1)]
+                if not np.isnan(xp)
+                else np.nan
+            )
             for xp in x
         ]
 
@@ -194,6 +202,25 @@ class Dimension(Generic[T]):
             "Abstract method, subclass should implement this method"
         )
 
+    def reverse_decoding(self, x):
+        """
+        Converts a decoded array x to 0-1 with null encoded values.
+
+        Arguments
+        ---------
+        self
+            dimension
+        x
+            decoded array of values
+
+        Returns
+        -------
+            list of encoded values
+        """
+        raise NotImplementedError(
+            "Abstract method, subclass should implement this method"
+        )
+
     def has_tag(self, tag: str) -> bool:
         """
         Function validates if there is a valid tag.
@@ -301,9 +328,9 @@ class Int(Dimension[int]):
 
     lb: Optional[int] = None
     ub: Optional[int] = None
-    value_set: Optional[List[int]] = None
+    value_set: Optional[Tuple[int]] = None
 
-    def convert_to_argument(self, input_value) -> T:
+    def convert_to_argument(self, input_value) -> int:
         """
         Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
@@ -335,6 +362,40 @@ class Int(Dimension[int]):
         raise ValueError(
             "Unbounded Int dimension cannot transform a uniform 0-1 value"
         )
+
+    def reverse_decoding(self, x):
+        """
+        Converts a decoded array x to 0-1 with null encoded values.
+
+        Arguments
+        ---------
+        self
+            dimension
+        x
+            decoded array of values
+
+        Returns
+        -------
+            list of encoded values
+        """
+
+        possible_values = self.value_set
+        if possible_values is None:
+            possible_values = list(
+                range(cast(int, self.lb), cast(int, self.ub) + 1)
+            )
+
+        c = len(possible_values)
+        map_dict = {}
+        for i, value in enumerate(possible_values):
+            map_dict[value] = i / max(1, c - 1)
+
+        def mapping_f(x_value):
+            if np.isnan(x_value):
+                return x_value
+            return map_dict[x_value]
+
+        return np.array(list(map(mapping_f, x)))
 
     def validate(self, input_value, specified_input: bool) -> None:
         """
@@ -399,7 +460,7 @@ class Bool(Int):
                     f"Invalid value, the value {input_value} is not the right type"
                 )
 
-    def convert_to_argument(self, input_value) -> T:
+    def convert_to_argument(self, input_value) -> bool:
         """
         Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
@@ -420,9 +481,9 @@ class Float(Dimension[float]):
 
     lb: Optional[float] = None
     ub: Optional[float] = None
-    value_set: Optional[List[float]] = None
+    value_set: Optional[Tuple[float]] = None
 
-    def convert_to_argument(self, input_value) -> T:
+    def convert_to_argument(self, input_value) -> float:
         """
         Implementation of abstract method. See `Dimension.convert_to_argument`.
 
@@ -469,6 +530,54 @@ class Float(Dimension[float]):
         raise ValueError(
             "Unbounded Float dimension cannot transform a uniform 0-1 value"
         )
+
+    def reverse_decoding(self, x):
+        """
+        Converts a decoded array x to 0-1 with null encoded values.
+
+        Arguments
+        ---------
+        self
+            dimension
+        x
+            decoded array of values
+
+        Returns
+        -------
+            list of encoded values
+        """
+
+        def mapping_df(x_value):
+            # default mapping function if criteira for reverse decoding are not specified
+            raise NotImplementedError("Unable to reverse decoding")
+
+        mapping_f = mapping_df
+
+        if self.value_set is not None:
+
+            c = len(self.value_set)
+            map_dict = {}
+            for i, value in enumerate(self.value_set):
+                map_dict[value] = i / max(1, c - 1)
+
+            def mapping_f1(x_value):
+                if np.isnan(x_value):
+                    return x_value
+                return map_dict[x_value]
+
+            mapping_f = mapping_f1
+        elif self.lb is not None and self.ub is not None:
+
+            def mapping_f2(x_value):
+                if np.isnan(x_value):
+                    return x_value
+                return (x_value - self.lb) / (
+                    cast(float, self.ub) - cast(float, self.lb)
+                )
+
+            mapping_f = mapping_f2
+
+        return np.array(list(map(mapping_f, x)))
 
     def validate(self, input_value, specified_input: bool) -> None:
         """
@@ -533,12 +642,20 @@ class Text(Dimension[str]):
     """
 
     length_limit: Optional[int] = None
-    value_set: Optional[List[Union[CategoryValue, str]]] = None
+    value_set: Optional[Tuple[Union[CategoryValue, str], ...]] = None
 
-    def convert_to_argument(self, input_value) -> T:
+    def convert_to_argument(self, input_value) -> str:
         """
         Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
+        if (
+            isinstance(input_value, (float, np.floating))
+            and self.value_set is not None
+        ):
+            index = int(input_value)
+            v = self.value_set[index]
+            return v.value if isinstance(v, CategoryValue) else v
+
         return str(input_value)
 
     def collapse_uniform(self, x, utilize_null_portions=True):
@@ -553,7 +670,13 @@ class Text(Dimension[str]):
         """
         if self.value_set is not None:
             return _map_values(
-                x, {v.value for v in self.value_set}, self.portion_null
+                x,
+                [
+                    # (v.value if isinstance(v, CategoryValue) else v)
+                    i
+                    for i in range(len(self.value_set))
+                ],
+                self.portion_null if utilize_null_portions else None,
             )
         raise ValueError(
             "Unbounded Text dimension cannot transform a uniform 0-1 value"
@@ -611,7 +734,7 @@ class Variant(Dimension):
         Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
         # find the children
-        for option in self.options:
+        for option in cast(List[Dimension], self.options):
             if option.local_id in input_value:
                 return option.convert_to_argument(input_value[option.local_id])
 
@@ -634,7 +757,7 @@ class Variant(Dimension):
         """
         return _map_values(
             x,
-            [i for i in range(len(self.options))],
+            [i for i in range(len(cast(List[Dimension], self.options)))],
             self.portion_null if utilize_null_portions else None,
         )
 
@@ -661,11 +784,11 @@ class Variant(Dimension):
         return sum(
             [
                 (
-                    c.count_children_dimensions()
+                    cast(ChildrenTypes, c).count_children_dimensions()
                     if c.has_child_dimensions()
                     else 1
                 )
-                for c in self.options
+                for c in cast(List[Dimension], self.options)
             ]
         )
 
@@ -675,7 +798,7 @@ class Variant(Dimension):
         """
         super().validate(input_value, specified_input)
         if input_value is not None:
-            for dim in self.options:
+            for dim in cast(List[Dimension], self.options):
                 if isinstance(input_value, dim.acceptable_types()):
                     value = input_value.content
                     dim.validate(value, specified_input)
@@ -685,7 +808,7 @@ class Variant(Dimension):
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         at = []
-        for option in self.options:
+        for option in cast(List[Dimension], self.options):
             at += option.acceptable_types()
         return tuple(at)
 
@@ -726,7 +849,7 @@ class ListDim(Dimension[List]):
         # TODO implement
         raise NotImplementedError("Not implemented!")
 
-    def acceptable_types(self):
+    def acceptable_types(self):  # type: ignore
         """
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
@@ -748,7 +871,26 @@ class Composite(Dimension):
         Implementation of abstract method. See `Dimension.convert_to_argument`.
         """
         args = convert_values_from_dict(self.children, input_value)
-        return self.type_class(**args)
+        return self.type_class(**args)  # type: ignore
+
+    def reverse_decoding(self, x):
+        """
+        Converts a decoded array x to 0-1 with null encoded values.
+
+        Arguments
+        ---------
+        self
+            dimension
+        x
+            decoded array of values
+
+        Returns
+        -------
+            list of encoded values
+        """
+        return np.array(
+            list(map(lambda x_value: x_value if np.isnan(x_value) else 1.0, x))
+        )
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
@@ -789,10 +931,10 @@ class Composite(Dimension):
                     if not c.has_child_dimensions()
                     else (
                         (0 if c.only_supports_spec_structure() else 1)
-                        + (c.count_children_dimensions())
+                        + (cast(ChildrenTypes, c).count_children_dimensions())
                     )
                 )
-                for c in self.children
+                for c in cast(List[Dimension], self.children)
             ]
         )
 
@@ -802,7 +944,7 @@ class Composite(Dimension):
         """
         super().validate(input_value, specified_input)
         if input_value is not None:
-            for dim in self.children:
+            for dim in cast(List[Dimension], self.children):
                 specified_child_input = False
                 if hasattr(input_value, dim.local_id):
                     value = getattr(input_value, dim.local_id)
@@ -811,8 +953,11 @@ class Composite(Dimension):
                     value = None
                 dim.validate(value, specified_child_input)
 
-    def acceptable_types(self):
+    def acceptable_types(self):  # type: ignore
         """
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (self.type_class,)
+
+
+ChildrenTypes = Union[Composite, Variant]

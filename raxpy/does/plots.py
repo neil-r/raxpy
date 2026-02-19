@@ -1,23 +1,23 @@
 """
-    This modules provides some custom plots to show experiment designs.
+This modules provides some custom plots to show experiment designs.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .doe import DesignOfExperiment
 
-
-def plot_scatterplot_matrix(
-    doe: DesignOfExperiment, title="Design of Experiment"
-):
+def plot_scatterplot_matrix(data, names, title="Pairplot"):
     """
-    Plots a scatterplot matrix of points from a design of experiment.
+    Plots a scatterplot matrix of subplots.  Each row of "data" is
+    plotted against other rows, resulting in a nrows by nrows grid of
+    subplots with the diagonal subplots labeled with "names".
 
     Arguments
     ---------
-    doe
-        The design of experiment
+    data
+        matrix of data points
+    names : str
+        Labels for subplot names
     title : str
         Additional keyword arguments are passed on to matplotlib's
         "plot" command.
@@ -27,11 +27,6 @@ def plot_scatterplot_matrix(
     Returns the matplotlib figure object containg the
     subplot grid.
     """
-
-    data = doe.decoded_input_sets
-    names = list(
-        doe.index_dim_id_map[i] for i in range(doe.dim_specification_count)
-    )
 
     # Check for NaN values
     has_nan = np.isnan(data).any()

@@ -1,5 +1,5 @@
-""" 
-    Tests numpy to standard Python conversions
+"""
+Tests numpy to standard Python conversions
 """
 
 import numpy as np
@@ -11,6 +11,8 @@ def test_create_dict_for_nan_and_variant():
     """
     Tests if create_dict_from_flat_values function outputs a NaN value and variants
     children data is converted.
+
+    Also tests the conversion of categorical-text values.
     """
     input_f = [
         s.Float(
@@ -60,9 +62,18 @@ def test_create_dict_for_nan_and_variant():
                 ),
             ],
         ),
+        s.Text(id="x8", value_set=("one", "two", "three")),
     ]
-    input_set_map = {"x1": 0, "x2": 1, "x3": 2, "x5": 3, "x6": 4, "x7": 5}
-    input_array = [3.8165008, np.nan, 0.0, 6, 0.1, np.nan]
+    input_set_map = {
+        "x1": 0,
+        "x2": 1,
+        "x3": 2,
+        "x5": 3,
+        "x6": 4,
+        "x7": 5,
+        "x8": 6,
+    }
+    input_array = [3.8165008, np.nan, 0.0, 6, 0.1, np.nan, 1.0]
 
     output = _create_dict_from_flat_values(input_f, input_array, input_set_map)
 
@@ -76,8 +87,9 @@ def test_create_dict_for_nan_and_variant():
     assert "x7" not in output["x3"]
     assert output["x3"]["x4"]["x5"] == 6
     assert output["x3"]["x4"]["x6"] == 0.1
+    assert output["x8"] == "two"
 
-    input_array_2 = [3.8165008, np.nan, 1.0, np.nan, np.nan, 0.9]
+    input_array_2 = [3.8165008, np.nan, 1.0, np.nan, np.nan, 0.9, 2.0]
 
     output_2 = _create_dict_from_flat_values(
         input_f, input_array_2, input_set_map
@@ -88,3 +100,4 @@ def test_create_dict_for_nan_and_variant():
     assert "x4" not in output_2["x3"]
     assert "x7" in output_2["x3"]
     assert output_2["x3"]["x7"] == 0.9
+    assert output_2["x8"] == "three"
