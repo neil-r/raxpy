@@ -745,6 +745,34 @@ class Variant(Dimension):
             f"non-nullable variant trying to convert input_value that does not have an option specified, : {input_value}"
         )
 
+    def reverse_decoding(self, x):
+        """
+        Converts a decoded array x to 0-1 with null encoded values.
+
+        Arguments
+        ---------
+        self
+            dimension
+        x
+            decoded array of values
+
+        Returns
+        -------
+            list of encoded values
+        """
+        return np.array(
+            list(
+                map(
+                    lambda x_value: (
+                        x_value
+                        if np.isnan(x_value)
+                        else x_value / (len(self.options) - 1)
+                    ),
+                    x,
+                )
+            )
+        )
+
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
         Implementation of abstract method. See `Dimension.collapse_uniform`.
