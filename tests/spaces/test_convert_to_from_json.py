@@ -42,3 +42,4 @@ def test_convert_to_json():
     assert isinstance(json_dict, dict)
 
     assert json_dict["dimensions"][2]["children"][1]["id"] == "x6"
+    assert json_dict["dimensions"][2]["children"][1]["__type__"] == "Composite"

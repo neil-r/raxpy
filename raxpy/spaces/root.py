@@ -5,7 +5,8 @@ a list of dimensions.
 """
 
 import itertools
-from dataclasses import dataclass, asdict
+import dataclasses
+from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Union, cast
 
 import numpy as np
@@ -670,7 +671,20 @@ class Space:
         return decoded_values
 
     def to_json_dict(self):
-        return asdict(self)
+        def asdict_with_type(obj):
+            if dataclasses.is_dataclass(obj):
+                result = {"__type__": type(obj).__name__}
+                for field in dataclasses.fields(obj):
+                    value = getattr(obj, field.name)
+                    result[field.name] = asdict_with_type(value)
+                return result
+            elif isinstance(obj, list):
+                return [asdict_with_type(i) for i in obj]
+            elif isinstance(obj, dict):
+                return {k: asdict_with_type(v) for k, v in obj.items()}
+            else:
+                return obj
+        return asdict_with_type(self)
 
 
 @dataclass
