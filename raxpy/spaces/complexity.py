@@ -74,7 +74,7 @@ def estimate_complexity(dim: d.Dimension) -> float:
     if dim.nullable:
         complexity_estimate += 1.0
 
-    return complexity_estimate
+    return max(1.0, complexity_estimate)
 
 
 def assign_null_portions(

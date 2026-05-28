@@ -25,7 +25,7 @@ from ..spaces import (
 )
 
 
-def _create_argument(d: Dimension, trial: optuna.Trial):
+def _create_argument(d: Dimension, trial: optuna.Trial, flat_mode_d=None):
     """
     Extracts a function argument represented by the provided dimension
     from an Optuna trial.
@@ -69,19 +69,32 @@ def _create_argument(d: Dimension, trial: optuna.Trial):
 
     elif isinstance(d, Variant):
 
-        if len(d.options) > 2:
-            c_value = trial.suggest_categorical(d.id, range(len(d.options)))
+        #if len(d.options) > 2:
+        c_value = trial.suggest_categorical(d.id,list(o.class_name for o in d.options))
+        #else:
+        #    c_value = trial.suggest_int(d.id, low=0, high=len(d.options) - 1)
+        c_dim = None
+        for o in d.options:
+            if o.class_name == c_value or (isinstance(c_value, int) and o.option_index == c_value):
+                c_dim = o
+                break
+        if flat_mode_d is not None:
+            _create_argument(c_dim, trial, flat_mode_d)
+            return c_value
         else:
-            c_value = trial.suggest_int(d.id, low=0, high=len(d.options) - 1)
-        c_dim = d.options[c_value]
-        return _create_argument(c_dim, trial)
+            return _create_argument(c_dim, trial, flat_mode_d)
     elif isinstance(d, Composite):
-        args = {}
+        if flat_mode_d is not None:
+            for child in d.children:
+                flat_mode_d[child.local_id] = _create_argument(child, trial, flat_mode_d)
+            return None
+        else:
+            args = {}
 
-        for child in d.children:
-            args[child.local_id] = _create_argument(child, trial)
+            for child in d.children:
+                args[child.local_id] = _create_argument(child, trial, flat_mode_d)
 
-        return d.type_class(**args)
+            return d.type_class(**args)
     elif isinstance(d, Text):
         return trial.suggest_categorical(d.id, d.value_set)
 
@@ -96,15 +109,22 @@ def _create_argument(d: Dimension, trial: optuna.Trial):
 def convert_trial_to_dict(
     trial,
     input_space: InputSpace,
+    flat_mode:bool =False,
 ):
     """
     Calls a raxpy annotated function f with the arguments extracted
     from an Optuna trial.
     """
+    
     args = {}
 
+    if flat_mode:
+        flat_mode_d = args
+    else:
+        flat_mode_d = None
+
     for child in input_space.children:
-        args[child.local_id] = _create_argument(child, trial)
+        args[child.local_id] = _create_argument(child, trial, flat_mode_d)
 
     return args
 

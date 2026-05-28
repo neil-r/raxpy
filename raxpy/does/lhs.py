@@ -160,13 +160,19 @@ class WorkingDesignOfExpertiment:
 
     def inject(self, new_dims, data_points, parent_mask):
         for i, dim in enumerate(new_dims):
-            self.column_map[self.active_index] = dim
-            self.input_set_map[dim.id] = self.active_index
-            self.final_data_points[parent_mask, self.active_index] = (
-                data_points[:, i]
-            )
+            if dim.id not in self.input_set_map:
+                self.column_map[self.active_index] = dim
+                self.input_set_map[dim.id] = self.active_index
+                self.final_data_points[parent_mask, self.active_index] = (
+                    data_points[:, i]
+                )
 
-            self.active_index += 1
+                self.active_index += 1
+            else:
+                dim_index = self.input_set_map[dim.id]
+                self.final_data_points[parent_mask, dim_index] = data_points[
+                    :, i
+                ]
 
 
 def _init_merge_with_shadown_design(working_design, base_creator):
@@ -287,10 +293,9 @@ def generate_design_by_tree_traversal(
     the deepest child dimensions.
 
     The working-parent designs dictate which points need children values.
-    To merge the child designs to the parent designs, the distances between
-    the working design and the child design are computed.  The child points
-    are mapped in order from the largest distance to the working-parent
-    designs smallest distances.
+    To merge the child designs to the parent designs, the a merge method 
+    can be defined; the default method is to use a discrepancy optimization
+    approach.
 
     Arguments
     ---------
@@ -358,23 +363,33 @@ def generate_design_by_tree_traversal(
                 )
 
         for active_dims, parent_mask, points_to_create in parts:
-            data_points = base_creator(len(active_dims), points_to_create)
-            if base_level:
-                data_points = init_strategy(data_points)
-                parent_mask = [True for _ in range(n_points)]
+            dim_count = len(active_dims)
+            if dim_count == 0 or points_to_create == 0:
+                pass
             else:
-                data_points = merge_strategy(data_points, parent_mask)
+                data_points = base_creator(dim_count, points_to_create)
+                if base_level:
+                    data_points = init_strategy(data_points)
+                    parent_mask = [True for _ in range(n_points)]
+                else:
+                    data_points = merge_strategy(data_points, parent_mask)
 
-            working_design.inject(active_dims, data_points, parent_mask)
+                working_design.inject(active_dims, data_points, parent_mask)
 
     # decoded_values = space.decode_zero_one_matrix(
     #    final_data_points, input_set_map
     # )
+    input_set_map = working_design.input_set_map
+    input_sets = working_design.final_data_points
+    if working_design.active_index != space.count_dimensions():
+        # resize input_sets to only include the columns that were filled
+        print("WARNING: not all dimensions were included in the design")
+        input_sets = input_sets[:, : working_design.active_index]
 
     return DesignOfExperiment(
         input_space=space,
-        input_sets=working_design.final_data_points,
-        input_set_map=working_design.input_set_map,
+        input_sets=input_sets,
+        input_set_map=input_set_map,
         encoding=EncodingEnum.ZERO_ONE_RAW_ENCODING,
     )
 
@@ -519,14 +534,14 @@ def generate_design_by_level_opt_merge(
 def _check_if_child_in_sub_space_allocation(dim, active_dim_ids):
     if dim.id in active_dim_ids:
         return True
-    elif isinstance(dim, Composite) and not dim.nullable:
-        # must handle case when Composite it only used for structure of children dimensions
-        for child_dim in dim.children:
-            c = _check_if_child_in_sub_space_allocation(
-                child_dim, active_dim_ids
-            )
-            if c:
-                return True
+    #elif isinstance(dim, Composite) and not dim.nullable:
+    #    # must handle case when Composite it only used for structure of children dimensions
+    #    for child_dim in dim.children:
+    #        c = _check_if_child_in_sub_space_allocation(
+    #            child_dim, active_dim_ids
+    #        )
+    #        if c:
+    #            return True
     return False
 
 
@@ -614,7 +629,7 @@ def generate_seperate_designs_by_full_subspace(
                 part_input_set_map[dim.id] = i
 
             decoded_data_points = space.decode_zero_one_matrix(
-                data_points, part_input_set_map, utilize_null_portitions=False
+                data_points, part_input_set_map, utilize_null_portions=False
             )
 
             for i, dim in enumerate(active_dims):
@@ -635,28 +650,29 @@ def generate_seperate_designs_by_full_subspace(
         if len(fixed_dims) > 0:
 
             for dim in fixed_dims:
-                if dim.id not in input_set_map:
-                    dim_index = active_index
-                    active_index += 1
+                if not dim.only_supports_spec_structure():
+                    if dim.id not in input_set_map:
+                        dim_index = active_index
+                        active_index += 1
 
-                    column_map[dim_index] = dim
-                    input_set_map[dim.id] = dim_index
-                else:
-                    dim_index = input_set_map[dim.id]
+                        column_map[dim_index] = dim
+                        input_set_map[dim.id] = dim_index
+                    else:
+                        dim_index = input_set_map[dim.id]
 
-                # determine value to inject into final data points
-                if isinstance(dim, Composite):
-                    v = 1
-                else:
-                    # if Variant type must determine the child dimension active
-                    for i, child_dim in enumerate(dim.children):
-                        if _check_if_child_in_sub_space_allocation(
-                            child_dim, sub_space_allocation.active_dim_ids
-                        ):
-                            v = i
-                            break
+                    # determine value to inject into final data points
+                    if isinstance(dim, Composite):
+                        v = 1
+                    else:
+                        # if Variant type must determine the child dimension active
+                        for i, child_dim in enumerate(dim.children):
+                            if _check_if_child_in_sub_space_allocation(
+                                child_dim, sub_space_allocation.active_dim_ids
+                            ):
+                                v = i
+                                break
 
-                final_data_points[row_mask, dim_index] = v
+                    final_data_points[row_mask, dim_index] = v
 
     # adjust if some dimensions never sampled
     if total_dim_count > len(input_set_map):
@@ -671,6 +687,11 @@ def generate_seperate_designs_by_full_subspace(
 
 
 class ValuePool:
+    """
+    A class that manages a pool of values for a dimension, allowing for the
+    selection of values in a way that supports Latin Hypercube Sampling (LHS)
+    and ensures that values are not reused until necessary.
+    """
 
     def __init__(self, value_count, outline_mode=True):
         # outline mode supports creating design points at the dimension bounds
@@ -855,18 +876,16 @@ def generate_seperate_designs_by_full_subspace_and_pool(
             from .scipy_optimizations import random_cd
 
             data_points = random_cd(data_points, 20000, 200, rng=rng)
-            print(data_points)
 
             part_input_set_map = {}
             for i, dim in enumerate(active_dims):
                 part_input_set_map[dim.id] = i
 
             decoded_data_points = space.decode_zero_one_matrix(
-                data_points, part_input_set_map, utilize_null_portitions=False
+                data_points, part_input_set_map, utilize_null_portions=False
             )
 
             for i, dim in enumerate(active_dims):
-
                 if dim.id not in input_set_map:
                     dim_index = active_index
                     active_index += 1
@@ -883,28 +902,29 @@ def generate_seperate_designs_by_full_subspace_and_pool(
         if len(fixed_dims) > 0:
 
             for dim in fixed_dims:
-                if dim.id not in input_set_map:
-                    dim_index = active_index
-                    active_index += 1
+                if not dim.only_supports_spec_structure():
+                    if dim.id not in input_set_map:
+                        dim_index = active_index
+                        active_index += 1
 
-                    column_map[dim_index] = dim
-                    input_set_map[dim.id] = dim_index
-                else:
-                    dim_index = input_set_map[dim.id]
+                        column_map[dim_index] = dim
+                        input_set_map[dim.id] = dim_index
+                    else:
+                        dim_index = input_set_map[dim.id]
 
-                # determine value to inject into final data points
-                if isinstance(dim, Composite):
-                    v = 1
-                else:
-                    # if Variant type must determine the child dimension active
-                    for i, child_dim in enumerate(dim.children):
-                        if _check_if_child_in_sub_space_allocation(
-                            child_dim, sub_space_allocation.active_dim_ids
-                        ):
-                            v = i
-                            break
+                    # determine value to inject into final data points
+                    if isinstance(dim, Composite):
+                        v = 1
+                    else:
+                        # if Variant type must determine the child dimension active
+                        for i, child_dim in enumerate(dim.children):
+                            if _check_if_child_in_sub_space_allocation(
+                                child_dim, sub_space_allocation.active_dim_ids
+                            ):
+                                v = i
+                                break
 
-                final_data_points[row_mask, dim_index] = v
+                    final_data_points[row_mask, dim_index] = v
 
     # adjust if some dimensions never sampled
     if total_dim_count > len(input_set_map):
@@ -942,11 +962,15 @@ def generate_design_with_projection(
     active_dims = list(
         create_all_iterable(space.children, skip_structual_dims=True)
     )
+    duplicate_count = 0
     input_set_map = {}
     for i, dim in enumerate(active_dims):
-        input_set_map[dim.id] = i
+        if dim.id in input_set_map:
+            duplicate_count += 1
+        else:
+            input_set_map[dim.id] = i - duplicate_count
 
-    data_points = base_creator(len(active_dims), n_points)
+    data_points = base_creator(len(active_dims)-duplicate_count, n_points)
 
     return DesignOfExperiment(
         input_space=space,

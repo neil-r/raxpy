@@ -63,7 +63,7 @@ METRIC_MIN_POINT_DISTANCE = "max_min_point_distance"
 
 
 def determine_relevant_dimensions(
-    design: DesignOfExperiment, point
+    design: DesignOfExperiment, point, include_constants=True
 ) -> List[str]:
     """
     Dervies the non-null and active dimensions from a point
@@ -88,14 +88,14 @@ def determine_relevant_dimensions(
         children_set = children_sets.pop(0)
         for dim in s.create_level_iterable(children_set):
             if dim.id in design.input_set_map:
-                if isinstance(dim, s.Variant):
-                    raise NotImplementedError(
-                        "Relevant dimensions given Variant not implemented"
-                    )
                 d_index = design.input_set_map[dim.id]
-                relevant_dims.append(dim.id)
+                if include_constants or not dim.is_constant():
+                    relevant_dims.append(dim.id)
 
-                if (
+                if isinstance(dim, s.Variant) and not np.isnan(point[d_index]):
+                    child = dim.options[int(point[d_index])]
+                    children_sets.append([child])
+                elif (
                     dim.has_child_dimensions()
                     and not np.isnan(point[d_index])
                     and point[d_index] > 0.0
@@ -201,7 +201,7 @@ def compute_star_discrepancy(
     # determine which vairant dimensions are active for each point
     for point in x:
         # determine relevant dimensions for point
-        relevant_dims_set = tuple(determine_relevant_dimensions(design, point))
+        relevant_dims_set = tuple(determine_relevant_dimensions(design, point, False))
 
         if relevant_dims_set not in relevant_dim_sets_proj_map:
             projection_sets = []
@@ -268,6 +268,10 @@ def compute_star_discrepancy(
             portion_of_points_in_region = point_count_in_projection_region / n
 
             ppd = abs(portion_of_points_in_region - region_volumn_percent)
+
+            if ppd == 1.0:
+                #print("Here") # TODO: DEBUG WHY THIS OCCURS
+                pass
 
             point_projection_discrepancies.append(ppd)
 

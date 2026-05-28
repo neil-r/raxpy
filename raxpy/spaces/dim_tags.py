@@ -6,9 +6,9 @@ treat the dimensions.
 
 # Input Dimension Tags
 
-FIXED = "fixed"
+CONSTANT = "constant"
 """
-Flag to indicate an input dimension as fixed or static (not to change
+Flag to indicate an input dimension as constant or static (not to change
 and to always use the default value during exploration).
 """
 

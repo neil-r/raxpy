@@ -1,4 +1,5 @@
-""" TODO Explain Module"""
+"""
+Tests for the creation of space-filling designs of experiments (DOEs)."""
 
 import numpy as np
 
@@ -232,7 +233,8 @@ def test_creation_of_space_filling_by_subspaces():
 
 def test_creation_of_space_filling_by_subspaces_with_value_pool():
     """
-    TODO Explain the Function
+    Tests the creation of a space-filling design by generating separate designs
+    for each full subspace with a pool of values.
 
     Asserts
     -------
@@ -257,6 +259,23 @@ def test_creation_of_space_filling_by_subspaces_with_value_pool():
     assert_every_point_in_a_full_sub_space(
         sub_spaces_list=SUB_SPACES, design=design
     )
+
+
+    rng = np.random.default_rng(seed=42)
+    design1 = doe.generate_seperate_designs_by_full_subspace_and_pool(
+        SPACE, 100, rng=rng
+    )
+
+    rng2 = np.random.default_rng(seed=42)
+    design2 = doe.generate_seperate_designs_by_full_subspace_and_pool(
+        SPACE, 100, rng=rng2
+    )
+
+    assert design1 is not None
+    assert design1.point_count == 100
+    assert design2 is not None
+    assert design2.point_count == 100
+    assert np.allclose(design1.input_sets, design2.input_sets, equal_nan=True)
 
 
 def test_creation_of_space_filling_by_subspaces_null_fill():
