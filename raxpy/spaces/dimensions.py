@@ -1024,7 +1024,7 @@ class Variant(Dimension):
                     value = input_value.content
                     dim.validate(value, specified_input)
 
-    def get_discrete_values(self) -> Optional[List[str | int | float]]:
+    def get_discrete_values(self) -> Optional[List[Union[str, int, float]]]:
         """
         Gets the discrete values represented by this dimension if applicable.
 
