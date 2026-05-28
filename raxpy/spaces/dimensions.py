@@ -16,8 +16,11 @@ from typing import (
     Union,
     cast,
 )
+import math
 
 import numpy as np
+
+from . import dim_tags
 
 
 T = TypeVar("T")
@@ -279,6 +282,25 @@ class Dimension(Generic[T]):
             "Abstract method, subclass should implement this method"
         )
 
+    @property
+    def decoded_type(self) -> Type:
+        """
+        Returns the numpy array type of the decoded values for this dimension
+
+        Arguments
+        ---------
+        self
+            the dimension
+
+        Returns
+        -------
+            Type: the numpy array type of the decoded values for this dimension
+
+        """
+        raise NotImplementedError(
+            "Abstract method, subclass should implement this method"
+        )
+
     def validate(self, input_value, specified_input: bool):
         """
         Validates the input_value given self's
@@ -318,6 +340,16 @@ class Dimension(Generic[T]):
             raise ValueError(
                 f"Invalid value type, dimension '{self.id}' should be a {T}"
             )
+        
+    def is_constant(self) -> bool:
+        """
+        Checks if the dimension is tagged as constant.
+
+        Returns
+        -------
+            bool: True if the dimension is tagged as constant, False otherwise
+        """
+        return self.has_tag(dim_tags.CONSTANT)
 
 
 @dataclass
@@ -353,7 +385,14 @@ class Int(Dimension[int]):
             vs = self.value_set
         else:
             if self.lb is not None and self.ub is not None:
-                vs = list(range(self.lb, self.ub + 1))
+                if self.has_tag(dim_tags.LOG):
+                    floats = _transform(x, self.lb, self.ub, self.has_tag(dim_tags.LOG), utilize_null_portions, self.portion_null)
+                    return np.array(list(
+                        max(min(round(xp),self.ub),self.lb) if not np.isnan(xp) else np.nan
+                        for xp in floats
+                    ))
+                else:
+                    vs = list(range(self.lb, self.ub + 1))
 
         if vs is not None:
             return _map_values(
@@ -381,9 +420,16 @@ class Int(Dimension[int]):
 
         possible_values = self.value_set
         if possible_values is None:
-            possible_values = list(
-                range(cast(int, self.lb), cast(int, self.ub) + 1)
-            )
+            if self.has_tag(dim_tags.LOG):
+                def mapping_f(x_value):
+                    if np.isnan(x_value):
+                        return x_value
+                    return (math.log(x_value) - math.log(self.lb)) / (math.log(self.ub) - math.log(self.lb))
+                return np.array(list(map(mapping_f, x)))
+            else:
+                possible_values = list(
+                    range(cast(int, self.lb), cast(int, self.ub) + 1)
+                )
 
         c = len(possible_values)
         map_dict = {}
@@ -428,12 +474,34 @@ class Int(Dimension[int]):
                     f"Invalid value, the value {input_value} is not in the "
                     f"value set {self.value_set}"
                 )
+    
+    def get_discrete_values(self) -> Optional[List[int]]:
+        """
+        Gets the discrete values represented by this dimension if applicable.
+
+        Returns
+        -------
+            Optional[List[int]]: the discrete values represented by this dimension if applicable, None otherwise
+        """
+        if self.value_set is not None:
+            return list(self.value_set)
+        elif self.lb is not None and self.ub is not None:
+            return list(range(self.lb, self.ub + 1))
+        else:
+            return None
 
     def acceptable_types(self):
         """
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (int,)
+
+    @property
+    def decoded_type(self) -> Type:
+        """
+        Implementation of abstract method. See `Dimension.decoded_type`.
+        """
+        return np.object_
 
 
 @dataclass
@@ -471,7 +539,70 @@ class Bool(Int):
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (bool,)
+    
+    @property
+    def decoded_type(self) -> Type:
+        """
+        Implementation of abstract method. See `Dimension.decoded_type`.
+        """
+        return np.object_
 
+
+def _transform(x, lb, ub, use_log, utilize_null_portions, portion_null):
+    """
+    Transforms a 0-1 array x to a range of values specified by lb and ub, with the option of using log scale and considering null_portions.
+    Arguments
+    ---------
+    x an array of 0-1 values
+    lb  the lower bound 
+    ub the upper bound
+    use_log       whether to use log scale for the transformation
+    utilize_null_portions   whether to consider the portion_null attribute to assign null values
+    portion_null   the threshold of the 0-1 range to map to null values if utilize_null_portions is True
+    """
+    r = ub - lb
+            
+    if portion_null is not None and utilize_null_portions:
+        if use_log:
+            return [
+                (
+                    math.exp(math.log(lb) + (
+                        (xp - portion_null)
+                        / (1.0 - portion_null)
+                    ) * (math.log(ub) - math.log(lb)))
+                    if xp is not None and not np.isnan(xp) and xp > portion_null
+                    else np.nan
+                )
+                for xp in x
+            ]
+        else:
+            return [
+                (
+                    lb
+                    + r
+                    * (
+                        (xp - portion_null)
+                        / (1.0 - portion_null)
+                    )
+                    if xp is not None and not np.isnan(xp) and xp > portion_null
+                    else np.nan
+                )
+                for xp in x
+            ]
+    else:
+        if use_log:
+            return [
+                (
+                    math.exp(math.log(lb) + (
+                        xp
+                    ) * (math.log(ub) - math.log(lb)))
+                )
+                for xp in x
+            ]
+        else:
+            return [
+                lb + r * xp if xp is not None else None for xp in x
+            ]
 
 @dataclass
 class Float(Dimension[float]):
@@ -508,25 +639,8 @@ class Float(Dimension[float]):
             )
 
         if self.lb is not None and self.ub is not None:
-            r = self.ub - self.lb
-            if self.portion_null is not None and utilize_null_portions:
-                return [
-                    (
-                        self.lb
-                        + r
-                        * (
-                            (xp - self.portion_null)
-                            / (1.0 - self.portion_null)
-                        )
-                        if xp is not None and xp > self.portion_null
-                        else None
-                    )
-                    for xp in x
-                ]
-            else:
-                return [
-                    self.lb + r * xp if xp is not None else None for xp in x
-                ]
+            return _transform(x, self.lb, self.ub, self.has_tag(dim_tags.LOG), utilize_null_portions, self.portion_null)
+            
         raise ValueError(
             "Unbounded Float dimension cannot transform a uniform 0-1 value"
         )
@@ -567,15 +681,22 @@ class Float(Dimension[float]):
 
             mapping_f = mapping_f1
         elif self.lb is not None and self.ub is not None:
+            if self.has_tag(dim_tags.LOG):
+                def mapping_f2(x_value):
+                    if np.isnan(x_value):
+                        return x_value
+                    return (math.log(x_value) - math.log(self.lb)) / (math.log(self.ub) - math.log(self.lb))
 
-            def mapping_f2(x_value):
-                if np.isnan(x_value):
-                    return x_value
-                return (x_value - self.lb) / (
-                    cast(float, self.ub) - cast(float, self.lb)
-                )
+                mapping_f = mapping_f2
+            else:
+                def mapping_f2(x_value):
+                    if np.isnan(x_value):
+                        return x_value
+                    return (x_value - self.lb) / (
+                        cast(float, self.ub) - cast(float, self.lb)
+                    )
 
-            mapping_f = mapping_f2
+                mapping_f = mapping_f2
 
         return np.array(list(map(mapping_f, x)))
 
@@ -617,11 +738,31 @@ class Float(Dimension[float]):
         """
         return self.value_set is not None
 
+    def get_discrete_values(self) -> Optional[List[float]]:
+        """
+        Gets the discrete values represented by this dimension if applicable.
+
+        Returns
+        -------
+            Optional[List[float]]: the discrete values represented by this dimension if applicable, None otherwise
+        """
+        if self.value_set is not None:
+            return list(self.value_set)
+        else:
+            return None
+
     def acceptable_types(self):
         """
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (float,)
+    
+    @property
+    def decoded_type(self) -> Type:
+        """
+        Implementation of abstract method. See `Dimension.decoded_type`.
+        """
+        return np.float32
 
 
 @dataclass
@@ -657,6 +798,25 @@ class Text(Dimension[str]):
             return v.value if isinstance(v, CategoryValue) else v
 
         return str(input_value)
+
+    def reverse_decoding(self, x):
+        """
+        Implementation of abstract method. See `Dimension.reverse_decoding`.
+        """
+        if self.value_set is not None:
+
+            def mapping_f(x_value):
+                if (
+                    np.isnan(x_value)
+                 ):
+                    return np.nan
+                return x_value/(len(self.value_set)-1)
+
+            return np.array(list(map(mapping_f, x)))
+        else:
+            raise NotImplementedError(
+                "Unable to reverse decode Text dimension without a value set"
+            )
 
     def collapse_uniform(self, x, utilize_null_portions=True):
         """
@@ -702,12 +862,32 @@ class Text(Dimension[str]):
                     f"Invalid value, the value {input_value} is not in the "
                     f"value set {self.value_set}"
                 )
+            
+    def get_discrete_values(self) -> Optional[List[str]]:
+        """
+        Gets the discrete values represented by this dimension if applicable.
+
+        Returns
+        -------
+            Optional[List[str]]: the discrete values represented by this dimension if applicable, None otherwise
+        """
+        if self.value_set is not None:
+            return [v.value if isinstance(v, CategoryValue) else v for v in self.value_set]
+        else:
+            return None
 
     def acceptable_types(self):
         """
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (str,)
+    
+    @property
+    def decoded_type(self) -> Type:
+        """
+        Implementation of abstract method. See `Dimension.decoded_type`.
+        """
+        return np.str_
 
 
 @dataclass
@@ -801,22 +981,35 @@ class Variant(Dimension):
         """
         return True
 
-    def count_children_dimensions(self) -> int:
+    def count_children_dimensions(self, seen_ids: set) -> int:
         """
         Recursively counts the number of children dimensions
+
+        Arguments:
+        seen_ids
+            a set of dimension ids that have been seen in the recursive calls so
+            far to avoid infinite recursion in the case of cycles in the dimension graph
+            and to ensure that shared dimensions are only counted once
 
         Returns
         -------
             int: the number of children dimensions
         """
+
+        def _seen(c):
+            if c.id in seen_ids:
+                return True
+            else:
+                seen_ids.add(c.id)
+                return False
         return sum(
             [
                 (
-                    cast(ChildrenTypes, c).count_children_dimensions()
+                    cast(ChildrenTypes, c).count_children_dimensions(seen_ids)
                     if c.has_child_dimensions()
                     else 1
                 )
-                for c in cast(List[Dimension], self.options)
+                for c in cast(List[Dimension], self.options) if not _seen(c)
             ]
         )
 
@@ -831,6 +1024,22 @@ class Variant(Dimension):
                     value = input_value.content
                     dim.validate(value, specified_input)
 
+    def get_discrete_values(self) -> Optional[List[Union[str, int, float]]]:
+        """
+        Gets the discrete values represented by this dimension if applicable.
+
+        Returns
+        -------
+            Optional[List[str | int | float]]: the discrete values represented by this dimension if applicable, None otherwise
+        """
+        if self.options is not None:
+            # The following assumes that the options are a Composite dimension with a
+            # class_name attribute that corresponds to the value of the option, may
+            # want to reassess this logic 
+            return [dim.class_name for dim in self.options]
+        else:
+            return None
+
     def acceptable_types(self):
         """
         Implementation of abstract method. See `Dimension.acceptable_types`.
@@ -839,6 +1048,13 @@ class Variant(Dimension):
         for option in cast(List[Dimension], self.options):
             at += option.acceptable_types()
         return tuple(at)
+    
+    @property
+    def decoded_type(self) -> Type:
+        """
+        Implementation of abstract method. See `Dimension.decoded_type`.
+        """
+        return np.object_
 
 
 @dataclass
@@ -942,9 +1158,9 @@ class Composite(Dimension):
         """
         Implementation of abstract method. See `Dimension.has_child_dimensions`.
         """
-        return True
+        return True # if self.children is not None and len(self.children) > 0 else False
 
-    def count_children_dimensions(self) -> int:
+    def count_children_dimensions(self, seen_ids: set) -> int:
         """
         Recursively counts the number of children dimensions
 
@@ -952,6 +1168,12 @@ class Composite(Dimension):
         -------
             int: the number of children dimensions
         """
+        def _seen(c):
+            if c.id in seen_ids:
+                return True
+            else:
+                seen_ids.add(c.id)
+                return False
         return sum(
             [
                 (
@@ -959,10 +1181,10 @@ class Composite(Dimension):
                     if not c.has_child_dimensions()
                     else (
                         (0 if c.only_supports_spec_structure() else 1)
-                        + (cast(ChildrenTypes, c).count_children_dimensions())
+                        + (cast(ChildrenTypes, c).count_children_dimensions(seen_ids))
                     )
                 )
-                for c in cast(List[Dimension], self.children)
+                for c in cast(List[Dimension], self.children) if not _seen(c)
             ]
         )
 
@@ -986,6 +1208,13 @@ class Composite(Dimension):
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (self.type_class,)
+    
+    @property
+    def decoded_type(self) -> Type:
+        """
+        Implementation of abstract method. See `Dimension.decoded_type`.
+        """
+        return np.object_
 
 
 ChildrenTypes = Union[Composite, Variant]

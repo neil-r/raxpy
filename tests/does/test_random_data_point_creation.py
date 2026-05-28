@@ -1,4 +1,6 @@
-"""TODO Explain Module"""
+"""
+Tests for the creation of random data points in a design of experiment (DOE).
+"""
 
 import numpy as np
 
@@ -16,20 +18,35 @@ def test_creation_of_random_doe():
     design created and every point belongs to a sub-space
 
     """
-    design = r.generate_design(sf_doe.SPACE, n_points=10)
+    design1 = r.generate_design(sf_doe.SPACE, n_points=10)
+    
 
+    assert design1 is not None
+    assert design1.point_count == 10
+    sf_doe.assert_every_point_in_a_full_sub_space(sf_doe.SUB_SPACES, design1)
+
+    rng = np.random.default_rng(seed=42)
+    design = r.generate_design(sf_doe.SPACE, n_points=10, rng=rng)
     assert design is not None
     assert design.point_count == 10
     sf_doe.assert_every_point_in_a_full_sub_space(sf_doe.SUB_SPACES, design)
-
+    rng2 = np.random.default_rng(seed=42)
+    design2 = r.generate_design(sf_doe.SPACE, n_points=10, rng=rng2)
+    assert design2 is not None
+    assert design2.point_count == 10
+    sf_doe.assert_every_point_in_a_full_sub_space(sf_doe.SUB_SPACES, design2)
+    # make sure the same seed produces the same design
+    assert np.all(design.input_sets == design2.input_sets)
+    assert np.any(design1.input_sets != design2.input_sets)
 
 def test_collapse_of_random_numbers():
     """
-    TODO Explain the Function
+    Tests the collapse of random numbers to a design.
 
     Asserts
     -------
-    **Explanation**
+    the collapse of random numbers to a design is consistent with the design's
+    input space
 
     """
     space = s.Space(
@@ -65,11 +82,12 @@ def test_collapse_of_random_numbers():
         ]
     )
     assert space.count_dimensions() == 9
-
+    
     flatted_dimensions = s.create_all_iterable(space.children)
     dim_map = {}
     for i, dim in enumerate(flatted_dimensions):
         dim_map[dim.local_id] = i
+    np.random.seed(42)
     random_x = np.random.rand(10, 9)
     collapsed_x = space.decode_zero_one_matrix(
         random_x, dim_map, map_null_to_children_dim=True

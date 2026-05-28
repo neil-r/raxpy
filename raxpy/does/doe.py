@@ -13,8 +13,18 @@ from ..spaces.root import InputSpace
 
 
 class EncodingEnum(str, Enum):
+    """Enum representing the encoding of the design of experiment."""
+
+    # raw zero-one encoding, where nulls are not represented and discrete
+    # values are not mapped to indicies
     ZERO_ONE_RAW_ENCODING = "0-1-raw"
+    
+    # zero-one encoding where nulls are represented as np.nan and discrete
+    # values are not mapped to indicies
     ZERO_ONE_NULL_ENCODING = "0-1-null"
+
+    # no encoding, the design is represented as decoded values, with np.nan
+    # representing nulls and indicies representing discrete values
     NONE = "decoded"
 
 
@@ -110,14 +120,14 @@ class DesignOfExperiment:
                     self.input_sets,
                     self.input_set_map,
                     map_null_to_children_dim=False,
-                    utilize_null_portitions=False,
+                    utilize_null_portions=False,
                 )
             elif self.encoding == EncodingEnum.ZERO_ONE_RAW_ENCODING:
                 self._decoded_cache = self.input_space.decode_zero_one_matrix(
                     self.input_sets,
                     self.input_set_map,
                     map_null_to_children_dim=True,
-                    utilize_null_portitions=True,
+                    utilize_null_portions=True,
                 )
             else:
                 self._decoded_cache = self.input_sets

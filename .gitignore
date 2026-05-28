@@ -93,11 +93,15 @@ ipython_config.py
 .DS_Store
 
 # Virtual Environment files
+venv*
 venv
 .venv
 
 # VS Code Files
 .vscode/launch.json
+
+# output files saved to local directory
+*_output*
 
 # README Test
 READMEPANDAS.md

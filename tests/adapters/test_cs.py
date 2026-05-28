@@ -68,14 +68,22 @@ def create_complex_configspace() -> ConfigurationSpace:
     )
 
     # 3. Add the defined hyperparameters to the configuration space.
-    cs.add(
+    cs.add_hyperparameters(
         [learning_rate, n_estimators, activation, optimizer_level, use_dropout]
     )
 
     return cs
 
 
-from ConfigSpace.conditions import InCondition
+from ConfigSpace.conditions import (
+    InCondition,
+    EqualsCondition,
+    NotEqualsCondition,
+    AndConjunction,
+    OrConjunction,
+    LessThanCondition,
+    GreaterThanCondition,
+)
 from ConfigSpace.hyperparameters import (
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
@@ -103,7 +111,7 @@ def create_complex_configspace_with_conditions() -> ConfigurationSpace:
     )
 
     # 3. Add the defined hyperparameters to the configuration space.
-    cs.add(
+    cs.add_hyperparameters(
         [
             dropout_rate,
         ]
@@ -116,7 +124,7 @@ def create_complex_configspace_with_conditions() -> ConfigurationSpace:
     )
 
     # 5. Add the condition to the configuration space.
-    cs.add(dropout_condition)
+    cs.add_condition(dropout_condition)
 
     return cs
 
@@ -175,8 +183,11 @@ def test_conditional_config_space():
 
     threw_exception = False
     try:
-        convert_config_space(cs)
+        input_space = convert_config_space(cs)
     except NotImplementedError:
         threw_exception = True
 
-    assert threw_exception
+    assert not threw_exception
+
+    assert input_space is not None
+
