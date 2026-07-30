@@ -4,10 +4,11 @@ the designing and execution of experiments.
 """
 
 import sys
+import os
+import pickle
 from typing import Optional, Union
 from functools import partial
 import numpy as np
-
 
 if sys.version_info >= (3, 10):
     from typing import Callable, TypeVar, List, ParamSpec, Tuple, Dict
@@ -30,12 +31,15 @@ from raxpy.does import lhs
 from raxpy.does import maxpro
 from raxpy.does import random
 
-
 T = TypeVar("T")
-I = ParamSpec("I")
+P = ParamSpec("P")
 
 
-def _default_orchistrator(f: Callable[I, T], inputs: List[Dict]) -> List[T]:
+def _default_orchistrator(
+    f: Callable[P, T],
+    inputs: List[Dict],
+    session_folder: Optional[str] = None,
+) -> List[T]:
     """
     Simply executes the function f sequentially,
     saving and returning the results
@@ -46,6 +50,8 @@ def _default_orchistrator(f: Callable[I, T], inputs: List[Dict]) -> List[T]:
         the function to execute
     inputs : List[I]
         the values to pass into the function
+    session_folder : Optional[str]
+        If specified, the folder to save the results of the experiment
 
     Returns
     -------
@@ -54,8 +60,55 @@ def _default_orchistrator(f: Callable[I, T], inputs: List[Dict]) -> List[T]:
     """
     results = []
 
-    for arg_set in inputs:
-        results.append(f(**arg_set))  # type: ignore
+    for i, arg_set in enumerate(inputs):
+        already_saved = False
+        result = None
+        result_file_path = ""
+        if session_folder is not None:
+            # Check to see if the results have already been saved for this
+            # input set
+            result_file_path = os.path.join(session_folder, f"result_{i}.pkl")
+            if os.path.exists(result_file_path):
+                with open(result_file_path, "rb") as fi:
+                    result = pickle.load(fi)
+                already_saved = True
+
+        if not already_saved:
+            # redirect stdout and stderr to files in the session folder
+            if session_folder is not None:
+                stdout_file_path = os.path.join(
+                    session_folder, f"stdout_{i}.txt"
+                )
+                stderr_file_path = os.path.join(
+                    session_folder, f"stderr_{i}.txt"
+                )
+                with (
+                    open(
+                        stdout_file_path, "w", encoding="utf-8"
+                    ) as stdout_file,
+                    open(
+                        stderr_file_path, "w", encoding="utf-8"
+                    ) as stderr_file,
+                ):
+                    sys.stdout = stdout_file
+                    sys.stderr = stderr_file
+                    try:
+                        result = f(**arg_set)  # type: ignore
+                    except Exception as e:
+                        # If an exception occurs, write it to the stderr file
+                        print(f"Exception occurred while executing f: {e}")
+                        raise e
+                    finally:
+                        # Reset stdout and stderr to their original values
+                        sys.stdout = sys.__stdout__
+                        sys.stderr = sys.__stderr__
+            else:
+                result = f(**arg_set)  # type: ignore
+            if session_folder is not None:
+                # Save the results to the specified folder
+                with open(result_file_path, "wb") as fi:
+                    pickle.dump(result, fi)
+        results.append(result)  # type: ignore
 
     return results
 
@@ -91,14 +144,15 @@ def _default_designer(
 
 
 def perform_experiment(
-    f: Callable[I, T],
+    f: Callable[P, T],
     n_points: int,
     designer: Callable[
         [InputSpace, int, Optional[int]], DesignOfExperiment
     ] = _default_designer,
     orchistrator: Callable[
-        [Callable[I, T], List[Dict]], List[T]
+        [Callable[P, T], List[Dict], Optional[str]], List[T]
     ] = _default_orchistrator,
+    session_folder: Optional[str] = None,
     seed: Optional[int] = None,
 ) -> Tuple[DesignOfExperiment, List[Dict], List[T]]:
     """
@@ -121,6 +175,8 @@ def perform_experiment(
         with.
     designer : Callable[[InputSpace, int], List[I], Optional[int]]
         A function that designs the experiment
+    session_folder : Optional[str]
+        If specified, the folder to save the results of the experiment
     orchistrator : Callable[[Callable[I, T], List[I]], List[T]]
         A function that executes the experiment on f
 
@@ -132,25 +188,46 @@ def perform_experiment(
         the values returned from f for each point
     """
 
-    input_space = function_spec.extract_input_space(f)
-    design = designer(input_space, n_points, seed)
+    if session_folder is not None:
+        if os.path.exists(session_folder):
+            if not os.path.isdir(session_folder):
+                raise ValueError(
+                    f"session_folder {session_folder} exists "
+                    "but is not a directory"
+                )
+        else:
+            os.makedirs(session_folder, exist_ok=True)
+
+        design_file_path = os.path.join(session_folder, "design.pkl")
+        if os.path.exists(design_file_path):
+            with open(design_file_path, "rb") as fi:
+                design = pickle.load(fi)
+                input_space = design.input_space
+        else:
+            input_space = function_spec.extract_input_space(f)
+            design = designer(input_space, n_points, seed)
+            with open(design_file_path, "wb") as fi:
+                pickle.dump(design, fi)
+    else:
+        input_space = function_spec.extract_input_space(f)
+        design = designer(input_space, n_points, seed)
+
     value_dicts = input_space.convert_flat_values_to_dict(
         design.decoded_input_sets, design.input_set_map
     )
-
     arg_sets = list(
         convert_values_from_dict(input_space.dimensions, value_dict)
         for value_dict in value_dicts
     )
 
-    results = orchistrator(f, arg_sets)
+    results = orchistrator(f, arg_sets, session_folder)
     return design, arg_sets, results
 
 
 def design_experiment(
     subject: Union[
         InputSpace,
-        Callable[I, T],
+        Callable[P, T],
     ],
     n_points: int,
     design_algorithm=lhs.generate_seperate_designs_by_full_subspace_and_pool,
