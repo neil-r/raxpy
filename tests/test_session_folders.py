@@ -72,7 +72,7 @@ def test_session_folder_skips_existing_results(tmp_path):
     assert inputs_1 == inputs_2  # The inputs should be the same since existing
 
 
-def test_no_session_folder(tmp_path):
+def test_no_session_folder():
     """
     Tests that the experiment runs without a session folder.
     """
