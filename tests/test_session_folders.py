@@ -70,3 +70,26 @@ def test_session_folder_skips_existing_results(tmp_path):
         outputs_1 == outputs_2
     )  # The outputs should be the same since existing results were skipped
     assert inputs_1 == inputs_2  # The inputs should be the same since existing
+
+
+def test_no_session_folder(tmp_path):
+    """
+    Tests that the experiment runs without a session folder.
+    """
+
+    # Define a simple function to test with
+    def f(x: Annotated[float, raxpy.Float(lb=0.0, ub=1.0)]) -> float:
+        return (
+            x**2 + random.random()
+        )  # Introduce randomness to test no session folder
+
+    # Perform the experiment with the session folder
+    _design_1, inputs_1, outputs_1 = raxpy.perform_experiment(f, n_points=5)
+
+    # Now perform the experiment again; it should skip existing results
+    _design_2, inputs_2, outputs_2 = raxpy.perform_experiment(f, n_points=5)
+
+    # Check that the results were not persisted and reloaded (i.e., they are
+    # different)
+    assert outputs_1 != outputs_2
+    assert inputs_1 != inputs_2
