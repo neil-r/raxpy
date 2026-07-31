@@ -82,6 +82,8 @@ def _default_orchistrator(
                 stderr_file_path = os.path.join(
                     session_folder, f"stderr_{i}.txt"
                 )
+                original_stdout = sys.stdout
+                original_stderr = sys.stderr
                 with (
                     open(
                         stdout_file_path, "w", encoding="utf-8"
@@ -96,12 +98,16 @@ def _default_orchistrator(
                         result = f(**arg_set)  # type: ignore
                     except Exception as e:
                         # If an exception occurs, write it to the stderr file
-                        print(f"Exception occurred while executing f: {e}")
+                        print(
+                            f"Exception occurred while executing f: {e}",
+                            file=sys.stderr,
+                        )
                         raise e
                     finally:
-                        # Reset stdout and stderr to their original values
-                        sys.stdout = sys.__stdout__
-                        sys.stderr = sys.__stderr__
+                        # Reset stdout and stderr to the values active
+                        # before redirection (important for notebooks).
+                        sys.stdout = original_stdout
+                        sys.stderr = original_stderr
             else:
                 result = f(**arg_set)  # type: ignore
             if session_folder is not None:
