@@ -48,7 +48,10 @@ def _ensure_composite_dim_id_in_list(lst_dim_ids, dim):
                 dim_ids.append(dim.id)
     return lst_dim_ids
 
-def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
+
+def derive_subspaces(
+    level: Iterable[Dimension], ensure_variant_composite_ids: bool = True
+) -> List[List[str]]:
     """
     Dervies every possible sub-spaces. Each sub-space defines a set
     of dimensions that corrospond to a valid set of non-null
@@ -58,6 +61,9 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
     ---------
     level : Interable[Dimension]
         The dimensions to consider
+    ensure_variant_composite_ids:bool=True
+        Ensures that the ids of composite within variant dimensions are included
+        in the sub-space lists
 
     Returns
     -------
@@ -76,11 +82,19 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
                 if isinstance(dim, Variant):
                     children_subspaces = []
                     for o in cast(List[Dimension], dim.children):
-                        children_subspaces += _ensure_composite_dim_id_in_list(
-                                derive_subspaces(
-                                    create_level_iterable([o])
-                                ), o
-                        )
+                        if ensure_variant_composite_ids:
+                            children_subspaces += (
+                                _ensure_composite_dim_id_in_list(
+                                    derive_subspaces(
+                                        create_level_iterable([o])
+                                    ),
+                                    o,
+                                )
+                            )
+                        else:
+                            children_subspaces += derive_subspaces(
+                                create_level_iterable([o])
+                            )
                 else:
                     children_subspaces = derive_subspaces(
                         create_level_iterable(
@@ -99,11 +113,14 @@ def derive_subspaces(level: Iterable[Dimension]) -> List[List[str]]:
                 required_dims.append(dim.id)
                 children_subspaces = []
                 for o in cast(List[Dimension], dim.children):
-                    children_subspaces += _ensure_composite_dim_id_in_list(
-                        derive_subspaces(
+                    if ensure_variant_composite_ids:
+                        children_subspaces += _ensure_composite_dim_id_in_list(
+                            derive_subspaces(create_level_iterable([o])), o
+                        )
+                    else:
+                        children_subspaces += derive_subspaces(
                             create_level_iterable([o])
-                        ), o
-                    )
+                        )
                 required_variant_expansion_map[dim.id] = children_subspaces
             else:
                 required_dims.append(dim.id)
@@ -175,10 +192,12 @@ class PathComponent:
     """
     A helper class to represent a component of a path to a dimension.
     """
-    def __init__(self, dimension_id: str, variant_option_index: Optional[int] = None):
+
+    def __init__(
+        self, dimension_id: str, variant_option_index: Optional[int] = None
+    ):
         self.dimension_id = dimension_id
         self.variant_option_index = variant_option_index
-
 
 
 def create_path_iterable(
@@ -186,7 +205,7 @@ def create_path_iterable(
 ) -> Iterable[Tuple[List[PathComponent], Dimension]]:
     """
     Creates an Iterable over all the dimensions in
-    base_dimensions and their children, providing the path 
+    base_dimensions and their children, providing the path
     to the dimension.
 
     Arguments
@@ -201,8 +220,7 @@ def create_path_iterable(
     """
     dimension_path_list: List[Tuple[List[PathComponent], Dimension]] = []
 
-    dimension_stack = list(([], bd)
-        for bd in base_dimensions)
+    dimension_stack = list(([], bd) for bd in base_dimensions)
 
     while len(dimension_stack) > 0:
         path, dim1 = dimension_stack.pop(0)
@@ -213,15 +231,22 @@ def create_path_iterable(
                 for i, child_dim in enumerate(
                     cast(List[Dimension], cast(ChildrenTypes, dim1).children)
                 ):
-                    dimension_stack.insert(0, (path + [PathComponent(dim1.id, i)], child_dim))
+                    dimension_stack.insert(
+                        0, (path + [PathComponent(dim1.id, i)], child_dim)
+                    )
             else:
                 for i, child_dim in enumerate(
                     cast(List[Dimension], cast(ChildrenTypes, dim1).children)
                 ):
-                    if skip_structual_dims and dim1.only_supports_spec_structure():
+                    if (
+                        skip_structual_dims
+                        and dim1.only_supports_spec_structure()
+                    ):
                         dimension_stack.insert(0, (path, child_dim))
                     else:
-                        dimension_stack.insert(0, (path + [PathComponent(dim1.id)], child_dim))
+                        dimension_stack.insert(
+                            0, (path + [PathComponent(dim1.id)], child_dim)
+                        )
 
     return dimension_path_list
 
@@ -435,7 +460,9 @@ class Space:
                     parents.append(cast(ChildrenTypes, c_dim))
         return None
 
-    def derive_full_subspaces(self) -> List[List[str]]:
+    def derive_full_subspaces(
+        self, ensure_variant_composite_ids: bool = True
+    ) -> List[List[str]]:
         """
         Discovers every combination of dimensions that are able to
         be specified togehter.
@@ -444,13 +471,24 @@ class Space:
         global identifer.
         Children dimensions are also analyzed.
 
+        Arguments
+        ---------
+        self : Space
+            Space
+        ensure_variant_composite_ids:bool=True
+            Ensures that the ids of composite within variant dimensions are included
+            in the sub-space lists
+
         Returns
         -------
         derive_subspaces : List[List[str]]
             Every combination of dimensions that must be
             specified together
         """
-        return derive_subspaces(create_level_iterable(self.children))
+        return derive_subspaces(
+            create_level_iterable(self.children),
+            ensure_variant_composite_ids=ensure_variant_composite_ids,
+        )
 
     def derive_spanning_subspaces(self) -> List[List[str]]:
         """
@@ -499,6 +537,7 @@ class Space:
             else:
                 seen_ids.add(c.id)
                 return False
+
         return sum(
             [
                 (
@@ -506,10 +545,15 @@ class Space:
                     if not d.has_child_dimensions()
                     else (
                         (0 if d.only_supports_spec_structure() else 1)
-                        + (cast(ChildrenTypes, d).count_children_dimensions(seen_ids))
+                        + (
+                            cast(ChildrenTypes, d).count_children_dimensions(
+                                seen_ids
+                            )
+                        )
                     )
                 )
-                for d in self.dimensions if not _seen(d)
+                for d in self.dimensions
+                if not _seen(d)
             ]
         )
 
@@ -578,7 +622,10 @@ class Space:
                 if dim.id not in dim_path_map:
                     column_index = dim_column_map[dim.id]
                     encoded_column = zero_one_encoded_values[:, column_index]
-                    dim_path_map[dim.id] = ([], np.array(dim.collapse_uniform(encoded_column, True)))
+                    dim_path_map[dim.id] = (
+                        [],
+                        np.array(dim.collapse_uniform(encoded_column, True)),
+                    )
                 dim_path_map[dim.id][0].append(path)
 
         for dim in flatted_dimensions:
@@ -586,31 +633,39 @@ class Space:
                 column_index = dim_column_map[dim.id]
                 if dim.portion_null is not None and dim.portion_null > 0.0:
                     encoded_column = zero_one_encoded_values[:, column_index]
-                    adjusted_encoded_column = np.array([
-                        (
-                            (xp - dim.portion_null) / (1.0 - dim.portion_null)
-                            if not np.isnan(xp) and xp > dim.portion_null
-                            else np.nan
-                        )
-                        for xp in encoded_column
-                    ])
+                    adjusted_encoded_column = np.array(
+                        [
+                            (
+                                (xp - dim.portion_null)
+                                / (1.0 - dim.portion_null)
+                                if not np.isnan(xp) and xp > dim.portion_null
+                                else np.nan
+                            )
+                            for xp in encoded_column
+                        ]
+                    )
                     adjusted_encoded_values[:, column_index] = (
                         adjusted_encoded_column
                     )
                 paths, _ = dim_path_map[dim.id]
-                
+
                 ored_paths = []
                 for path in paths:
                     if len(path) > 0:
-                        path_include_mask = np.array([True] * len(encoded_column))
+                        path_include_mask = np.array(
+                            [True] * len(encoded_column)
+                        )
                         for path_component in path:
                             parent_dim_id = path_component.dimension_id
-                            parent_decoded_column = dim_path_map[parent_dim_id][1]
+                            parent_decoded_column = dim_path_map[
+                                parent_dim_id
+                            ][1]
 
                             if path_component.variant_option_index is not None:
                                 # must address variant children
                                 path_include_mask = path_include_mask & (
-                                    parent_decoded_column == path_component.variant_option_index
+                                    parent_decoded_column
+                                    == path_component.variant_option_index
                                 )
                             else:
                                 # must address non-variant children
@@ -618,15 +673,17 @@ class Space:
                                     np.isnan(parent_decoded_column) == False
                                 )
                         ored_paths.append(path_include_mask)
-                
+
                 if len(ored_paths) > 0:
-                    total_nan_mask = (np.logical_or.reduce(ored_paths) == False)
-                    adjusted_encoded_column = adjusted_encoded_values[:, column_index]
+                    total_nan_mask = np.logical_or.reduce(ored_paths) == False
+                    adjusted_encoded_column = adjusted_encoded_values[
+                        :, column_index
+                    ]
                     adjusted_encoded_column[total_nan_mask] = np.nan
                     adjusted_encoded_values[:, column_index] = (
                         adjusted_encoded_column
                     )
-            
+
         return adjusted_encoded_values
 
     def reverse_decoding_to_zero_one_null_matrix(
@@ -731,6 +788,7 @@ class Space:
                 return {k: asdict_with_type(v) for k, v in obj.items()}
             else:
                 return obj
+
         return asdict_with_type(self)
 
 

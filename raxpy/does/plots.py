@@ -5,18 +5,25 @@ This modules provides some custom plots to show experiment designs.
 import numpy as np
 import matplotlib.pyplot as plt
 
+from .doe import DesignOfExperiment
 
-def plot_scatterplot_matrix(data, names, title="Pairplot"):
+
+def plot_scatterplot_matrix(
+    doe: DesignOfExperiment, names=None, title="Pairplot"
+):
     """
-    Plots a scatterplot matrix of subplots.  Each row of "data" is
-    plotted against other rows, resulting in a nrows by nrows grid of
-    subplots with the diagonal subplots labeled with "names".
+    Plots the experiment design as a scatterplot matrix of subplots.
+    The zero-one-null encoding is used to plot the design points.
+    The rows/columns of matrix represent the dimensions active in the
+    experiment design. Histograms are shown on the diagonal, and scatter
+    plots are shown on the off-diagonal of the design-point values
+    for the associated input dimensions.
 
     Arguments
     ---------
-    data
-        matrix of data points
-    names : str
+    doe : raxpy.does.DesignOfExperiments
+        The design of experiments object containing the data to plot
+    names : List[str] | None
         Labels for subplot names
     title : str
         Additional keyword arguments are passed on to matplotlib's
@@ -27,6 +34,11 @@ def plot_scatterplot_matrix(data, names, title="Pairplot"):
     Returns the matplotlib figure object containg the
     subplot grid.
     """
+
+    data = doe.zero_one_null_input_sets
+
+    if names is None:
+        names = list(doe.input_set_map.keys())
 
     # Check for NaN values
     has_nan = np.isnan(data).any()

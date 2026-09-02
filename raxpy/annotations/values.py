@@ -8,7 +8,6 @@ from dataclasses import dataclass
 
 from .. import spaces as s
 
-
 CategorySpec = Union[str, Tuple[str, str]]
 
 
@@ -18,6 +17,7 @@ class Base:
     Parameter annotation abstract class.
     """
 
+    id: Optional[str] = None
     label: Optional[str] = None
     tags: Optional[List[str]] = None
     portion_null: Optional[float] = None
@@ -34,6 +34,8 @@ class Base:
         d : d.Dimension
             a dimension to apply annotation attributes onto
         """
+        if self.id is not None:
+            d.id = self.id
         if self.label is not None:
             d.label = self.label
         if self.tags is not None:

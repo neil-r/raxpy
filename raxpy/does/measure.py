@@ -1,6 +1,6 @@
 """
-    This modules provides logic to compute
-    assessments of an experiment design.
+This modules provides logic to compute
+assessments of an experiment design.
 """
 
 from dataclasses import dataclass
@@ -201,7 +201,9 @@ def compute_star_discrepancy(
     # determine which vairant dimensions are active for each point
     for point in x:
         # determine relevant dimensions for point
-        relevant_dims_set = tuple(determine_relevant_dimensions(design, point, False))
+        relevant_dims_set = tuple(
+            determine_relevant_dimensions(design, point, False)
+        )
 
         if relevant_dims_set not in relevant_dim_sets_proj_map:
             projection_sets = []
@@ -270,7 +272,7 @@ def compute_star_discrepancy(
             ppd = abs(portion_of_points_in_region - region_volumn_percent)
 
             if ppd == 1.0:
-                #print("Here") # TODO: DEBUG WHY THIS OCCURS
+                # print("Here") # TODO: DEBUG WHY THIS OCCURS
                 pass
 
             point_projection_discrepancies.append(ppd)
@@ -746,7 +748,7 @@ def _compute_nan_distance(row1, row2, p=2):
     # Replace nan's differences to 1 to represent the maximin difference
     parts = np.nan_to_num(parts, nan=1)
 
-    distance = np.sqrt(np.sum(parts)) # TODO fix
+    distance = np.sqrt(np.sum(parts))  # TODO fix
 
     return distance
 
@@ -914,7 +916,9 @@ def allocate_points_to_full_subspaces(doe: DesignOfExperiment):
     """
     # determine every full-combination of input dimensions
     # that could be defined in this space
-    sub_spaces = doe.input_space.derive_full_subspaces()
+    sub_spaces = doe.input_space.derive_full_subspaces(
+        ensure_variant_composite_ids=False
+    )
 
     # assign a index to each sub space
     sub_space_index_map = {}
@@ -1022,3 +1026,30 @@ def measure_with_all_metrics(
         full_sub_design_measurements=full_sub_set_assessments,
         measurements=total_measurements,
     )
+
+
+def assess_design(doe: DesignOfExperiment):
+    """
+    Assesses the design and prints the assessment results to the console.
+
+    Arguments
+    ---------
+    doe : DesignOfExperiment
+        The design to assess
+    """
+    assessment = measure_with_all_metrics(doe)
+
+    print(f"Total Point Count: {assessment.total_point_count}")
+    print("Full Sub-Design Measurements:")
+    for sub_concept_design in assessment.full_sub_design_measurements:
+        print(
+            f"\tConcept Sub-space Dimensions: {sub_concept_design.active_dimensions}"
+        )
+        print(f"\t\tPoint Count: {sub_concept_design.point_count}")
+        print(
+            f"\t\tSpace-Filling Measurements: {sub_concept_design.measurements}"
+        )
+
+    print("Overall Design Measurements:")
+    for metric, value in assessment.measurements.items():
+        print(f"\t{metric}: {value}")

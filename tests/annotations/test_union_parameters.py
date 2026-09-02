@@ -1,5 +1,5 @@
-""" 
-    Unit tests for the code-intorspection of functions Union parameters
+"""
+Unit tests for the code-intorspection of functions Union parameters
 """
 
 from typing import Annotated, Union
@@ -117,7 +117,7 @@ def test_union_choice_spec_param_func_long():
 
     def f(x1: Union[_CustomCls1, _CustomCls2, _CustomCls3]):
         """
-        TODO Explain the Function
+        Function to support unit testing.
 
         Arguments
         ---------
@@ -134,3 +134,49 @@ def test_union_choice_spec_param_func_long():
     assert isinstance(dim, s.Variant)
     assert len(dim.children) == 3
     assert dim.nullable is False
+
+
+def test_shared_nested_factors():
+    """
+    Tests to ensure ids assigned to shared nested factors are shared across
+    the union parameter options
+    """
+
+    @dataclass
+    class _CustomClsN1:
+        """
+        Dataclass used for unit testing
+        """
+
+        x1: Annotated[float, raxpy.Float(id="x1n", lb=0.0, ub=1.0)]
+
+    @dataclass
+    class _CustomClsN2:
+        """
+        Dataclass used for unit testing
+        """
+
+        x1: Annotated[float, raxpy.Float(id="x1n", lb=0.0, ub=1.0)]
+
+    def f(x1: Union[_CustomClsN1, _CustomClsN2]):
+        """
+        Function to support unit testing.
+
+        Arguments
+        ---------
+        x1 : CustomClsN1 | CustomClsN2
+        """
+        pass
+
+    input_space = fs.extract_input_space(f)
+    assert input_space is not None
+    assert input_space.dimensions is not None
+    assert len(input_space.dimensions) == 1
+    dim = input_space.dimensions[0]
+    assert isinstance(dim, s.Variant)
+    assert dim.id == "x1"
+    assert len(dim.children) == 2
+    assert dim.nullable is False
+
+    assert dim.children[0].children[0].id == "x1n"
+    assert dim.children[1].children[0].id == "x1n"
