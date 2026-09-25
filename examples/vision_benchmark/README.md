@@ -49,6 +49,8 @@ python -m experiment.run_experiment --n_points 20 --train_subset 3000 --val_subs
 
 ## Results
 
+Please note that neural network training is non-deterministic, so running the experiment will not result in identical results when compared to a prior run.  results.json and results.csv from a prior test are included for reference.
+
 Execution outputs are saved to:
 - `experiment/results.json`: Detailed dictionary of all design points and measured performance metrics.
 - `experiment/results.csv`: Tabular export containing architecture parameters, augmentation status, loss, accuracy, and runtime.
