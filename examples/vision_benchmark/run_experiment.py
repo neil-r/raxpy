@@ -7,7 +7,7 @@ import os
 import ssl
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -53,7 +53,6 @@ def _get_data_loaders(
     batch_size: int,
     augmentation: Optional[AugmentationConfig],
 ) -> Tuple[DataLoader, DataLoader]:
-    global _TRAIN_DATASET, _VAL_DATASET
 
     if augmentation is not None:
         train_transform = transforms.Compose([
