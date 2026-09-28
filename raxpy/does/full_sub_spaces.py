@@ -65,7 +65,7 @@ def allocate_points_to_full_sub_spaces(
 
     if sub_space_target_allocations is None:
         sub_space_target_allocations = []
-        full_subspace_sets = space.derive_full_subspaces()
+        full_subspace_sets = space.derive_concept_subspaces()
 
         # compute portion of the n_points that each sub-design for each sub-space
         # should address

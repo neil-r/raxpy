@@ -64,7 +64,7 @@ class Float(Base):
 
     ub: Optional[float] = None
     lb: Optional[float] = None
-    value_set: Optional[Tuple[float]] = None
+    value_set: Optional[Tuple[float, ...]] = None
 
     def apply_to(self, d: s.Dimension):
         """
@@ -94,7 +94,7 @@ class Integer(Base):
 
     ub: Optional[int] = None
     lb: Optional[int] = None
-    value_set: Optional[Tuple[int]] = None
+    value_set: Optional[Tuple[int, ...]] = None
 
     def apply_to(self, d: s.Dimension):
         """

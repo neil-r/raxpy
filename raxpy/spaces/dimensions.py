@@ -22,7 +22,6 @@ import numpy as np
 
 from . import dim_tags
 
-
 T = TypeVar("T")
 
 
@@ -340,7 +339,7 @@ class Dimension(Generic[T]):
             raise ValueError(
                 f"Invalid value type, dimension '{self.id}' should be a {T}"
             )
-        
+
     def is_constant(self) -> bool:
         """
         Checks if the dimension is tagged as constant.
@@ -360,7 +359,7 @@ class Int(Dimension[int]):
 
     lb: Optional[int] = None
     ub: Optional[int] = None
-    value_set: Optional[Tuple[int]] = None
+    value_set: Optional[Tuple[int, ...]] = None
 
     def convert_to_argument(self, input_value) -> int:
         """
@@ -386,11 +385,24 @@ class Int(Dimension[int]):
         else:
             if self.lb is not None and self.ub is not None:
                 if self.has_tag(dim_tags.LOG):
-                    floats = _transform(x, self.lb, self.ub, self.has_tag(dim_tags.LOG), utilize_null_portions, self.portion_null)
-                    return np.array(list(
-                        max(min(round(xp),self.ub),self.lb) if not np.isnan(xp) else np.nan
-                        for xp in floats
-                    ))
+                    floats = _transform(
+                        x,
+                        self.lb,
+                        self.ub,
+                        self.has_tag(dim_tags.LOG),
+                        utilize_null_portions,
+                        self.portion_null,
+                    )
+                    return np.array(
+                        list(
+                            (
+                                max(min(round(xp), self.ub), self.lb)
+                                if not np.isnan(xp)
+                                else np.nan
+                            )
+                            for xp in floats
+                        )
+                    )
                 else:
                     vs = list(range(self.lb, self.ub + 1))
 
@@ -421,10 +433,14 @@ class Int(Dimension[int]):
         possible_values = self.value_set
         if possible_values is None:
             if self.has_tag(dim_tags.LOG):
+
                 def mapping_f(x_value):
                     if np.isnan(x_value):
                         return x_value
-                    return (math.log(x_value) - math.log(self.lb)) / (math.log(self.ub) - math.log(self.lb))
+                    return (math.log(x_value) - math.log(self.lb)) / (
+                        math.log(self.ub) - math.log(self.lb)
+                    )
+
                 return np.array(list(map(mapping_f, x)))
             else:
                 possible_values = list(
@@ -474,7 +490,7 @@ class Int(Dimension[int]):
                     f"Invalid value, the value {input_value} is not in the "
                     f"value set {self.value_set}"
                 )
-    
+
     def get_discrete_values(self) -> Optional[List[int]]:
         """
         Gets the discrete values represented by this dimension if applicable.
@@ -539,7 +555,7 @@ class Bool(Int):
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (bool,)
-    
+
     @property
     def decoded_type(self) -> Type:
         """
@@ -554,23 +570,26 @@ def _transform(x, lb, ub, use_log, utilize_null_portions, portion_null):
     Arguments
     ---------
     x an array of 0-1 values
-    lb  the lower bound 
+    lb  the lower bound
     ub the upper bound
     use_log       whether to use log scale for the transformation
     utilize_null_portions   whether to consider the portion_null attribute to assign null values
     portion_null   the threshold of the 0-1 range to map to null values if utilize_null_portions is True
     """
     r = ub - lb
-            
+
     if portion_null is not None and utilize_null_portions:
         if use_log:
             return [
                 (
-                    math.exp(math.log(lb) + (
-                        (xp - portion_null)
-                        / (1.0 - portion_null)
-                    ) * (math.log(ub) - math.log(lb)))
-                    if xp is not None and not np.isnan(xp) and xp > portion_null
+                    math.exp(
+                        math.log(lb)
+                        + ((xp - portion_null) / (1.0 - portion_null))
+                        * (math.log(ub) - math.log(lb))
+                    )
+                    if xp is not None
+                    and not np.isnan(xp)
+                    and xp > portion_null
                     else np.nan
                 )
                 for xp in x
@@ -578,13 +597,10 @@ def _transform(x, lb, ub, use_log, utilize_null_portions, portion_null):
         else:
             return [
                 (
-                    lb
-                    + r
-                    * (
-                        (xp - portion_null)
-                        / (1.0 - portion_null)
-                    )
-                    if xp is not None and not np.isnan(xp) and xp > portion_null
+                    lb + r * ((xp - portion_null) / (1.0 - portion_null))
+                    if xp is not None
+                    and not np.isnan(xp)
+                    and xp > portion_null
                     else np.nan
                 )
                 for xp in x
@@ -592,17 +608,12 @@ def _transform(x, lb, ub, use_log, utilize_null_portions, portion_null):
     else:
         if use_log:
             return [
-                (
-                    math.exp(math.log(lb) + (
-                        xp
-                    ) * (math.log(ub) - math.log(lb)))
-                )
+                (math.exp(math.log(lb) + (xp) * (math.log(ub) - math.log(lb))))
                 for xp in x
             ]
         else:
-            return [
-                lb + r * xp if xp is not None else None for xp in x
-            ]
+            return [lb + r * xp if xp is not None else None for xp in x]
+
 
 @dataclass
 class Float(Dimension[float]):
@@ -612,7 +623,7 @@ class Float(Dimension[float]):
 
     lb: Optional[float] = None
     ub: Optional[float] = None
-    value_set: Optional[Tuple[float]] = None
+    value_set: Optional[Tuple[float, ...]] = None
 
     def convert_to_argument(self, input_value) -> float:
         """
@@ -639,8 +650,15 @@ class Float(Dimension[float]):
             )
 
         if self.lb is not None and self.ub is not None:
-            return _transform(x, self.lb, self.ub, self.has_tag(dim_tags.LOG), utilize_null_portions, self.portion_null)
-            
+            return _transform(
+                x,
+                self.lb,
+                self.ub,
+                self.has_tag(dim_tags.LOG),
+                utilize_null_portions,
+                self.portion_null,
+            )
+
         raise ValueError(
             "Unbounded Float dimension cannot transform a uniform 0-1 value"
         )
@@ -682,13 +700,17 @@ class Float(Dimension[float]):
             mapping_f = mapping_f1
         elif self.lb is not None and self.ub is not None:
             if self.has_tag(dim_tags.LOG):
+
                 def mapping_f2(x_value):
                     if np.isnan(x_value):
                         return x_value
-                    return (math.log(x_value) - math.log(self.lb)) / (math.log(self.ub) - math.log(self.lb))
+                    return (math.log(x_value) - math.log(self.lb)) / (
+                        math.log(self.ub) - math.log(self.lb)
+                    )
 
                 mapping_f = mapping_f2
             else:
+
                 def mapping_f2(x_value):
                     if np.isnan(x_value):
                         return x_value
@@ -756,7 +778,7 @@ class Float(Dimension[float]):
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (float,)
-    
+
     @property
     def decoded_type(self) -> Type:
         """
@@ -806,11 +828,9 @@ class Text(Dimension[str]):
         if self.value_set is not None:
 
             def mapping_f(x_value):
-                if (
-                    np.isnan(x_value)
-                 ):
+                if np.isnan(x_value):
                     return np.nan
-                return x_value/(len(self.value_set)-1)
+                return x_value / (len(self.value_set) - 1)
 
             return np.array(list(map(mapping_f, x)))
         else:
@@ -862,7 +882,7 @@ class Text(Dimension[str]):
                     f"Invalid value, the value {input_value} is not in the "
                     f"value set {self.value_set}"
                 )
-            
+
     def get_discrete_values(self) -> Optional[List[str]]:
         """
         Gets the discrete values represented by this dimension if applicable.
@@ -872,7 +892,10 @@ class Text(Dimension[str]):
             Optional[List[str]]: the discrete values represented by this dimension if applicable, None otherwise
         """
         if self.value_set is not None:
-            return [v.value if isinstance(v, CategoryValue) else v for v in self.value_set]
+            return [
+                v.value if isinstance(v, CategoryValue) else v
+                for v in self.value_set
+            ]
         else:
             return None
 
@@ -881,7 +904,7 @@ class Text(Dimension[str]):
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (str,)
-    
+
     @property
     def decoded_type(self) -> Type:
         """
@@ -1002,6 +1025,7 @@ class Variant(Dimension):
             else:
                 seen_ids.add(c.id)
                 return False
+
         return sum(
             [
                 (
@@ -1009,7 +1033,8 @@ class Variant(Dimension):
                     if c.has_child_dimensions()
                     else 1
                 )
-                for c in cast(List[Dimension], self.options) if not _seen(c)
+                for c in cast(List[Dimension], self.options)
+                if not _seen(c)
             ]
         )
 
@@ -1035,7 +1060,7 @@ class Variant(Dimension):
         if self.options is not None:
             # The following assumes that the options are a Composite dimension with a
             # class_name attribute that corresponds to the value of the option, may
-            # want to reassess this logic 
+            # want to reassess this logic
             return [dim.class_name for dim in self.options]
         else:
             return None
@@ -1048,7 +1073,7 @@ class Variant(Dimension):
         for option in cast(List[Dimension], self.options):
             at += option.acceptable_types()
         return tuple(at)
-    
+
     @property
     def decoded_type(self) -> Type:
         """
@@ -1158,7 +1183,7 @@ class Composite(Dimension):
         """
         Implementation of abstract method. See `Dimension.has_child_dimensions`.
         """
-        return True # if self.children is not None and len(self.children) > 0 else False
+        return True  # if self.children is not None and len(self.children) > 0 else False
 
     def count_children_dimensions(self, seen_ids: set) -> int:
         """
@@ -1168,12 +1193,14 @@ class Composite(Dimension):
         -------
             int: the number of children dimensions
         """
+
         def _seen(c):
             if c.id in seen_ids:
                 return True
             else:
                 seen_ids.add(c.id)
                 return False
+
         return sum(
             [
                 (
@@ -1181,10 +1208,15 @@ class Composite(Dimension):
                     if not c.has_child_dimensions()
                     else (
                         (0 if c.only_supports_spec_structure() else 1)
-                        + (cast(ChildrenTypes, c).count_children_dimensions(seen_ids))
+                        + (
+                            cast(ChildrenTypes, c).count_children_dimensions(
+                                seen_ids
+                            )
+                        )
                     )
                 )
-                for c in cast(List[Dimension], self.children) if not _seen(c)
+                for c in cast(List[Dimension], self.children)
+                if not _seen(c)
             ]
         )
 
@@ -1208,7 +1240,7 @@ class Composite(Dimension):
         Implementation of abstract method. See `Dimension.acceptable_types`.
         """
         return (self.type_class,)
-    
+
     @property
     def decoded_type(self) -> Type:
         """

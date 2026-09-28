@@ -1,8 +1,8 @@
 """
-Script designed to be called from an MPI executable, such as mpirun, to 
-demonstrate the execution of a raxpy experiment with MPI. 
+Script designed to be called from an MPI executable, such as mpirun, to
+demonstrate the execution of a raxpy experiment with MPI.
 
-> mpirun -n 4 python distributed_mpi_example.py
+> mpirun -n 4 python -m mpi4py distributed_mpi_example.py
 """
 
 from typing import Annotated, Optional

@@ -1,5 +1,5 @@
-""" 
-    Unit tests for analysis functions of a space's dimensions
+"""
+Unit tests for analysis functions of a space's dimensions
 """
 
 import raxpy.spaces as s
@@ -48,7 +48,7 @@ def test_deriving_subspaces():
         ]
     )
 
-    sub_spaces = space.derive_full_subspaces()
+    sub_spaces = space.derive_concept_subspaces()
 
     assert sub_spaces is not None
     assert len(sub_spaces) == 6
@@ -86,7 +86,7 @@ def test_deriving_subspaces_from_unions():
         ]
     )
 
-    sub_spaces = space.derive_full_subspaces()
+    sub_spaces = space.derive_concept_subspaces()
 
     assert sub_spaces is not None
     assert len(sub_spaces) == 4
@@ -148,7 +148,7 @@ def test_deriving_spanning_subspaces():
 
 def test_deriving_subspaces_from_required_unions():
     """
-    Tests the ability to derive full spaces when a
+    Tests the ability to derive concept spaces when a
     required Variant dimension is at the root level.
 
     Asserts
@@ -156,6 +156,6 @@ def test_deriving_subspaces_from_required_unions():
         The proper number of full subspaces are
         derived
     """
-    full_subspaces = SPACE.derive_full_subspaces()
+    concept_subspaces = SPACE.derive_concept_subspaces()
 
-    assert len(full_subspaces) == len(SUB_SPACES)
+    assert len(concept_subspaces) == len(SUB_SPACES)

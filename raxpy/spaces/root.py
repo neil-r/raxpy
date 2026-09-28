@@ -460,13 +460,13 @@ class Space:
                     parents.append(cast(ChildrenTypes, c_dim))
         return None
 
-    def derive_full_subspaces(
+    def derive_concept_subspaces(
         self, ensure_variant_composite_ids: bool = True
     ) -> List[List[str]]:
         """
         Discovers every combination of dimensions that are able to
         be specified togehter.
-        We call these the possible full subspaces.
+        We call these the possible concept subspaces.
         A list is returned containing List of the dimensions'
         global identifer.
         Children dimensions are also analyzed.
@@ -501,7 +501,7 @@ class Space:
             Every combination of dimensions that must be
             specified together
         """
-        subspaces = self.derive_full_subspaces()
+        subspaces = self.derive_concept_subspaces()
         spanning_subspaces = {}
 
         dims = create_all_iterable(self.dimensions)
