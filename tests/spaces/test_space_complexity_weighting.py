@@ -1,5 +1,5 @@
-""" 
-    Units test for the dimension complexity computation hueristics
+"""
+Units test for the dimension complexity computation hueristics
 """
 
 import raxpy.spaces.complexity as c
@@ -124,13 +124,13 @@ def test_subspace_portitions_computations():
             ),
         ]
     )
-    full_subspace_sets = space.derive_full_subspaces()
-    portitions = c.compute_subspace_portions(space, full_subspace_sets)
+    concept_subspace_sets = space.derive_concept_subspaces()
+    portitions = c.compute_subspace_portions(space, concept_subspace_sets)
 
     assert portitions is not None
-    assert len(portitions) == len(full_subspace_sets)
+    assert len(portitions) == len(concept_subspace_sets)
 
-    index_of_check = full_subspace_sets.index(
+    index_of_check = concept_subspace_sets.index(
         ["x1", "x3", "x4", "x5", "x6", "x8"]
     )
     p_check = portitions[index_of_check]

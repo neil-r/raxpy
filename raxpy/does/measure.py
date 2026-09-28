@@ -916,7 +916,7 @@ def allocate_points_to_full_subspaces(doe: DesignOfExperiment):
     """
     # determine every full-combination of input dimensions
     # that could be defined in this space
-    sub_spaces = doe.input_space.derive_full_subspaces(
+    sub_spaces = doe.input_space.derive_concept_subspaces(
         ensure_variant_composite_ids=False
     )
 
@@ -1040,7 +1040,7 @@ def assess_design(doe: DesignOfExperiment):
     assessment = measure_with_all_metrics(doe)
 
     print(f"Total Point Count: {assessment.total_point_count}")
-    print("Full Sub-Design Measurements:")
+    print("Sub-Design Measurements:")
     for sub_concept_design in assessment.full_sub_design_measurements:
         print(
             f"\tConcept Sub-space Dimensions: {sub_concept_design.active_dimensions}"
