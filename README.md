@@ -1,5 +1,6 @@
 # raxpy, Python library to rapidly design and execute experiments
 
+|  |  Details|
 |---|---|
 | Testing | [![CI - Test](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/neil-r/raxpy/actions/workflows/unit_tests.yml) |
 | Meta | [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/neil-r/raxpy/blob/main/LICENSE)
