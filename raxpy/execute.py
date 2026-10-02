@@ -6,7 +6,7 @@ the designing and execution of experiments.
 import sys
 import os
 import pickle
-from typing import Optional, Union
+from typing import Optional, Union, cast
 from functools import partial
 import numpy as np
 
@@ -237,7 +237,7 @@ def design_experiment(
     ],
     n_points: int,
     design_algorithm=lhs.generate_seperate_designs_by_full_subspace_and_pool,
-    optimize_projections: bool = True,
+    optimize_projections: Union[bool, maxpro.Modes] = True,
     seed: Optional[int] = None,
 ) -> DesignOfExperiment:
     """
@@ -280,7 +280,13 @@ def design_experiment(
         rng = np.random.default_rng()
 
     design = design_algorithm(input_space, n_points, rng=rng)
+    opt_mode: Optional[maxpro.Modes] = None
     if optimize_projections:
+        if type(optimize_projections) == bool:
+            opt_mode = "MaxPro"
+        else:
+            opt_mode = cast(maxpro.Modes, optimize_projections)
+    if opt_mode is not None:
         design = maxpro.optimize_design_with_sa(
             design,
             # We want to ensure that the projections are optimized
@@ -289,6 +295,7 @@ def design_experiment(
             # and the optimization is more effective)
             encoding=maxpro.EncodingEnum.ZERO_ONE_NULL_ENCODING,
             rng=rng,
+            mode=opt_mode,
         )
 
     return design

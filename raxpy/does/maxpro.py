@@ -9,7 +9,8 @@ for more details about MaxPro.
 https://par.nsf.gov/servlets/purl/10199193
 """
 
-from typing import Optional, cast
+from typing import Optional, cast, Literal
+from typing_extensions import TypeAlias
 import math
 import numpy as np
 from ..spaces.complexity import estimate_complexity
@@ -17,18 +18,57 @@ from ..spaces.complexity import estimate_complexity
 from .. import spaces as s
 from .doe import DesignOfExperiment, EncodingEnum
 
+Modes: TypeAlias = Literal["uMaxPro", "MaxPro"]
 
-def _create_max_pro_dist_func(dim):
+
+def _create_max_pro_dist_func(dim, mode: Modes = "MaxPro"):
     level_factor = 1.0 / estimate_complexity(dim)
 
-    def f(x1_value, x2_value):
-        if not np.isnan(x1_value) and not np.isnan(x2_value):
-            return abs(x1_value - x2_value) + level_factor
-        else:
-            if np.isnan(x1_value) and np.isnan(x2_value):
-                return level_factor
+    if mode == "MaxPro":
+
+        def f(x1_value, x2_value):
+            if not np.isnan(x1_value) and not np.isnan(x2_value):
+                return abs(x1_value - x2_value) + level_factor
+
             else:
-                return 1.0 + level_factor
+                if np.isnan(x1_value) and np.isnan(x2_value):
+                    return level_factor
+                else:
+                    return 1.0 + level_factor
+
+    elif mode == "uMaxPro":
+
+        def f(x1_value, x2_value):
+            if not np.isnan(x1_value) and not np.isnan(x2_value):
+                d = abs(x1_value - x2_value)
+                return min(d, 1 - d) + level_factor
+
+            else:
+                if np.isnan(x1_value) and np.isnan(x2_value):
+                    return level_factor
+                else:
+                    return 1.0 + level_factor
+
+    else:
+        raise NotImplementedError(f"Mode {mode} not implemented")
+
+    return f
+
+
+def _create_max_pro_dist_func_s(mode: Modes = "MaxPro"):
+    if mode == "MaxPro":
+
+        def f(x1_value, x2_value):
+            return x1_value - x2_value
+
+    elif mode == "uMaxPro":
+
+        def f(x1_value, x2_value):
+            d = abs(x1_value - x2_value)
+            return min(d, 1 - d)
+
+    else:
+        raise NotImplementedError(f"Mode {mode} not implemented")
 
     return f
 
@@ -40,6 +80,7 @@ def optimize_design_with_sa(
     max_rabbit_whole_threshold: int = 1,
     suppress_numerical_computation_warnings: bool = True,
     rng: Optional[np.random.Generator] = None,
+    mode: Modes = "uMaxPro",
 ) -> DesignOfExperiment:
     """
     Makes a copy of base_design and swaps non-null values in the design
@@ -123,9 +164,9 @@ def optimize_design_with_sa(
             or dim_id not in root_dim_ids
             or dim.has_finite_values()
         ):
-            dist_funcs.append(_create_max_pro_dist_func(dim))
+            dist_funcs.append(_create_max_pro_dist_func(dim, mode))
         else:
-            dist_funcs.append(lambda x1_value, x2_value: x1_value - x2_value)
+            dist_funcs.append(_create_max_pro_dist_func_s(mode))
 
     for i_a in range(n - 1):
         for j_a in range(i_a + 1, n):

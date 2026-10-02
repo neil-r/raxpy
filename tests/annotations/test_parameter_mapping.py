@@ -1,6 +1,6 @@
-""" 
-    Unit tests considering the introspection of a function's
-    parameters defining an input space.
+"""
+Unit tests considering the introspection of a function's
+parameters defining an input space.
 """
 
 from typing import Annotated, Optional
@@ -138,7 +138,7 @@ def test_mixed_spec_param_func():
         _x2: Annotated[float, raxpy.Float(lb=1.7, ub=3.3)],
         _x3: Annotated[int, raxpy.Integer(ub=5)],
         _x4: Annotated[
-            Optional[int], raxpy.Integer(value_set={1, 2, 4}, portion_null=0.5)
+            Optional[int], raxpy.Integer(value_set=(1, 2, 4), portion_null=0.5)
         ] = None,
         _x5: int = 3,
         _x6: Optional[float] = None,
@@ -167,7 +167,7 @@ def test_mixed_spec_param_func():
         None,
         None,
         None,
-        value_set={1, 2, 4},
+        value_set=(1, 2, 4),
         nullable=True,
         specified_default=True,
     )
@@ -258,7 +258,7 @@ def test_complex_object_spec_param():
         caf2: Optional[float]
         cas1: str
         cas2: Annotated[
-            str, raxpy.Categorical(value_set={"one", "two", "three"})
+            str, raxpy.Categorical(value_set=("one", "two", "three"))
         ]
 
     @dataclass
