@@ -12,8 +12,9 @@ def f(
     return (x1 - 2) ** 2 + (x2 - 3) ** 2
 
 
-# create an Optuna-compatible function from the annotated function
-optuna_f = optuna_adapter.convert_to_optuna(f)
+if __name__ == "__main__":
+    # create an Optuna-compatible function from the annotated function
+    optuna_f = optuna_adapter.convert_to_optuna(f)
 
-s = optuna.create_study(direction="minimize")
-s.optimize(optuna_f, n_trials=100)
+    s = optuna.create_study(direction="minimize")
+    s.optimize(optuna_f, n_trials=100)
