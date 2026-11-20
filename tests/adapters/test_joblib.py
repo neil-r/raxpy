@@ -1,8 +1,16 @@
 import os
 from typing import Annotated
+import pytest
 
 import raxpy
-from raxpy.adapters.joblib import perform_experiment
+
+try:
+    from raxpy.adapters.joblib import perform_experiment
+except ImportError:
+    pytest.skip(
+        "joblib module not available, so skipping adapter tests",
+        allow_module_level=True,
+    )
 
 
 def test_execute_design_persists_and_reuses_results(tmp_path):
