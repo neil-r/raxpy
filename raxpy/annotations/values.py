@@ -53,7 +53,30 @@ class Categorical(Base):
     Annotation for a str parameter representing a finite set of values.
     """
 
-    value_set: Optional[Tuple[CategorySpec]] = None
+    value_set: Optional[Tuple[CategorySpec, ...]] = None
+
+    def apply_to(self, d: s.Dimension):
+        """
+        Applies the annotated attributes to the
+        dimension d.
+
+        Arguments
+        ---------
+        self : Base
+
+        d : d.Dimension
+            a dimension to apply annotation attributes onto
+        """
+        super().apply_to(d)
+        d = cast(s.Text, d)
+        if self.value_set is not None:
+            if len(self.value_set) > 1:
+                if isinstance(self.value_set[0], tuple):
+                    d.value_set = tuple(
+                        s.CategoryValue(v[0], v[1]) for v in self.value_set
+                    )
+                else:
+                    d.value_set = tuple(str(v) for v in self.value_set)
 
 
 @dataclass(frozen=True, eq=True)

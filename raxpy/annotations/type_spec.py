@@ -9,7 +9,6 @@ from typing import List, Type, Union, get_args, get_origin, Dict
 
 from .. import spaces as s
 
-
 UndefinedValue = object()
 
 _type_dimension_mapper: Dict[Type, Type] = {
@@ -178,8 +177,11 @@ def map_type(
             options = []
 
             for i, a in enumerate(args):
-
-                options.append(map_type(id, f"option_{i}", a))
+                option = map_type(id, f"option_{i}", a)
+                if isinstance(option, s.Composite):
+                    option.class_name = a.__name__
+                    option.type_class = a
+                options.append(option)
 
             initalization_values["options"] = options
     else:

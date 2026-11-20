@@ -11,7 +11,13 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import numpy as np
 
-from .dimensions import Dimension, Variant, ChildrenTypes, Composite
+from .dimensions import (
+    Dimension,
+    Variant,
+    ChildrenTypes,
+    Composite,
+    _map_values,
+)
 
 
 def _generate_combinations(base_list: list) -> list:
@@ -633,20 +639,53 @@ class Space:
                 column_index = dim_column_map[dim.id]
                 if dim.portion_null is not None and dim.portion_null > 0.0:
                     encoded_column = zero_one_encoded_values[:, column_index]
-                    adjusted_encoded_column = np.array(
-                        [
-                            (
-                                (xp - dim.portion_null)
-                                / (1.0 - dim.portion_null)
-                                if not np.isnan(xp) and xp > dim.portion_null
-                                else np.nan
-                            )
-                            for xp in encoded_column
-                        ]
-                    )
+                    if isinstance(dim, Composite):
+                        # an optional composite dimension should be fixed
+                        # to a 1.0 value for non-null dimensions
+                        adjusted_encoded_column = np.array(
+                            [
+                                (
+                                    1.0
+                                    if not np.isnan(xp)
+                                    and xp > dim.portion_null
+                                    else np.nan
+                                )
+                                for xp in encoded_column
+                            ]
+                        )
+                    else:
+                        adjusted_encoded_column = np.array(
+                            [
+                                (
+                                    (xp - dim.portion_null)
+                                    / (1.0 - dim.portion_null)
+                                    if not np.isnan(xp)
+                                    and xp > dim.portion_null
+                                    else np.nan
+                                )
+                                for xp in encoded_column
+                            ]
+                        )
                     adjusted_encoded_values[:, column_index] = (
                         adjusted_encoded_column
                     )
+
+                # if dimensions specify discrete values then
+                # scale values to reflect this discrete attribute
+                if dim.has_finite_values() and not isinstance(dim, Composite):
+                    d_values = dim.get_discrete_values()
+                    d_len = len(d_values)
+
+                    int_indicies = _map_values(
+                        adjusted_encoded_values[:, column_index],
+                        [i for i in range(d_len)],
+                        None,
+                    )
+
+                    adjusted_encoded_values[:, column_index] = np.array(
+                        int_indicies
+                    ) / float(d_len - 1)
+
                 paths, _ = dim_path_map[dim.id]
 
                 ored_paths = []

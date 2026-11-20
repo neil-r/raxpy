@@ -1049,19 +1049,16 @@ class Variant(Dimension):
                     value = input_value.content
                     dim.validate(value, specified_input)
 
-    def get_discrete_values(self) -> Optional[List[Union[str, int, float]]]:
+    def get_discrete_values(self) -> Optional[List[int]]:
         """
         Gets the discrete values represented by this dimension if applicable.
 
         Returns
         -------
-            Optional[List[str | int | float]]: the discrete values represented by this dimension if applicable, None otherwise
+            Optional[List[int]]: the discrete values represented by this dimension if applicable, None otherwise
         """
         if self.options is not None:
-            # The following assumes that the options are a Composite dimension with a
-            # class_name attribute that corresponds to the value of the option, may
-            # want to reassess this logic
-            return [dim.class_name for dim in self.options]
+            return [i for i, _dim in enumerate(self.options)]
         else:
             return None
 
