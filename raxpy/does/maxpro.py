@@ -10,7 +10,11 @@ https://par.nsf.gov/servlets/purl/10199193
 """
 
 from typing import Optional, cast, Literal
-from typing_extensions import TypeAlias
+
+try:
+    from typing import TypeAlias
+except ImportError:
+    from typing_extensions import TypeAlias
 import math
 import numpy as np
 from ..spaces.complexity import estimate_complexity
