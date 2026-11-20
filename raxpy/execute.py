@@ -254,7 +254,7 @@ def design_experiment(
         with.
     design_algorithm
         Generates an initial experiment that could be optimize further
-    optimize_projections: bool
+    optimize_projections: Union[bool, maxpro.Modes]
         If true, optimizes the design created by the design_algorithm to
         maximize the projections
     seed:Optional[int]
